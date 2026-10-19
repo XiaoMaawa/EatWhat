@@ -46,12 +46,27 @@ public class DishServiceImpl implements DishService {
     @Transactional(rollbackFor = Exception.class)
     public DishCategory createCategory(Long userId, CategoryRequest request) {
         Shop shop = shopService.currentShop(userId);
+        String name = request.getName().trim();
+        requireUniqueCategoryName(shop.getId(), name, null);
         DishCategory category = new DishCategory();
         category.setShopId(shop.getId());
-        category.setName(request.getName().trim());
+        category.setName(name);
         category.setSort(request.getSort() == null ? 0 : request.getSort());
         categoryMapper.insert(category);
         return category;
+    }
+
+    /**
+     * 商家-18 / 商家-19：同一店铺内分类名称唯一（忽略首尾空格与已逻辑删除的分类）。
+     */
+    private void requireUniqueCategoryName(Long shopId, String name, Long excludeId) {
+        Long exists = categoryMapper.selectCount(new LambdaQueryWrapper<DishCategory>()
+                .eq(DishCategory::getShopId, shopId)
+                .eq(DishCategory::getName, name)
+                .ne(excludeId != null, DishCategory::getId, excludeId));
+        if (exists != null && exists > 0) {
+            throw BizException.of(ErrorCode.PARAM_INVALID, "同一店铺内分类名称不能重复：" + name);
+        }
     }
 
     @Override
@@ -59,7 +74,9 @@ public class DishServiceImpl implements DishService {
     public void updateCategory(Long userId, Long categoryId, CategoryRequest request) {
         Shop shop = shopService.currentShop(userId);
         DishCategory category = requireOwnedCategory(shop.getId(), categoryId);
-        category.setName(request.getName().trim());
+        String name = request.getName().trim();
+        requireUniqueCategoryName(shop.getId(), name, categoryId);
+        category.setName(name);
         if (request.getSort() != null) {
             category.setSort(request.getSort());
         }
