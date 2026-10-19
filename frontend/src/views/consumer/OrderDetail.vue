@@ -32,6 +32,23 @@
         <span>{{ order.receiverAddress }}</span>
       </div>
 
+      <!-- 顾客-54：支付记录 -->
+      <template v-if="order.payTime || order.tradeNo">
+        <el-divider />
+        <div class="section">
+          <span class="label">支付时间</span>
+          <span>{{ order.payTime || '—' }}</span>
+        </div>
+        <div class="section">
+          <span class="label">支付金额</span>
+          <span class="ew-price">¥{{ order.totalAmount }}</span>
+        </div>
+        <div class="section">
+          <span class="label">支付流水号</span>
+          <span class="trade-no">{{ order.tradeNo || '—' }}</span>
+        </div>
+      </template>
+
       <el-divider />
 
       <div class="items">
@@ -271,6 +288,13 @@ onMounted(load)
   gap: 12px;
   font-size: 14px;
   padding: 5px 0;
+}
+
+.trade-no {
+  font-family: var(--el-font-family-mono, monospace);
+  font-size: 13px;
+  color: var(--el-text-color-regular);
+  word-break: break-all;
 }
 
 .label {

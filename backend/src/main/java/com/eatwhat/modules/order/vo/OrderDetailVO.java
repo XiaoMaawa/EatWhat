@@ -27,6 +27,9 @@ public class OrderDetailVO {
     private BigDecimal totalAmount;
     private Integer payType;
 
+    /** 顾客-54：支付流水号（支付回调写入） */
+    private String tradeNo;
+
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime payTime;
 
@@ -217,9 +220,16 @@ public class OrderDetailVO {
     public LocalDateTime getPayTime() {
         return payTime;
     }
-
     public void setPayTime(LocalDateTime payTime) {
         this.payTime = payTime;
+    }
+
+    public String getTradeNo() {
+        return tradeNo;
+    }
+
+    public void setTradeNo(String tradeNo) {
+        this.tradeNo = tradeNo;
     }
 
     public LocalDateTime getCreatedAt() {

@@ -359,6 +359,7 @@ public class OrderServiceImpl implements OrderService {
         vo.setDiscountAmount(order.getDiscountAmount());
         vo.setTotalAmount(order.getTotalAmount());
         vo.setPayType(order.getPayType());
+        vo.setTradeNo(order.getTradeNo());
         vo.setPayTime(order.getPayTime());
         vo.setCreatedAt(order.getCreatedAt());
         vo.setCompletedAt(order.getCompletedAt());
