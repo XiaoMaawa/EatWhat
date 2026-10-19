@@ -369,7 +369,7 @@ INSERT INTO `sys_user` (`id`, `phone`, `password`, `nickname`, `avatar`, `role`,
 INSERT INTO `user_address` (`id`, `user_id`, `contact_name`, `phone`, `province`, `city`, `district`, `detail`, `longitude`, `latitude`, `is_default`) VALUES
 (1, 2, '张三', '13800000001', '浙江省', '杭州市', '西湖区', '文三路 100 号 3 幢 501 室', 120.1234560, 30.2765000, 1),
 (2, 2, '张三', '13800000001', '浙江省', '杭州市', '滨江区', '江南大道 588 号 A 座 1201', 120.2100000, 30.2080000, 0),
-(3, 3, '李四', '13800000002', '浙江省', '杭州市', '余杭区', '文一西路 969 号 7 号楼 302', 120.0100000, 30.2800000, 1);
+(3, 3, '李四', '13800000002', '浙江省', '杭州市', '西湖区', '文三路 200 号 1 幢 802 室', 120.1200000, 30.2780000, 1);
 
 INSERT INTO `merchant` (`id`, `user_id`, `real_name`, `id_card`, `license_img`, `contact_phone`, `audit_status`, `audit_remark`, `audited_at`) VALUES
 (1, 4, '陈建国', '330106199001011234', NULL, '13800000010', 1, '资质齐全，审核通过', NOW()),
@@ -416,8 +416,15 @@ INSERT INTO `rider` (`id`, `user_id`, `real_name`, `id_card`, `health_img`, `con
 (2, 7, '赵敏', '330106199407075678', NULL, '13800000021', 1, '健康证有效，审核通过', NOW(), 0, 0.00);
 
 -- =====================================================================
--- 说明：以上账号密码的 BCrypt 哈希由 backend 启动时的 PasswordHashInitializer
--- 或 sql/gen-password.sql 生成后回填；首次导入后请执行：
+-- 说明：以上账号密码均以 BCrypt 密文入库，明文与哈希对应关系如下：
+--   13800000000 / Admin@123     管理员
+--   13800000001 / User@123      消费者（张三）
+--   13800000002 / User@123      消费者（李四）
+--   13800000010 / Merchant@123  商家（川味小厨）
+--   13800000011 / Merchant@123  商家（麦香烘焙）
+--   13800000012 / Merchant@123  商家（麦香轻食）
+--   13800000020 / Rider@123     骑手（王强）
+--   13800000021 / Rider@123     骑手（赵敏）
+-- 如需重新生成哈希，可执行：
 --   cd backend && mvn -q exec:java -Dexec.mainClass=com.eatwhat.common.utils.BcryptGen
--- 该工具会打印 4 个哈希，替换 __HASH_*__ 占位符即可。
 -- =====================================================================
