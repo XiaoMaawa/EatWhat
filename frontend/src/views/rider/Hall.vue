@@ -60,7 +60,7 @@
           </div>
         </div>
 
-        <el-empty v-if="!loading && tasks.length === 0" description="暂时没有可抢的订单，歇会儿吧～" />
+        <el-empty v-if="!loading && tasks.length === 0" description="暂时没有可抢的订单" />
       </div>
     </div>
 

@@ -262,6 +262,8 @@ CREATE TABLE `delivery_task` (
   `grabbed_at`       DATETIME        DEFAULT NULL            COMMENT '抢单时间',
   `picked_at`        DATETIME        DEFAULT NULL            COMMENT '取餐时间',
   `delivered_at`     DATETIME        DEFAULT NULL            COMMENT '送达时间',
+  `estimated_arrival_at` DATETIME    DEFAULT NULL            COMMENT '预计送达时间',
+  `on_time`          TINYINT         DEFAULT NULL            COMMENT '是否准时送达 1准时 0超时 NULL未送达',
   `version`          INT             NOT NULL DEFAULT 0      COMMENT '乐观锁版本号',
   `created_at`       DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updated_at`       DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
@@ -524,6 +526,27 @@ CREATE TABLE `sys_dict` (
   UNIQUE KEY `uk_sys_dict_type_value` (`dict_type`, `dict_value`),
   KEY `idx_sys_dict_type` (`dict_type`, `status`, `sort`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='数据字典';
+-- ---------------------------------------------------------------------
+-- 23. 每日统计汇总表
+-- ---------------------------------------------------------------------
+DROP TABLE IF EXISTS `stats_daily`;
+CREATE TABLE `stats_daily` (
+  `id`              BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `stat_date`       DATE            NOT NULL                COMMENT '统计日期',
+  `order_count`     INT             NOT NULL DEFAULT 0      COMMENT '订单量',
+  `completed_count` INT             NOT NULL DEFAULT 0      COMMENT '完成单量',
+  `cancel_count`    INT             NOT NULL DEFAULT 0      COMMENT '取消单量',
+  `total_amount`    DECIMAL(12,2)   NOT NULL DEFAULT 0.00   COMMENT '交易额（已支付订单）',
+  `refund_amount`   DECIMAL(12,2)   NOT NULL DEFAULT 0.00   COMMENT '退款额',
+  `new_users`       INT             NOT NULL DEFAULT 0      COMMENT '新增用户数',
+  `new_merchants`   INT             NOT NULL DEFAULT 0      COMMENT '新增商家数',
+  `new_riders`      INT             NOT NULL DEFAULT 0      COMMENT '新增骑手数',
+  `created_at`      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at`      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_stats_daily_date` (`stat_date`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='每日统计汇总表';
+
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- =====================================================================

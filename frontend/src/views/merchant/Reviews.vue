@@ -62,7 +62,7 @@
 
     <el-dialog v-model="replyVisible" title="回复评价" width="480px">
       <div class="quote">{{ currentReview?.content }}</div>
-      <el-input v-model="replyText" type="textarea" :rows="3" maxlength="200" show-word-limit placeholder="感谢您的评价～" />
+      <el-input v-model="replyText" type="textarea" :rows="3" maxlength="200" show-word-limit placeholder="感谢您的评价" />
       <template #footer>
         <el-button @click="replyVisible = false">取消</el-button>
         <el-button type="primary" :loading="replying" @click="submitReply">提交回复</el-button>

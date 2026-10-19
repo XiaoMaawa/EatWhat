@@ -2,9 +2,9 @@
   <div class="login-page">
     <div class="login-box">
       <div class="brand">
-        <span class="logo">🐋</span>
+        <span class="logo">🍜</span>
         <h1>EatWhat</h1>
-        <p>今天吃啥？本鱼替主人挑好了</p>
+        <p>今天吃啥？一站式外卖点餐平台</p>
       </div>
 
       <el-form ref="formRef" :model="form" :rules="rules" size="large" @keyup.enter="submit">
@@ -130,7 +130,7 @@ async function submit() {
       payload.captchaCode = form.captchaCode
     }
     const data = await userStore.login(payload)
-    ElMessage.success(`欢迎回来，${data.userInfo?.nickname || '主人'}`)
+    ElMessage.success(`欢迎回来，${data.userInfo?.nickname || '朋友'}`)
     const redirect = route.query.redirect
     router.replace(redirect || HOME_BY_ROLE[data.userInfo?.role] || '/')
   } catch (error) {

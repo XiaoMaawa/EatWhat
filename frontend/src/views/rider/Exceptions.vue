@@ -44,7 +44,7 @@
         <el-table-column prop="createdAt" label="提交时间" width="170" />
       </el-table>
 
-      <el-empty v-if="!loading && list.length === 0" description="还没有异常记录，一切顺利～" />
+      <el-empty v-if="!loading && list.length === 0" description="暂无异常记录" />
 
       <el-pagination
         v-if="total > size"

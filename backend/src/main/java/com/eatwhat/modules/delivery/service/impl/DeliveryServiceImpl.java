@@ -199,8 +199,20 @@ public class DeliveryServiceImpl implements DeliveryService {
         if (rows == 0) {
             throw BizException.of(ErrorCode.TASK_ALREADY_TAKEN);
         }
+        // 抢单即给出预计送达时间（30 分钟备餐 + 每公里 3 分钟）。
+        // 注意：grab 的原生 SQL 已把 version 自增，这里不能再用 updateById（乐观锁会匹配不到），改用条件更新。
+        taskMapper.updateEta(taskId, estimateArrival(task));
         // 同步订单进入配送中
         orderService.transition(task.getOrderId(), CommonConstants.ORDER_DELIVERING, "RIDER", "骑手已接单");
+    }
+
+    /** 预计送达 = 当前时间 + 30 分钟备餐 + 每公里 3 分钟（不足 1 公里按 1 公里） */
+    private java.time.LocalDateTime estimateArrival(DeliveryTask task) {
+        int minutes = 30;
+        BigDecimal distance = task.getDistance() == null ? BigDecimal.ONE : task.getDistance();
+        int km = Math.max(1, distance.setScale(0, java.math.RoundingMode.CEILING).intValue());
+        minutes += km * 3;
+        return java.time.LocalDateTime.now().plusMinutes(minutes);
     }
 
     @Override
@@ -225,7 +237,12 @@ public class DeliveryServiceImpl implements DeliveryService {
             throw BizException.of(ErrorCode.ORDER_STATUS_ILLEGAL, "取餐后才能送达");
         }
         task.setStatus(CommonConstants.TASK_DELIVERED);
-        task.setDeliveredAt(java.time.LocalDateTime.now());
+        java.time.LocalDateTime deliveredAt = java.time.LocalDateTime.now();
+        task.setDeliveredAt(deliveredAt);
+        // 准时送达：实际送达时间不晚于预计送达时间
+        boolean punctual = task.getEstimatedArrivalAt() == null
+                || !deliveredAt.isAfter(task.getEstimatedArrivalAt());
+        task.setOnTime(punctual ? 1 : 0);
         taskMapper.updateById(task);
 
         // 骑手累计单量与收益
@@ -320,7 +337,49 @@ public class DeliveryServiceImpl implements DeliveryService {
             trend.add(point);
         }
         stats.put("incomeTrend", trend);
+
+        // 准时送达率（骑手-26）
+        long onTimeCount = delivered.stream()
+                .filter(t -> Integer.valueOf(1).equals(t.getOnTime()))
+                .count();
+        long lateCount = delivered.stream()
+                .filter(t -> Integer.valueOf(0).equals(t.getOnTime()))
+                .count();
+        int judged = (int) (onTimeCount + lateCount);
+        stats.put("onTimeOrders", onTimeCount);
+        stats.put("lateOrders", lateCount);
+        stats.put("onTimeRate", judged == 0 ? 100.0
+                : Math.round(onTimeCount * 1000.0 / judged) / 10.0);
+
         return stats;
+    }
+
+    @Override
+    public PageResult<DeliveryTask> incomeDetail(Long userId, String startDate, String endDate,
+                                                 Integer onTime, int page, int size) {
+        Rider rider = requireApprovedRider(userId);
+        LambdaQueryWrapper<DeliveryTask> wrapper = new LambdaQueryWrapper<DeliveryTask>()
+                .eq(DeliveryTask::getRiderId, rider.getId())
+                .eq(DeliveryTask::getStatus, CommonConstants.TASK_DELIVERED);
+        if (startDate != null && !startDate.isBlank()) {
+            wrapper.ge(DeliveryTask::getDeliveredAt, LocalDate.parse(startDate).atStartOfDay());
+        }
+        if (endDate != null && !endDate.isBlank()) {
+            wrapper.lt(DeliveryTask::getDeliveredAt, LocalDate.parse(endDate).plusDays(1).atStartOfDay());
+        }
+        if (onTime != null) {
+            wrapper.eq(DeliveryTask::getOnTime, onTime);
+        }
+        wrapper.orderByDesc(DeliveryTask::getDeliveredAt);
+        Page<DeliveryTask> result = taskMapper.selectPage(new Page<>(page, Math.min(size, 100)), wrapper);
+        // 补订单号，供「结算记录」展示
+        for (DeliveryTask task : result.getRecords()) {
+            Order order = orderMapper.selectById(task.getOrderId());
+            if (order != null) {
+                task.setOrderNo(order.getOrderNo());
+            }
+        }
+        return PageResult.of(result);
     }
 
     private BigDecimal sumFee(List<DeliveryTask> tasks, java.util.function.Predicate<DeliveryTask> filter) {

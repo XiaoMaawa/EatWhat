@@ -2,7 +2,7 @@
   <div class="login-page">
     <div class="login-box">
       <div class="brand">
-        <span class="logo">🐋</span>
+        <span class="logo">🍜</span>
         <h1>找回密码</h1>
         <p>输入手机号与验证码，就能重新设密码啦</p>
       </div>

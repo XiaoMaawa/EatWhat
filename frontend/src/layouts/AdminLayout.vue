@@ -2,7 +2,7 @@
   <el-container class="layout">
     <el-aside width="210px" class="aside">
       <div class="brand">
-        <span class="logo">🐋</span>
+        <span class="logo">🍜</span>
         <span class="brand-text">EatWhat 管理后台</span>
       </div>
       <el-menu :default-active="activeMenu" router class="menu">
@@ -13,6 +13,10 @@
         <el-menu-item index="/admin/statistics">
           <el-icon><TrendCharts /></el-icon>
           <span>平台统计</span>
+        </el-menu-item>
+        <el-menu-item index="/admin/daily-stats">
+          <el-icon><Calendar /></el-icon>
+          <span>每日汇总</span>
         </el-menu-item>
         <el-menu-item index="/admin/users">
           <el-icon><User /></el-icon>
@@ -93,7 +97,7 @@ import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
-import { ArrowDown, Bell, Bicycle, ChatDotSquare, DataBoard, Dish, Document, List, Setting, Shop, TrendCharts, User, Wallet, Warning } from '@element-plus/icons-vue'
+import { ArrowDown, Bell, Bicycle, Calendar, ChatDotSquare, DataBoard, Dish, Document, List, Setting, Shop, TrendCharts, User, Wallet, Warning } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()

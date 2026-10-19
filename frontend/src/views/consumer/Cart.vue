@@ -48,7 +48,7 @@
             <span class="ew-price">{{ cart.totalAmount }}</span>
           </div>
           <div v-if="belowMin" class="tip">
-            差 ¥{{ (Number(cart.minOrderAmount) - Number(cart.goodsAmount)).toFixed(2) }} 起送，主人再点一点嘛～
+            差 ¥{{ (Number(cart.minOrderAmount) - Number(cart.goodsAmount)).toFixed(2) }} 起送，再点一些即可下单
           </div>
         </div>
 
@@ -95,7 +95,7 @@
         </div>
       </template>
 
-      <el-empty v-else description="购物车还是空的，本鱼建议来碗米饭">
+      <el-empty v-else description="购物车还是空的，去挑几道喜欢的菜吧">
         <el-button type="primary" @click="$router.push('/')">去逛逛</el-button>
       </el-empty>
     </div>

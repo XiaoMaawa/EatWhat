@@ -49,6 +49,13 @@ public class DeliveryTask extends BaseEntity {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime deliveredAt;
 
+    /** 预计送达时间（抢单/取餐时计算） */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime estimatedArrivalAt;
+
+    /** 是否准时送达（实际送达不晚于预计） */
+    private Integer onTime;
+
     @Version
     private Integer version;
 
@@ -154,6 +161,22 @@ public class DeliveryTask extends BaseEntity {
 
     public void setDeliveredAt(LocalDateTime deliveredAt) {
         this.deliveredAt = deliveredAt;
+    }
+
+    public LocalDateTime getEstimatedArrivalAt() {
+        return estimatedArrivalAt;
+    }
+
+    public void setEstimatedArrivalAt(LocalDateTime estimatedArrivalAt) {
+        this.estimatedArrivalAt = estimatedArrivalAt;
+    }
+
+    public Integer getOnTime() {
+        return onTime;
+    }
+
+    public void setOnTime(Integer onTime) {
+        this.onTime = onTime;
     }
 
     public Integer getVersion() {

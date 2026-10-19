@@ -21,6 +21,12 @@ public interface DeliveryTaskMapper extends BaseMapper<DeliveryTask> {
     int grab(@Param("taskId") Long taskId, @Param("riderId") Long riderId);
 
     /**
+     * 写入预计送达时间（不参与乐观锁，抢单后由服务层计算）。
+     */
+    @Update("UPDATE delivery_task SET estimated_arrival_at = #{eta}, updated_at = NOW() WHERE id = #{taskId}")
+    int updateEta(@Param("taskId") Long taskId, @Param("eta") java.time.LocalDateTime eta);
+
+    /**
      * 原子转单：仅当任务仍归属该骑手且处于已接单或已取餐状态时退回订单池。
      */
     @Update("UPDATE delivery_task SET rider_id = NULL, status = 0, grabbed_at = NULL, picked_at = NULL, "

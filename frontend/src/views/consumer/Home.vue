@@ -3,7 +3,7 @@
     <div class="banner">
       <div class="banner-text">
         <h2>今天吃啥？</h2>
-        <p>本鱼已经把附近的店都翻遍了，主人只管点就好</p>
+        <p>附近好店已为你整理好，下单即可送达</p>
       </div>
       <span class="banner-icon">🍚</span>
     </div>

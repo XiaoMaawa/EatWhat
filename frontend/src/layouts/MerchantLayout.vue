@@ -2,7 +2,7 @@
   <el-container class="layout">
     <el-aside width="210px" class="aside">
       <div class="brand">
-        <span class="logo">🐋</span>
+        <span class="logo">🍜</span>
         <span class="brand-text">EatWhat 商家</span>
       </div>
       <el-menu :default-active="activeMenu" router class="menu">

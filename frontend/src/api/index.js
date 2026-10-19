@@ -111,7 +111,8 @@ export const riderApi = {
   transfer: (taskId, data) => request.post(`/rider/tasks/${taskId}/transfer`, data),
   reportException: (taskId, data) => request.post(`/rider/tasks/${taskId}/exception`, data),
   exceptions: (params) => request.get('/rider/exceptions', { params }),
-  stats: () => request.get('/rider/stats')
+  stats: () => request.get('/rider/stats'),
+  incomeDetail: (params) => request.get('/rider/income-detail', { params })
 }
 
 // ===== 评价 =====
@@ -187,7 +188,11 @@ export const adminApi = {
   configs: (params) => request.get('/admin/configs', { params }),
   createConfig: (data) => request.post('/admin/configs', data),
   updateConfig: (id, data) => request.put(`/admin/configs/${id}`, data),
-  deleteConfig: (id) => request.delete(`/admin/configs/${id}`)
+  deleteConfig: (id) => request.delete(`/admin/configs/${id}`),
+
+  dailyStats: (params) => request.get('/admin/daily-stats', { params }),
+  dailyStatsRange: (params) => request.get('/admin/daily-stats/range', { params }),
+  summarizeStats: (params) => request.post('/admin/daily-stats/summarize', null, { params })
 }
 
 // ===== 公共内容（免登录）=====

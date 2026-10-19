@@ -84,7 +84,7 @@
           </template>
         </el-table-column>
       </el-table>
-      <el-empty v-if="!pendingOrders.length" description="暂无待处理订单，本鱼陪你摸会儿鱼～" :image-size="70" />
+      <el-empty v-if="!pendingOrders.length" description="暂无待处理订单" :image-size="70" />
     </div>
   </div>
 </template>

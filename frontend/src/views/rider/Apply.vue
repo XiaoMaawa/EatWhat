@@ -35,7 +35,7 @@
       <template #default>
         快去
         <el-link type="primary" :underline="false" @click="router.push('/rider/hall')">抢单大厅</el-link>
-        接单吧～
+        接单
       </template>
     </el-alert>
 

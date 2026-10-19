@@ -2,9 +2,9 @@
   <div class="register-page">
     <div class="register-box">
       <div class="brand">
-        <span class="logo">🐋</span>
+        <span class="logo">🍜</span>
         <h1>注册 EatWhat</h1>
-        <p>先选个身份，本鱼才知道该怎么招待主人</p>
+        <p>先选个身份，开启你的 EatWhat 之旅</p>
       </div>
 
       <el-form ref="formRef" :model="form" :rules="rules" size="large" label-position="top">
@@ -92,7 +92,7 @@ async function submit() {
   loading.value = true
   try {
     await authApi.register({ ...form, nickname: form.nickname || undefined })
-    // 注册成功顺手登录，省得主人再输一次密码
+    // 注册成功后自动登录，免去重复输入密码
     try {
       await userStore.login({ phone: form.phone, password: form.password })
       ElMessage.success('注册成功，已自动登录')

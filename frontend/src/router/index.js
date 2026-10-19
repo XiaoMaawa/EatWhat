@@ -74,6 +74,7 @@ const routes = [
       { path: '', redirect: '/admin/dashboard' },
       { path: 'dashboard', name: 'adminDashboard', component: () => import('@/views/admin/Dashboard.vue'), meta: { title: '数据看板' } },
       { path: 'statistics', name: 'adminStatistics', component: () => import('@/views/admin/Statistics.vue'), meta: { title: '平台统计' } },
+      { path: 'daily-stats', name: 'adminDailyStats', component: () => import('@/views/admin/DailyStats.vue'), meta: { title: '每日汇总' } },
       { path: 'users', name: 'adminUsers', component: () => import('@/views/admin/Users.vue'), meta: { title: '用户管理' } },
       { path: 'merchants', name: 'adminMerchants', component: () => import('@/views/admin/Merchants.vue'), meta: { title: '商家审核' } },
       { path: 'riders', name: 'adminRiders', component: () => import('@/views/admin/Riders.vue'), meta: { title: '骑手审核' } },

@@ -3,7 +3,7 @@
     <header class="header">
       <div class="header-inner">
         <router-link to="/" class="logo">
-          <span class="logo-icon">🐋</span>
+          <span class="logo-icon">🍜</span>
           <span class="logo-text">EatWhat</span>
         </router-link>
 

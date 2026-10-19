@@ -128,11 +128,11 @@ class AuthServiceImplTest {
         when(userMapper.insert(any(SysUser.class))).thenAnswer(inv -> {
             SysUser u = inv.getArgument(0);
             u.setId(100L);
-            assertThat(u.getNickname()).isEqualTo("鲸鱼娘");
+            assertThat(u.getNickname()).isEqualTo("测试昵称");
             return 1;
         });
         RegisterRequest r = registerRequest("Abc123456", "Abc123456");
-        r.setNickname("鲸鱼娘");
+        r.setNickname("测试昵称");
         assertThat(service.register(r)).isEqualTo(100L);
     }
 

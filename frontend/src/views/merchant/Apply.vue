@@ -37,7 +37,7 @@
       <template #default>
         店铺已经开通，快去
         <el-link type="primary" :underline="false" @click="router.push('/merchant/shop')">完善店铺信息</el-link>
-        吧～
+        吧
       </template>
     </el-alert>
 

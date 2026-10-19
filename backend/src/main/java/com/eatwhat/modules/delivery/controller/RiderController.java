@@ -110,6 +110,16 @@ public class RiderController {
         return R.ok(deliveryService.stats(UserContext.userId()));
     }
 
+    @Operation(summary = "收入明细（按订单逐单，含准时标记与结算状态）")
+    @GetMapping("/income-detail")
+    public R<PageResult<DeliveryTask>> incomeDetail(@RequestParam(required = false) String startDate,
+                                                    @RequestParam(required = false) String endDate,
+                                                    @RequestParam(required = false) Integer onTime,
+                                                    @RequestParam(defaultValue = "1") int page,
+                                                    @RequestParam(defaultValue = "10") int size) {
+        return R.ok(deliveryService.incomeDetail(UserContext.userId(), startDate, endDate, onTime, page, size));
+    }
+
     @Operation(summary = "转单申请")
     @PostMapping("/tasks/{taskId}/transfer")
     public R<DeliveryException> transfer(@PathVariable Long taskId,

@@ -38,7 +38,7 @@
           <div class="logo-row">
             <div class="logo-box">
               <img v-if="form.logo" :src="form.logo" alt="" />
-              <span v-else>🐋</span>
+              <span v-else>🍜</span>
             </div>
             <el-upload :show-file-list="false" :before-upload="beforeUpload" :http-request="uploadLogo" accept="image/*">
               <el-button size="small" :loading="uploading">上传 Logo</el-button>

@@ -64,6 +64,12 @@ public interface DeliveryService {
     Map<String, Object> stats(Long userId);
 
     /**
+     * 骑手收入明细（按订单逐单，含准时标记），日期区间与准时过滤可选。
+     */
+    PageResult<DeliveryTask> incomeDetail(Long userId, String startDate, String endDate,
+                                          Integer onTime, int page, int size);
+
+    /**
      * 商家备餐完成后创建配送任务。
      */
     DeliveryTask createTask(Long orderId, Long shopId, String pickupAddress, String deliveryAddress, Double distance);
