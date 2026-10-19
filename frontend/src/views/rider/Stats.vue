@@ -23,6 +23,47 @@
     </div>
 
     <div class="ew-card">
+      <div class="ew-flex-between">
+        <h3 class="ew-title">收入明细</h3>
+        <el-radio-group v-model="period" size="small">
+          <el-radio-button value="week">本周</el-radio-button>
+          <el-radio-button value="month">本月</el-radio-button>
+        </el-radio-group>
+      </div>
+      <div class="stats period">
+        <div class="stat">
+          <div class="stat-label">{{ period === 'week' ? '本周' : '本月' }}完成单量</div>
+          <div class="stat-value">{{ period === 'week' ? (stats.weekOrders ?? 0) : (stats.monthOrders ?? 0) }}</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">{{ period === 'week' ? '本周' : '本月' }}收入</div>
+          <div class="stat-value ew-price">
+            ¥{{ money(period === 'week' ? stats.weekIncome : stats.monthIncome) }}
+          </div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">日均收入</div>
+          <div class="stat-value ew-price">¥{{ money(avgIncome) }}</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">单均收入</div>
+          <div class="stat-value ew-price">¥{{ money(avgFee) }}</div>
+        </div>
+      </div>
+
+      <div class="trend">
+        <div v-for="point in stats.incomeTrend || []" :key="point.date" class="bar-col">
+          <div class="bar-wrap">
+            <div class="bar" :style="{ height: barHeight(point.income) }" :title="`¥${money(point.income)}`"></div>
+          </div>
+          <div class="bar-label">{{ point.date.slice(5) }}</div>
+          <div class="bar-value">¥{{ money(point.income) }}</div>
+        </div>
+        <el-empty v-if="!(stats.incomeTrend || []).length" description="近 7 日暂无收入" :image-size="60" />
+      </div>
+    </div>
+
+    <div class="ew-card">
       <h3 class="ew-title">骑手资料</h3>
       <el-descriptions v-if="profile" :column="2" border>
         <el-descriptions-item label="姓名">{{ profile.realName }}</el-descriptions-item>
@@ -41,7 +82,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { riderApi } from '@/api'
 import { money } from '@/utils/format'
 import { AUDIT_STATUS } from '@/utils/orderStatus'
@@ -49,6 +90,31 @@ import { AUDIT_STATUS } from '@/utils/orderStatus'
 const loading = ref(false)
 const stats = ref({})
 const profile = ref(null)
+const period = ref('week')
+
+const avgIncome = computed(() => {
+  const total = period.value === 'week' ? stats.value.weekIncome : stats.value.monthIncome
+  const days = period.value === 'week' ? 7 : new Date().getDate()
+  const value = Number(total || 0)
+  return days > 0 ? value / days : 0
+})
+
+const avgFee = computed(() => {
+  const orders = period.value === 'week' ? stats.value.weekOrders : stats.value.monthOrders
+  const total = period.value === 'week' ? stats.value.weekIncome : stats.value.monthIncome
+  const count = Number(orders || 0)
+  return count > 0 ? Number(total || 0) / count : 0
+})
+
+const maxTrend = computed(() => {
+  const points = stats.value.incomeTrend || []
+  return Math.max(1, ...points.map((p) => Number(p.income || 0)))
+})
+
+function barHeight(income) {
+  const ratio = Number(income || 0) / maxTrend.value
+  return `${Math.max(4, Math.round(ratio * 100))}%`
+}
 
 onMounted(async () => {
   loading.value = true
@@ -92,5 +158,50 @@ onMounted(async () => {
   .stats {
     grid-template-columns: repeat(2, 1fr);
   }
+}
+
+.stats.period {
+  margin-top: 6px;
+}
+
+.trend {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+  min-height: 150px;
+  padding: 0 4px;
+}
+
+.bar-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.bar-wrap {
+  width: 100%;
+  height: 100px;
+  display: flex;
+  align-items: flex-end;
+}
+
+.bar {
+  width: 100%;
+  border-radius: 6px 6px 0 0;
+  background: linear-gradient(180deg, #6ea8fe, #3b7ddd);
+  transition: height 0.3s;
+}
+
+.bar-label {
+  font-size: 12px;
+  color: #909399;
+}
+
+.bar-value {
+  font-size: 11px;
+  color: #606266;
 }
 </style>

@@ -34,6 +34,21 @@ public class Rider extends BaseEntity {
 
     private String contactPhone;
 
+    /**
+     * 1 接单中 / 0 已暂停接单。
+     */
+    private Integer accepting;
+
+    /**
+     * 接单半径（公里）。
+     */
+    private BigDecimal maxDistance;
+
+    /**
+     * 最大同时接单数。
+     */
+    private Integer maxOrders;
+
     /** 0 待审核 1 通过 2 驳回 */
     private Integer auditStatus;
 
@@ -106,6 +121,30 @@ public class Rider extends BaseEntity {
 
     public void setContactPhone(String contactPhone) {
         this.contactPhone = contactPhone;
+    }
+
+    public Integer getAccepting() {
+        return accepting;
+    }
+
+    public void setAccepting(Integer accepting) {
+        this.accepting = accepting;
+    }
+
+    public BigDecimal getMaxDistance() {
+        return maxDistance;
+    }
+
+    public void setMaxDistance(BigDecimal maxDistance) {
+        this.maxDistance = maxDistance;
+    }
+
+    public Integer getMaxOrders() {
+        return maxOrders;
+    }
+
+    public void setMaxOrders(Integer maxOrders) {
+        this.maxOrders = maxOrders;
     }
 
     public Integer getAuditStatus() {

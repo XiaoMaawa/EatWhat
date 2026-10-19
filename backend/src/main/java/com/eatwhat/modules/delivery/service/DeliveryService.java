@@ -34,6 +34,11 @@ public interface DeliveryService {
     List<DeliveryTask> availableTasks(Long userId);
 
     /**
+     * 更新骑手接单设置：接单开关、接单半径、同时接单上限。
+     */
+    void updateSettings(Long userId, Integer accepting, java.math.BigDecimal maxDistance, Integer maxOrders);
+
+    /**
      * 抢单。
      */
     void grab(Long userId, Long taskId);

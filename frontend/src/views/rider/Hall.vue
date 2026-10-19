@@ -14,7 +14,24 @@
     <div class="ew-card">
       <div class="ew-flex-between">
         <h3 class="ew-title">抢单大厅</h3>
-        <el-button :loading="loading" @click="load">刷新</el-button>
+        <div class="ew-flex ew-gap8">
+          <div v-if="profile" class="accept-switch">
+            <span class="switch-label">{{ settings.accepting ? '接单中' : '已暂停接单' }}</span>
+            <el-switch
+              v-model="settings.accepting"
+              :active-value="1"
+              :inactive-value="0"
+              :loading="savingSettings"
+              @change="saveSettings"
+            />
+          </div>
+          <el-button @click="settingsVisible = true">接单设置</el-button>
+          <el-button :loading="loading" @click="load">刷新</el-button>
+        </div>
+      </div>
+
+      <div v-if="profile" class="settings-hint">
+        接单半径 {{ settings.maxDistance }} 公里 · 最多同时 {{ settings.maxOrders }} 单 · 每 30 秒自动刷新
       </div>
 
       <div class="tasks">
@@ -46,11 +63,31 @@
         <el-empty v-if="!loading && tasks.length === 0" description="暂时没有可抢的订单，歇会儿吧～" />
       </div>
     </div>
+
+    <el-dialog v-model="settingsVisible" title="接单设置" width="420px">
+      <el-form label-width="110px">
+        <el-form-item label="接单状态">
+          <el-switch v-model="settings.accepting" :active-value="1" :inactive-value="0" active-text="接单中" />
+        </el-form-item>
+        <el-form-item label="接单半径">
+          <el-slider v-model="settings.maxDistance" :min="1" :max="10" :step="0.5" show-input :show-input-controls="false" />
+          <span class="unit">公里</span>
+        </el-form-item>
+        <el-form-item label="同时接单上限">
+          <el-input-number v-model="settings.maxOrders" :min="1" :max="10" />
+          <span class="unit">单</span>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="settingsVisible = false">取消</el-button>
+        <el-button type="primary" :loading="savingSettings" @click="saveSettings(true)">保存</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { riderApi } from '@/api'
 import { distance, money } from '@/utils/format'
@@ -59,13 +96,38 @@ const loading = ref(false)
 const grabbing = ref(null)
 const tasks = ref([])
 const profile = ref(null)
+const settingsVisible = ref(false)
+const savingSettings = ref(false)
+const settings = reactive({ accepting: 1, maxDistance: 5, maxOrders: 5 })
+
+let timer = null
 
 async function load() {
   loading.value = true
   try {
     tasks.value = (await riderApi.available()) || []
+  } catch {
+    tasks.value = []
   } finally {
     loading.value = false
+  }
+}
+
+async function saveSettings(closeDialog = false) {
+  savingSettings.value = true
+  try {
+    await riderApi.updateSettings({
+      accepting: settings.accepting,
+      maxDistance: settings.maxDistance,
+      maxOrders: settings.maxOrders
+    })
+    ElMessage.success('接单设置已保存')
+    if (closeDialog) {
+      settingsVisible.value = false
+    }
+    await load()
+  } finally {
+    savingSettings.value = false
   }
 }
 
@@ -82,13 +144,49 @@ async function grab(task) {
 
 onMounted(async () => {
   profile.value = await riderApi.profile().catch(() => null)
+  if (profile.value) {
+    settings.accepting = profile.value.accepting ?? 1
+    settings.maxDistance = Number(profile.value.maxDistance ?? 5)
+    settings.maxOrders = profile.value.maxOrders ?? 5
+  }
   await load()
+  // 每 30 秒自动刷新订单池
+  timer = setInterval(load, 30000)
+})
+
+onBeforeUnmount(() => {
+  if (timer) {
+    clearInterval(timer)
+  }
 })
 </script>
 
 <style scoped>
 .tip {
   margin-bottom: 12px;
+}
+
+.accept-switch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.switch-label {
+  font-size: 13px;
+  color: var(--ew-text-sub);
+}
+
+.settings-hint {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--ew-text-sub);
+}
+
+.unit {
+  margin-left: 8px;
+  font-size: 13px;
+  color: var(--ew-text-sub);
 }
 
 .tasks {

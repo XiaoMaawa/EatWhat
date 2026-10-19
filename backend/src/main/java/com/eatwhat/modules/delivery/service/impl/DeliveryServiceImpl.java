@@ -27,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,6 +43,12 @@ public class DeliveryServiceImpl implements DeliveryService {
     /** 基础配送费，与距离系数一起决定骑手收益 */
     private static final BigDecimal BASE_FEE = BigDecimal.valueOf(4.0);
     private static final BigDecimal PER_KM_FEE = BigDecimal.valueOf(1.0);
+
+    /** 骑手未设置时的默认接单半径（公里） */
+    private static final BigDecimal DEFAULT_MAX_DISTANCE = BigDecimal.valueOf(5.0);
+
+    /** 骑手未设置时的默认同时接单上限 */
+    private static final int DEFAULT_MAX_ORDERS = 5;
 
     private final RiderMapper riderMapper;
     private final DeliveryTaskMapper taskMapper;
@@ -124,13 +131,60 @@ public class DeliveryServiceImpl implements DeliveryService {
 
     @Override
     public List<DeliveryTask> availableTasks(Long userId) {
-        requireApprovedRider(userId);
+        Rider rider = requireApprovedRider(userId);
+        if (!Integer.valueOf(1).equals(rider.getAccepting())) {
+            throw BizException.of(ErrorCode.ORDER_STATUS_ILLEGAL, "已暂停接单，请先在「骑手认证」页开启接单开关");
+        }
+
+        BigDecimal radius = rider.getMaxDistance() == null ? DEFAULT_MAX_DISTANCE : rider.getMaxDistance();
+        int maxOrders = rider.getMaxOrders() == null ? DEFAULT_MAX_ORDERS : rider.getMaxOrders();
+        long ongoing = taskMapper.selectCount(new LambdaQueryWrapper<DeliveryTask>()
+                .eq(DeliveryTask::getRiderId, rider.getId())
+                .in(DeliveryTask::getStatus, CommonConstants.TASK_GRABBED, CommonConstants.TASK_PICKED));
+
         List<DeliveryTask> tasks = taskMapper.selectList(new LambdaQueryWrapper<DeliveryTask>()
                 .eq(DeliveryTask::getStatus, CommonConstants.TASK_WAITING)
                 .isNull(DeliveryTask::getRiderId)
                 .orderByAsc(DeliveryTask::getId));
+
+        // 按接单半径过滤，超距订单不展示
+        tasks = tasks.stream()
+                .filter(task -> task.getDistance() == null
+                        || task.getDistance().compareTo(radius) <= 0)
+                .collect(java.util.stream.Collectors.toList());
+
+        // 已达同时接单上限时不再展示新单
+        if (ongoing >= maxOrders) {
+            return new ArrayList<>();
+        }
         tasks.forEach(this::fillOrderNo);
         return tasks;
+    }
+
+    @Override
+    public void updateSettings(Long userId, Integer accepting, BigDecimal maxDistance, Integer maxOrders) {
+        Rider rider = requireApprovedRider(userId);
+        Rider update = new Rider();
+        update.setId(rider.getId());
+        if (accepting != null) {
+            if (accepting != 0 && accepting != 1) {
+                throw BizException.of(ErrorCode.PARAM_INVALID, "接单开关取值只能是 0 或 1");
+            }
+            update.setAccepting(accepting);
+        }
+        if (maxDistance != null) {
+            if (maxDistance.compareTo(BigDecimal.ONE) < 0 || maxDistance.compareTo(BigDecimal.TEN) > 0) {
+                throw BizException.of(ErrorCode.PARAM_INVALID, "接单半径需在 1 至 10 公里之间");
+            }
+            update.setMaxDistance(maxDistance);
+        }
+        if (maxOrders != null) {
+            if (maxOrders < 1 || maxOrders > 10) {
+                throw BizException.of(ErrorCode.PARAM_INVALID, "同时接单数需在 1 至 10 之间");
+            }
+            update.setMaxOrders(maxOrders);
+        }
+        riderMapper.updateById(update);
     }
 
     @Override
@@ -232,7 +286,56 @@ public class DeliveryServiceImpl implements DeliveryService {
         stats.put("totalIncome", totalIncome.setScale(2, RoundingMode.HALF_UP));
         stats.put("todayOrders", today.size());
         stats.put("todayIncome", todayIncome.setScale(2, RoundingMode.HALF_UP));
+
+        // 本周 / 本月收入与单量
+        LocalDate todayDate = LocalDate.now();
+        LocalDate weekStart = todayDate.with(java.time.DayOfWeek.MONDAY);
+        LocalDate monthStart = todayDate.withDayOfMonth(1);
+
+        BigDecimal weekIncome = sumFee(delivered, d -> !d.getDeliveredAt().toLocalDate().isBefore(weekStart));
+        int weekOrders = countDelivered(delivered, d -> !d.getDeliveredAt().toLocalDate().isBefore(weekStart));
+        BigDecimal monthIncome = sumFee(delivered, d -> !d.getDeliveredAt().toLocalDate().isBefore(monthStart));
+        int monthOrders = countDelivered(delivered, d -> !d.getDeliveredAt().toLocalDate().isBefore(monthStart));
+
+        stats.put("weekOrders", weekOrders);
+        stats.put("weekIncome", weekIncome.setScale(2, RoundingMode.HALF_UP));
+        stats.put("monthOrders", monthOrders);
+        stats.put("monthIncome", monthIncome.setScale(2, RoundingMode.HALF_UP));
+
+        // 近 7 日收入趋势
+        java.util.List<Map<String, Object>> trend = new ArrayList<>();
+        for (int i = 6; i >= 0; i--) {
+            LocalDate day = todayDate.minusDays(i);
+            List<DeliveryTask> dayTasks = delivered.stream()
+                    .filter(t -> t.getDeliveredAt() != null
+                            && t.getDeliveredAt().toLocalDate().equals(day))
+                    .toList();
+            BigDecimal dayIncome = dayTasks.stream()
+                    .map(t -> t.getFee() == null ? BigDecimal.ZERO : t.getFee())
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            Map<String, Object> point = new HashMap<>();
+            point.put("date", day.toString());
+            point.put("orders", dayTasks.size());
+            point.put("income", dayIncome.setScale(2, RoundingMode.HALF_UP));
+            trend.add(point);
+        }
+        stats.put("incomeTrend", trend);
         return stats;
+    }
+
+    private BigDecimal sumFee(List<DeliveryTask> tasks, java.util.function.Predicate<DeliveryTask> filter) {
+        return tasks.stream()
+                .filter(t -> t.getDeliveredAt() != null)
+                .filter(filter)
+                .map(t -> t.getFee() == null ? BigDecimal.ZERO : t.getFee())
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    private int countDelivered(List<DeliveryTask> tasks, java.util.function.Predicate<DeliveryTask> filter) {
+        return (int) tasks.stream()
+                .filter(t -> t.getDeliveredAt() != null)
+                .filter(filter)
+                .count();
     }
 
     @Override

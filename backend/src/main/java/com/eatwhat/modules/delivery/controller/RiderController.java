@@ -56,6 +56,19 @@ public class RiderController {
         return R.ok(deliveryService.availableTasks(UserContext.userId()));
     }
 
+    @Operation(summary = "更新接单设置")
+    @PatchMapping("/settings")
+    public R<Void> updateSettings(@RequestBody Map<String, Object> body) {
+        Integer accepting = body.get("accepting") == null ? null
+                : Integer.valueOf(body.get("accepting").toString());
+        java.math.BigDecimal maxDistance = body.get("maxDistance") == null ? null
+                : new java.math.BigDecimal(body.get("maxDistance").toString());
+        Integer maxOrders = body.get("maxOrders") == null ? null
+                : Integer.valueOf(body.get("maxOrders").toString());
+        deliveryService.updateSettings(UserContext.userId(), accepting, maxDistance, maxOrders);
+        return R.ok();
+    }
+
     @Operation(summary = "抢单")
     @PostMapping("/tasks/{taskId}/grab")
     public R<Map<String, Object>> grab(@PathVariable Long taskId) {
