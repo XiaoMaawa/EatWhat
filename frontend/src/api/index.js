@@ -6,7 +6,8 @@ export const authApi = {
   register: (data) => request.post('/auth/register', data),
   refresh: (refreshToken) => request.post('/auth/refresh', { refreshToken }),
   logout: () => request.post('/auth/logout'),
-  captcha: () => request.get('/captcha')
+  captcha: () => request.get('/captcha'),
+  resetPassword: (data) => request.post('/auth/reset-password', data)
 }
 
 // ===== 用户中心 =====
@@ -26,6 +27,14 @@ export const shopApi = {
   detail: (id) => request.get(`/shops/${id}`),
   dishes: (id, params) => request.get(`/shops/${id}/dishes`, { params }),
   reviews: (id, params) => request.get(`/shops/${id}/reviews`, { params })
+}
+
+// ===== 店铺收藏 =====
+export const favoriteApi = {
+  list: (params) => request.get('/favorites', { params }),
+  add: (shopId) => request.post(`/favorites/${shopId}`),
+  remove: (shopId) => request.delete(`/favorites/${shopId}`),
+  status: (shopId) => request.get(`/favorites/${shopId}`)
 }
 
 // ===== 购物车 =====
@@ -87,6 +96,7 @@ export const riderApi = {
   pickup: (taskId) => request.patch(`/rider/tasks/${taskId}/pickup`),
   deliver: (taskId) => request.patch(`/rider/tasks/${taskId}/deliver`),
   tasks: (params) => request.get('/rider/tasks', { params }),
+  updateSettings: (data) => request.patch('/rider/settings', data),
   stats: () => request.get('/rider/stats')
 }
 

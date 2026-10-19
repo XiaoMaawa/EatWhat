@@ -9,6 +9,7 @@
 
         <nav class="nav">
           <router-link to="/" class="nav-item">首页</router-link>
+          <router-link to="/favorites" class="nav-item">我的收藏</router-link>
           <router-link to="/orders" class="nav-item">我的订单</router-link>
           <router-link to="/reviews" class="nav-item">我的评价</router-link>
           <router-link to="/cart" class="nav-item">

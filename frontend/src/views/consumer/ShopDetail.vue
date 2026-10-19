@@ -19,6 +19,17 @@
         </div>
         <p v-if="shop.notice" class="notice">📢 {{ shop.notice }}</p>
       </div>
+      <div class="fav-box">
+        <el-button
+          :type="favorite ? 'danger' : 'default'"
+          :plain="!favorite"
+          :loading="favLoading"
+          @click="toggleFavorite"
+        >
+          <span class="fav-icon">{{ favorite ? '💙' : '🤍' }}</span>
+          {{ favorite ? '已收藏' : '收藏' }}
+        </el-button>
+      </div>
     </div>
 
     <div class="body">
@@ -120,7 +131,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { cartApi, shopApi } from '@/api'
+import { cartApi, favoriteApi, shopApi } from '@/api'
 import { ShoppingCart } from '@element-plus/icons-vue'
 
 const route = useRoute()
@@ -131,6 +142,9 @@ const loading = ref(false)
 const shop = ref(null)
 const categories = ref([])
 const activeCat = ref(null)
+
+const favorite = ref(false)
+const favLoading = ref(false)
 
 const reviews = ref([])
 const reviewTotal = ref(0)
@@ -153,8 +167,35 @@ async function load() {
     categories.value = data.categories || []
     activeCat.value = categories.value[0]?.id ?? null
     await refreshCart()
+    await loadFavorite()
   } finally {
     loading.value = false
+  }
+}
+
+async function loadFavorite() {
+  try {
+    const data = await favoriteApi.status(shopId)
+    favorite.value = Boolean(data?.favorite)
+  } catch {
+    favorite.value = false
+  }
+}
+
+async function toggleFavorite() {
+  favLoading.value = true
+  try {
+    if (favorite.value) {
+      await favoriteApi.remove(shopId)
+      favorite.value = false
+      ElMessage.success('已取消收藏')
+    } else {
+      await favoriteApi.add(shopId)
+      favorite.value = true
+      ElMessage.success('收藏成功，下次点餐更方便啦')
+    }
+  } finally {
+    favLoading.value = false
   }
 }
 
@@ -200,6 +241,16 @@ onMounted(async () => {
   display: flex;
   gap: 18px;
   margin-bottom: 16px;
+}
+
+.fav-box {
+  margin-left: auto;
+  align-self: flex-start;
+  flex-shrink: 0;
+}
+
+.fav-icon {
+  margin-right: 4px;
 }
 
 .logo {
