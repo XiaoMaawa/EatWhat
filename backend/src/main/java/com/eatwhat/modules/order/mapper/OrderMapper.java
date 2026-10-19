@@ -87,11 +87,39 @@ public interface OrderMapper extends BaseMapper<Order> {
     List<Map<String, Object>> dailyNewUsers(@Param("role") String role, @Param("start") LocalDateTime start);
 
     /**
+     * 活跃用户统计（管理员-42）：区间内按下单日期聚合的去重用户数。
+     */
+    @Select("SELECT DATE(created_at) AS date, COUNT(DISTINCT user_id) AS activeUsers "
+            + "FROM orders WHERE deleted = 0 AND status NOT IN (0, 6) "
+            + "AND created_at >= #{start} AND created_at < #{end} "
+            + "GROUP BY DATE(created_at) ORDER BY DATE(created_at)")
+    List<Map<String, Object>> dailyActiveUsers(@Param("start") LocalDateTime start,
+                                               @Param("end") LocalDateTime end);
+
+    /**
+     * 区间内总活跃用户数（去重）。
+     */
+    @Select("SELECT COUNT(DISTINCT user_id) FROM orders WHERE deleted = 0 AND status NOT IN (0, 6) "
+            + "AND created_at >= #{start} AND created_at < #{end}")
+    long countActiveUsers(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+
+    /**
      * 超时未支付的订单（定时任务自动取消）。expire_at 为业务计算值：created_at + 15 分钟。
      */
     @Select("SELECT * FROM orders WHERE deleted = 0 AND status = 0 "
             + "AND created_at < #{deadline} LIMIT #{limit}")
     List<Order> selectTimeoutOrders(@Param("deadline") LocalDateTime deadline, @Param("limit") int limit);
+
+    /**
+     * 商家在时间区间内按小时分布的订单量（营业时段分析）。
+     */
+    @Select("SELECT HOUR(created_at) AS hour, COUNT(*) AS orderCount "
+            + "FROM orders WHERE merchant_id = #{merchantId} AND deleted = 0 "
+            + "AND status NOT IN (0, 6) AND created_at >= #{start} AND created_at < #{end} "
+            + "GROUP BY HOUR(created_at) ORDER BY hour")
+    List<Map<String, Object>> hourlyOrders(@Param("merchantId") Long merchantId,
+                                           @Param("start") LocalDateTime start,
+                                           @Param("end") LocalDateTime end);
 
     /**
      * 骑手在时间区间内已完成订单的收入合计。

@@ -34,4 +34,9 @@ public interface MerchantService {
      * 商家经营统计。
      */
     Map<String, Object> stats(Long userId, String type);
+
+    /**
+     * 经营分析扩展（商家-51/55/56/57）：客单价、评分统计、评价评分统计、营业时段分析。
+     */
+    Map<String, Object> analytics(Long userId, String type);
 }

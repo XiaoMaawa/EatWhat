@@ -2,7 +2,17 @@
   <div class="ew-page">
     <div class="ew-card">
       <div class="ew-flex-between">
-        <h3 class="ew-title">菜品管理</h3>
+        <h3 class="ew-title">
+          菜品管理
+          <el-alert
+            v-if="lowStockCount > 0"
+            type="warning"
+            :closable="false"
+            show-icon
+            class="low-stock-alert"
+            :title="`有 ${lowStockCount} 个菜品库存不足 10 份，请及时补货`"
+          />
+        </h3>
         <el-button type="primary" @click="openDishDialog()">新增菜品</el-button>
       </div>
 
@@ -45,7 +55,14 @@
         <el-table-column label="价格" width="100">
           <template #default="{ row }">¥{{ money(row.price) }}</template>
         </el-table-column>
-        <el-table-column prop="stock" label="库存" width="90" />
+        <el-table-column label="库存" width="110">
+          <template #default="{ row }">
+            <span :class="{ 'stock-low': row.stock != null && row.stock < 10 }">{{ row.stock }}</span>
+            <el-tooltip v-if="row.stock != null && row.stock < 10" content="库存不足 10 份，请及时补货" placement="top">
+              <el-tag size="small" type="danger" effect="plain" class="stock-tip">补货</el-tag>
+            </el-tooltip>
+          </template>
+        </el-table-column>
         <el-table-column prop="monthSales" label="月销" width="90" />
         <el-table-column label="状态" width="100">
           <template #default="{ row }">
@@ -226,7 +243,7 @@
 </template>
 
 <script setup>
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { merchantApi, fileApi } from '@/api'
 import { money } from '@/utils/format'
@@ -240,6 +257,10 @@ const selection = ref([])
 const keyword = ref('')
 const filterCategoryId = ref(null)
 const filterStatus = ref(null)
+
+const lowStockCount = computed(
+  () => dishes.value.filter((d) => d.stock != null && d.stock < 10).length
+)
 
 const dishVisible = ref(false)
 const dishFormRef = ref()
@@ -557,6 +578,21 @@ async function removeAddon(row) {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+.low-stock-alert {
+  margin-top: 8px;
+  width: auto;
+  display: inline-flex;
+}
+
+.stock-low {
+  color: #f56c6c;
+  font-weight: 600;
+}
+
+.stock-tip {
+  margin-left: 4px;
 }
 
 .dish-img {

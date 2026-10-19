@@ -7,6 +7,7 @@ import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
 import java.math.BigDecimal;
+import java.util.Map;
 
 /**
  * 评价 Mapper。
@@ -26,4 +27,25 @@ public interface ReviewMapper extends BaseMapper<Review> {
             + "FROM review r JOIN order_item oi ON r.order_id = oi.order_id "
             + "WHERE r.deleted = 0 AND oi.dish_id = #{dishId} AND r.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)")
     BigDecimal goodRateByDish(@Param("dishId") Long dishId);
+
+    /**
+     * 店铺各维度平均分与评价总数（商家-51/56）。
+     */
+    @Select("SELECT IFNULL(ROUND(AVG(shop_score), 2), 5.00) AS avgShopScore, "
+            + "IFNULL(ROUND(AVG(delivery_score), 2), 5.00) AS avgDeliveryScore, "
+            + "IFNULL(ROUND(AVG(shop_score), 2), 5.00) AS avgTasteScore, "
+            + "COUNT(*) AS totalReviews, "
+            + "IFNULL(SUM(CASE WHEN reply IS NOT NULL AND reply <> '' THEN 1 ELSE 0 END), 0) AS repliedReviews "
+            + "FROM review WHERE shop_id = #{shopId} AND deleted = 0")
+    Map<String, Object> scoreSummaryByShop(@Param("shopId") Long shopId);
+
+    /**
+     * 店铺近 30 天各维度平均分与评价总数（商家-51）。
+     */
+    @Select("SELECT IFNULL(ROUND(AVG(shop_score), 2), 5.00) AS avgShopScore, "
+            + "IFNULL(ROUND(AVG(delivery_score), 2), 5.00) AS avgDeliveryScore, "
+            + "COUNT(*) AS totalReviews "
+            + "FROM review WHERE shop_id = #{shopId} AND deleted = 0 "
+            + "AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)")
+    Map<String, Object> scoreSummaryLast30Days(@Param("shopId") Long shopId);
 }

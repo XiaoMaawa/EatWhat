@@ -9,6 +9,7 @@ import com.eatwhat.modules.merchant.entity.Merchant;
 import com.eatwhat.modules.merchant.mapper.MerchantMapper;
 import com.eatwhat.modules.merchant.service.MerchantService;
 import com.eatwhat.modules.order.mapper.OrderMapper;
+import com.eatwhat.modules.review.mapper.ReviewMapper;
 import com.eatwhat.modules.shop.entity.Shop;
 import com.eatwhat.modules.shop.mapper.ShopMapper;
 import org.springframework.stereotype.Service;
@@ -32,11 +33,14 @@ public class MerchantServiceImpl implements MerchantService {
     private final MerchantMapper merchantMapper;
     private final ShopMapper shopMapper;
     private final OrderMapper orderMapper;
+    private final ReviewMapper reviewMapper;
 
-    public MerchantServiceImpl(MerchantMapper merchantMapper, ShopMapper shopMapper, OrderMapper orderMapper) {
+    public MerchantServiceImpl(MerchantMapper merchantMapper, ShopMapper shopMapper, OrderMapper orderMapper,
+                               ReviewMapper reviewMapper) {
         this.merchantMapper = merchantMapper;
         this.shopMapper = shopMapper;
         this.orderMapper = orderMapper;
+        this.reviewMapper = reviewMapper;
     }
 
     @Override
@@ -160,6 +164,88 @@ public class MerchantServiceImpl implements MerchantService {
             hotDishes.add(dish);
         }
         result.put("hotDishes", hotDishes);
+        return result;
+    }
+
+    @Override
+    public Map<String, Object> analytics(Long userId, String type) {
+        Merchant merchant = requireApprovedMerchant(userId);
+        Shop shop = shopMapper.selectOne(new LambdaQueryWrapper<Shop>()
+                .eq(Shop::getMerchantId, merchant.getId())
+                .last("LIMIT 1"));
+        if (shop == null) {
+            throw BizException.of(ErrorCode.SHOP_NOT_FOUND);
+        }
+        LocalDateTime end = LocalDateTime.now();
+        String scope = type == null ? "month" : type.trim();
+        LocalDate today = LocalDate.now();
+        LocalDateTime start;
+        switch (scope) {
+            case "day" -> start = today.atStartOfDay();
+            case "week" -> start = today.minusDays(6).atStartOfDay();
+            default -> start = today.minusDays(29).atStartOfDay();
+        }
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("period", scope);
+        result.put("startDate", start.toLocalDate().toString());
+        result.put("endDate", today.toString());
+
+        // 商家-55 客单价统计
+        Map<String, Object> sum = orderMapper.sumByMerchantAndRange(merchant.getId(), start, end.plusDays(1));
+        long orderCount = toLong(sum == null ? null : sum.get("orderCount"));
+        BigDecimal totalAmount = toDecimal(sum == null ? null : sum.get("totalAmount"));
+        result.put("totalOrders", orderCount);
+        result.put("totalAmount", totalAmount.setScale(2, RoundingMode.HALF_UP));
+        result.put("avgOrderAmount", orderCount == 0 ? BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP)
+                : totalAmount.divide(BigDecimal.valueOf(orderCount), 2, RoundingMode.HALF_UP));
+
+        // 商家-56 评分统计（综合 + 各维度）
+        Map<String, Object> score = reviewMapper.scoreSummaryByShop(shop.getId());
+        Map<String, Object> scoreStat = new LinkedHashMap<>();
+        if (score != null) {
+            scoreStat.put("avgShopScore", toDecimal(score.get("avgShopScore")));
+            scoreStat.put("avgDeliveryScore", toDecimal(score.get("avgDeliveryScore")));
+            scoreStat.put("avgTasteScore", toDecimal(score.get("avgTasteScore")));
+            scoreStat.put("totalReviews", toLong(score.get("totalReviews")));
+            scoreStat.put("repliedReviews", toLong(score.get("repliedReviews")));
+        }
+        result.put("score", scoreStat);
+
+        // 商家-51 评价评分统计（近 30 天维度平均分与评价总数）
+        Map<String, Object> recent = reviewMapper.scoreSummaryLast30Days(shop.getId());
+        Map<String, Object> recentStat = new LinkedHashMap<>();
+        if (recent != null) {
+            recentStat.put("avgShopScore", toDecimal(recent.get("avgShopScore")));
+            recentStat.put("avgDeliveryScore", toDecimal(recent.get("avgDeliveryScore")));
+            recentStat.put("totalReviews", toLong(recent.get("totalReviews")));
+        }
+        result.put("recentReviews", recentStat);
+
+        // 商家-57 营业时段分析：按小时订单分布与高峰时段
+        int[] hours = new int[24];
+        for (Map<String, Object> row : orderMapper.hourlyOrders(merchant.getId(), start, end.plusDays(1))) {
+            int hour = (int) toLong(row.get("hour"));
+            if (hour >= 0 && hour < 24) {
+                hours[hour] = (int) toLong(row.get("orderCount"));
+            }
+        }
+        List<Map<String, Object>> hourly = new ArrayList<>();
+        int maxHour = 0;
+        long maxCount = 0;
+        for (int h = 0; h < 24; h++) {
+            Map<String, Object> point = new LinkedHashMap<>();
+            point.put("hour", String.format("%02d:00", h));
+            point.put("orderCount", hours[h]);
+            hourly.add(point);
+            if (hours[h] > maxCount) {
+                maxCount = hours[h];
+                maxHour = h;
+            }
+        }
+        result.put("hourly", hourly);
+        result.put("peakHour", maxCount > 0 ? String.format("%02d:00", maxHour) : null);
+        result.put("peakHourOrders", maxCount);
         return result;
     }
 

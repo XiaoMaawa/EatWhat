@@ -106,6 +106,7 @@ export const merchantApi = {
   receipt: (id) => request.get(`/merchant/orders/${id}/receipt`),
   previewShop: (shopId) => request.get(`/shops/${shopId}`),
   stats: (type) => request.get('/merchant/stats', { params: { type } }),
+  analytics: (type) => request.get('/merchant/analytics', { params: { type } }),
 
   reviews: (params) => request.get('/merchant/reviews', { params }),
   replyReview: (id, reply) => request.post(`/merchant/reviews/${id}/reply`, { reply })

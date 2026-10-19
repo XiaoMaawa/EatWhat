@@ -43,6 +43,11 @@
           <div class="stat-value">{{ data.newUsers ?? 0 }}</div>
           <div class="stat-sub"><span>{{ data.startDate }} 至 {{ data.endDate }}</span></div>
         </div>
+        <div class="stat">
+          <div class="stat-label">活跃用户（管理员-42）</div>
+          <div class="stat-value">{{ data.activeUsers ?? 0 }}</div>
+          <div class="stat-sub"><span>区间内下单用户数（去重）</span></div>
+        </div>
       </div>
     </div>
 
@@ -56,7 +61,7 @@
           </div>
           <span class="count">{{ item.count }} 单</span>
           <span class="amount ew-price">¥{{ money(item.amount) }}</span>
-          <span class="new-users">新增 {{ item.newUsers ?? 0 }}</span>
+          <span class="new-users">新增 {{ item.newUsers ?? 0 }} · 活跃 {{ item.activeUsers ?? 0 }}</span>
         </div>
       </div>
       <el-empty v-else description="暂无统计数据" :image-size="70" />
@@ -159,7 +164,7 @@ onMounted(load)
 
 .stats {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 14px;
   margin-top: 8px;
 }

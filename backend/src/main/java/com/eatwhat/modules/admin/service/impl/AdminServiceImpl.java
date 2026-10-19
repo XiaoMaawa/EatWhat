@@ -504,12 +504,17 @@ public class AdminServiceImpl implements AdminService {
         for (Map<String, Object> row : orderMapper.dailyNewUsers("CONSUMER", start)) {
             newUserMap.put(String.valueOf(row.get("date")), readLong(row, "count"));
         }
+        Map<String, Long> activeUserMap = new LinkedHashMap<>();
+        for (Map<String, Object> row : orderMapper.dailyActiveUsers(start, end)) {
+            activeUserMap.put(String.valueOf(row.get("date")), readLong(row, "activeUsers"));
+        }
         Map<String, Object> orderTrendMap = new LinkedHashMap<>();
         for (Map<String, Object> row : orderMapper.dailyTrend(start)) {
             orderTrendMap.put(String.valueOf(row.get("date")), row);
         }
         List<Map<String, Object>> trend = new ArrayList<>();
         long newUserTotal = 0;
+        long activeUserTotal = 0;
         int days = p.equals("day") ? 1 : (p.equals("week") ? 7 : 30);
         for (int i = days - 1; i >= 0; i--) {
             String date = today.minusDays(i).toString();
@@ -522,10 +527,14 @@ public class AdminServiceImpl implements AdminService {
             long newUsers = newUserMap.getOrDefault(date, 0L);
             point.put("newUsers", newUsers);
             newUserTotal += newUsers;
+            long activeUsers = activeUserMap.getOrDefault(date, 0L);
+            point.put("activeUsers", activeUsers);
+            activeUserTotal += activeUsers;
             trend.add(point);
         }
         result.put("trend", trend);
         result.put("newUsers", newUserTotal);
+        result.put("activeUsers", orderMapper.countActiveUsers(start, end));
 
         List<Map<String, Object>> topList = new ArrayList<>();
         for (Map<String, Object> row : orderMapper.topMerchants(start, end, 10)) {

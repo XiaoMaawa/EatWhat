@@ -34,6 +34,10 @@
           <el-icon><Wallet /></el-icon>
           <span>退款售后</span>
         </el-menu-item>
+        <el-menu-item index="/merchant/analytics" :disabled="menuDisabled('/merchant/analytics')">
+          <el-icon><TrendCharts /></el-icon>
+          <span>经营分析</span>
+        </el-menu-item>
         <el-menu-item index="/merchant/preview" :disabled="menuDisabled('/merchant/preview')">
           <el-icon><View /></el-icon>
           <span>顾客视角</span>
@@ -75,7 +79,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { merchantApi } from '@/api'
-import { ArrowDown, ChatDotSquare, DataLine, Dish, Iphone, List, Postcard, Shop, View, Wallet } from '@element-plus/icons-vue'
+import { ArrowDown, ChatDotSquare, DataLine, Dish, Iphone, List, Postcard, Shop, TrendCharts, View, Wallet } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()

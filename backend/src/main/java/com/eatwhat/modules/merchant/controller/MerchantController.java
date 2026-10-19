@@ -253,4 +253,10 @@ public class MerchantController {
     public R<Map<String, Object>> stats(@RequestParam(defaultValue = "day") String type) {
         return R.ok(merchantService.stats(UserContext.userId(), type));
     }
+
+    @Operation(summary = "经营分析（客单价/评分统计/营业时段）")
+    @GetMapping("/analytics")
+    public R<Map<String, Object>> analytics(@RequestParam(defaultValue = "month") String type) {
+        return R.ok(merchantService.analytics(UserContext.userId(), type));
+    }
 }
