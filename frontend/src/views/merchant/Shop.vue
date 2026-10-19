@@ -94,6 +94,28 @@
             <span>—</span>
             <el-time-picker v-model="closeTime" format="HH:mm" value-format="HH:mm" placeholder="结束" />
           </div>
+          <div class="ew-muted tip-line">未配置下方「按星期营业时段」时，以此处的每日营业时间为准</div>
+        </el-form-item>
+        <el-form-item label="按星期时段">
+          <div class="weekly">
+            <div class="weekly-tip ew-muted">
+              配置后按星期生效，同一天可设置多个时段（如午市、晚市），留空则沿用上方营业时间
+            </div>
+            <div v-for="row in businessHours" :key="row.key" class="weekly-row">
+              <el-select v-model="row.dayOfWeek" placeholder="星期" style="width: 110px">
+                <el-option v-for="d in WEEK_OPTIONS" :key="d.value" :label="d.label" :value="d.value" />
+              </el-select>
+              <el-time-picker v-model="row.openTime" format="HH:mm" value-format="HH:mm" placeholder="开始" />
+              <span>—</span>
+              <el-time-picker v-model="row.closeTime" format="HH:mm" value-format="HH:mm" placeholder="结束" />
+              <el-button link type="danger" @click="removeHour(row)">删除</el-button>
+            </div>
+            <div class="weekly-actions">
+              <el-button size="small" @click="addHour">添加时段</el-button>
+              <el-button size="small" type="primary" :loading="savingHours" @click="saveHours">保存时段</el-button>
+              <span class="ew-muted">共 {{ businessHours.length }} 个时段</span>
+            </div>
+          </div>
         </el-form-item>
         <el-form-item label="打烊提示语">
           <el-input
@@ -126,6 +148,18 @@ const profile = ref(null)
 const formRef = ref()
 const openTime = ref('09:00')
 const closeTime = ref('21:00')
+const savingHours = ref(false)
+const WEEK_OPTIONS = [
+  { value: 1, label: '周一' },
+  { value: 2, label: '周二' },
+  { value: 3, label: '周三' },
+  { value: 4, label: '周四' },
+  { value: 5, label: '周五' },
+  { value: 6, label: '周六' },
+  { value: 7, label: '周日' }
+]
+let hourKey = 0
+const businessHours = ref([])
 
 const form = reactive({
   name: '',
@@ -183,6 +217,13 @@ async function load() {
       openTime.value = trimClock(shop.value.openTime)
       closeTime.value = trimClock(shop.value.closeTime)
     }
+    const hours = await merchantApi.businessHours().catch(() => [])
+    businessHours.value = (hours || []).map((h) => ({
+      key: ++hourKey,
+      dayOfWeek: h.dayOfWeek,
+      openTime: trimClock(h.openTime),
+      closeTime: trimClock(h.closeTime)
+    }))
   } finally {
     loading.value = false
   }
@@ -210,6 +251,59 @@ async function toggleOpen(value) {
     ElMessage.success(value === 1 ? '店铺已开始营业' : '店铺已打烊')
   } catch {
     shop.value.isOpen = value === 1 ? 0 : 1
+  }
+}
+
+function addHour() {
+  if (businessHours.value.length >= 21) {
+    ElMessage.warning('营业时段最多 21 条')
+    return
+  }
+  businessHours.value.push({
+    key: ++hourKey,
+    dayOfWeek: new Date().getDay() === 0 ? 7 : new Date().getDay(),
+    openTime: '09:00',
+    closeTime: '21:00'
+  })
+}
+
+function removeHour(row) {
+  businessHours.value = businessHours.value.filter((h) => h.key !== row.key)
+}
+
+async function saveHours() {
+  for (const row of businessHours.value) {
+    if (!row.dayOfWeek) {
+      ElMessage.warning('请选择每个时段的星期')
+      return
+    }
+    if (!row.openTime || !row.closeTime) {
+      ElMessage.warning('请填写每个时段的起止时间')
+      return
+    }
+    if (row.openTime === row.closeTime) {
+      ElMessage.warning('营业起止时间不能相同')
+      return
+    }
+  }
+  savingHours.value = true
+  try {
+    const data = await merchantApi.saveBusinessHours({
+      items: businessHours.value.map((h) => ({
+        dayOfWeek: h.dayOfWeek,
+        openTime: h.openTime,
+        closeTime: h.closeTime
+      }))
+    })
+    businessHours.value = (data || []).map((h) => ({
+      key: ++hourKey,
+      dayOfWeek: h.dayOfWeek,
+      openTime: trimClock(h.openTime),
+      closeTime: trimClock(h.closeTime)
+    }))
+    ElMessage.success(businessHours.value.length ? '营业时段已保存' : '已清空营业时段，恢复每日营业时间')
+  } finally {
+    savingHours.value = false
   }
 }
 
@@ -280,6 +374,35 @@ onMounted(load)
   width: 100%;
   color: #909399;
   font-size: 12px;
+  margin-top: 4px;
+}
+
+.tip-line {
+  width: 100%;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.weekly {
+  width: 100%;
+}
+
+.weekly-tip {
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+.weekly-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.weekly-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   margin-top: 4px;
 }
 </style>

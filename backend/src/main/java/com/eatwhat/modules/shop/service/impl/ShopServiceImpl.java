@@ -45,6 +45,7 @@ public class ShopServiceImpl implements ShopService {
     private final ReviewMapper reviewMapper;
     private final com.eatwhat.modules.dish.service.DishSpecService dishSpecService;
     private final com.eatwhat.modules.dish.service.DishComboService dishComboService;
+    private final com.eatwhat.modules.shop.service.ShopBusinessHourService businessHourService;
 
     public ShopServiceImpl(ShopMapper shopMapper,
                            MerchantMapper merchantMapper,
@@ -52,7 +53,8 @@ public class ShopServiceImpl implements ShopService {
                            DishCategoryMapper categoryMapper,
                            ReviewMapper reviewMapper,
                            @org.springframework.context.annotation.Lazy com.eatwhat.modules.dish.service.DishSpecService dishSpecService,
-                           @org.springframework.context.annotation.Lazy com.eatwhat.modules.dish.service.DishComboService dishComboService) {
+                           @org.springframework.context.annotation.Lazy com.eatwhat.modules.dish.service.DishComboService dishComboService,
+                           @org.springframework.context.annotation.Lazy com.eatwhat.modules.shop.service.ShopBusinessHourService businessHourService) {
         this.shopMapper = shopMapper;
         this.merchantMapper = merchantMapper;
         this.dishMapper = dishMapper;
@@ -60,6 +62,7 @@ public class ShopServiceImpl implements ShopService {
         this.reviewMapper = reviewMapper;
         this.dishSpecService = dishSpecService;
         this.dishComboService = dishComboService;
+        this.businessHourService = businessHourService;
     }
 
     @Override
@@ -159,9 +162,16 @@ public class ShopServiceImpl implements ShopService {
         vo.setCloseTime(shop.getCloseTime());
         vo.setIsOpen(shop.getIsOpen());
         // 商家-08：营业时段之外，顾客端按「休息中」处理
-        if (Integer.valueOf(1).equals(shop.getIsOpen())
-                && !TimeUtils.inBusinessHours(shop.getOpenTime(), shop.getCloseTime())) {
-            vo.setIsOpen(0);
+        if (Integer.valueOf(1).equals(shop.getIsOpen())) {
+            Boolean weeklyOpen = businessHourService.openNow(shop.getId());
+            if (weeklyOpen != null) {
+                // 配置了按星期的营业时段，以时段为准
+                if (!weeklyOpen) {
+                    vo.setIsOpen(0);
+                }
+            } else if (!TimeUtils.inBusinessHours(shop.getOpenTime(), shop.getCloseTime())) {
+                vo.setIsOpen(0);
+            }
         }
         vo.setClosedTip(shop.getClosedTip());
         vo.setAvgScore(shop.getAvgScore());

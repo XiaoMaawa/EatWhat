@@ -621,6 +621,24 @@ CREATE TABLE `dish_combo_item` (
   PRIMARY KEY (`id`),
   KEY `idx_combo_item_combo` (`combo_id`, `sort`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='套餐组成表';
+
+-- ---------------------------------------------------------------------
+-- 26. 店铺营业时段表（商家-08）
+-- ---------------------------------------------------------------------
+DROP TABLE IF EXISTS `shop_business_hour`;
+CREATE TABLE `shop_business_hour` (
+  `id`         BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `shop_id`    BIGINT UNSIGNED NOT NULL                COMMENT '店铺ID',
+  `day_of_week` TINYINT        NOT NULL                COMMENT '星期 1周一 2周二 ... 7周日',
+  `open_time`  TIME            NOT NULL                COMMENT '开始营业时间',
+  `close_time` TIME            NOT NULL                COMMENT '结束营业时间',
+  `created_at` DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted`    TINYINT         NOT NULL DEFAULT 0      COMMENT '逻辑删除',
+  PRIMARY KEY (`id`),
+  KEY `idx_bh_shop_day` (`shop_id`, `day_of_week`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='店铺营业时段表';
+
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- =====================================================================

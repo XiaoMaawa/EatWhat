@@ -82,6 +82,7 @@ public class OrderServiceImpl implements OrderService {
     private final DeliveryService deliveryService;
     private final MessageService messageService;
     private final com.eatwhat.modules.dish.service.DishComboService dishComboService;
+    private final com.eatwhat.modules.shop.service.ShopBusinessHourService businessHourService;
 
     /** 敏感词服务；单元测试环境下为空，调用前须判空 */
     @Autowired(required = false)
@@ -102,7 +103,8 @@ public class OrderServiceImpl implements OrderService {
                             MerchantMapper merchantMapper,
                             @Lazy DeliveryService deliveryService,
                             @Lazy MessageService messageService,
-                            com.eatwhat.modules.dish.service.DishComboService dishComboService) {
+                            com.eatwhat.modules.dish.service.DishComboService dishComboService,
+                            com.eatwhat.modules.shop.service.ShopBusinessHourService businessHourService) {
         this.orderMapper = orderMapper;
         this.orderItemMapper = orderItemMapper;
         this.statusLogMapper = statusLogMapper;
@@ -119,6 +121,7 @@ public class OrderServiceImpl implements OrderService {
         this.deliveryService = deliveryService;
         this.messageService = messageService;
         this.dishComboService = dishComboService;
+        this.businessHourService = businessHourService;
     }
 
     @Override
@@ -132,8 +135,13 @@ public class OrderServiceImpl implements OrderService {
                 || !Integer.valueOf(1).equals(shop.getStatus())) {
             throw BizException.of(ErrorCode.SHOP_CLOSED);
         }
-        // 商家-08：营业时段之外不可下单
-        if (!com.eatwhat.common.utils.TimeUtils.inBusinessHours(shop.getOpenTime(), shop.getCloseTime())) {
+        // 商家-08：营业时段之外不可下单（优先使用按星期的时段配置）
+        Boolean weeklyOpen = businessHourService.openNow(shop.getId());
+        if (weeklyOpen != null) {
+            if (!weeklyOpen) {
+                throw BizException.of(ErrorCode.SHOP_CLOSED, "商家当前不在营业时段内");
+            }
+        } else if (!com.eatwhat.common.utils.TimeUtils.inBusinessHours(shop.getOpenTime(), shop.getCloseTime())) {
             throw BizException.of(ErrorCode.SHOP_CLOSED, "商家当前不在营业时段内");
         }
 

@@ -52,17 +52,20 @@ public class MerchantController {
     private final DishService dishService;
     private final OrderService orderService;
     private final ReviewService reviewService;
+    private final com.eatwhat.modules.shop.service.ShopBusinessHourService businessHourService;
 
     public MerchantController(MerchantService merchantService,
                               ShopService shopService,
                               DishService dishService,
                               OrderService orderService,
-                              ReviewService reviewService) {
+                              ReviewService reviewService,
+                              com.eatwhat.modules.shop.service.ShopBusinessHourService businessHourService) {
         this.merchantService = merchantService;
         this.shopService = shopService;
         this.dishService = dishService;
         this.orderService = orderService;
         this.reviewService = reviewService;
+        this.businessHourService = businessHourService;
     }
 
     // ------------------------------------------------------------------ 入驻
@@ -107,6 +110,20 @@ public class MerchantController {
     public R<Void> updateShopStatus(@RequestBody Map<String, Integer> body) {
         shopService.updateOpenStatus(UserContext.userId(), body == null ? null : body.get("isOpen"));
         return R.ok();
+    }
+
+    @Operation(summary = "查询营业时段（商家-08）")
+    @GetMapping("/shop/business-hours")
+    public R<java.util.List<com.eatwhat.modules.shop.entity.ShopBusinessHour>> businessHours() {
+        Shop current = shopService.currentShop(UserContext.userId());
+        return R.ok(businessHourService.listByShop(current.getId()));
+    }
+
+    @Operation(summary = "设置营业时段（商家-08）")
+    @PutMapping("/shop/business-hours")
+    public R<java.util.List<com.eatwhat.modules.shop.entity.ShopBusinessHour>> saveBusinessHours(
+            @Valid @RequestBody com.eatwhat.modules.shop.dto.BusinessHourRequest request) {
+        return R.ok(businessHourService.save(UserContext.userId(), request));
     }
 
     // ------------------------------------------------------------------ 菜品分类

@@ -80,6 +80,8 @@ export const merchantApi = {
   shop: () => request.get('/merchant/shop'),
   updateShop: (data) => request.put('/merchant/shop', data),
   toggleShop: (isOpen) => request.patch('/merchant/shop/status', { isOpen }),
+  businessHours: () => request.get('/merchant/shop/business-hours'),
+  saveBusinessHours: (data) => request.put('/merchant/shop/business-hours', data),
 
   categories: () => request.get('/merchant/dish-categories'),
   addCategory: (data) => request.post('/merchant/dish-categories', data),
