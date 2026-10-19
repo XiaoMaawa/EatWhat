@@ -44,6 +44,9 @@ public class ShopUpdateRequest {
     @DecimalMin(value = "0", message = "配送费不能为负数")
     private BigDecimal deliveryFee;
 
+    /** 配送费计费方式：0 固定 / 1 按距离阶梯，为空时保持原值 */
+    private Integer deliveryFeeType;
+
     @NotNull(message = "配送范围不能为空")
     private Integer deliveryRange;
 
@@ -131,6 +134,14 @@ public class ShopUpdateRequest {
 
     public void setDeliveryFee(BigDecimal deliveryFee) {
         this.deliveryFee = deliveryFee;
+    }
+
+    public Integer getDeliveryFeeType() {
+        return deliveryFeeType;
+    }
+
+    public void setDeliveryFeeType(Integer deliveryFeeType) {
+        this.deliveryFeeType = deliveryFeeType;
     }
 
     public Integer getDeliveryRange() {

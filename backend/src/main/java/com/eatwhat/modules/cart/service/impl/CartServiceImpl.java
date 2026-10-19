@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.eatwhat.common.constant.CommonConstants;
 import com.eatwhat.common.exception.BizException;
 import com.eatwhat.common.exception.ErrorCode;
+import com.eatwhat.common.utils.DeliveryFeeUtils;
+import com.eatwhat.common.utils.GeoUtils;
 import com.eatwhat.modules.cart.dto.AddCartRequest;
 import com.eatwhat.modules.cart.entity.CartItem;
 import com.eatwhat.modules.cart.mapper.CartItemMapper;
@@ -13,10 +15,13 @@ import com.eatwhat.modules.dish.entity.Dish;
 import com.eatwhat.modules.dish.mapper.DishMapper;
 import com.eatwhat.modules.shop.entity.Shop;
 import com.eatwhat.modules.shop.mapper.ShopMapper;
+import com.eatwhat.modules.user.entity.UserAddress;
+import com.eatwhat.modules.user.mapper.UserAddressMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,15 +35,23 @@ public class CartServiceImpl implements CartService {
     private final CartItemMapper cartItemMapper;
     private final DishMapper dishMapper;
     private final ShopMapper shopMapper;
+    private final UserAddressMapper addressMapper;
 
-    public CartServiceImpl(CartItemMapper cartItemMapper, DishMapper dishMapper, ShopMapper shopMapper) {
+    public CartServiceImpl(CartItemMapper cartItemMapper, DishMapper dishMapper, ShopMapper shopMapper,
+                          UserAddressMapper addressMapper) {
         this.cartItemMapper = cartItemMapper;
         this.dishMapper = dishMapper;
         this.shopMapper = shopMapper;
+        this.addressMapper = addressMapper;
     }
 
     @Override
     public CartVO view(Long userId) {
+        return view(userId, null);
+    }
+
+    @Override
+    public CartVO view(Long userId, Long addressId) {
         List<CartItem> items = cartItemMapper.selectList(new LambdaQueryWrapper<CartItem>()
                 .eq(CartItem::getUserId, userId)
                 .orderByDesc(CartItem::getId));
@@ -83,9 +96,31 @@ public class CartServiceImpl implements CartService {
             BigDecimal subtotal = dish.getPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
             vo.setGoodsAmount(vo.getGoodsAmount().add(subtotal));
         }
-        BigDecimal deliveryFee = vo.getDeliveryFee() == null ? BigDecimal.ZERO : vo.getDeliveryFee();
-        vo.setTotalAmount(vo.getGoodsAmount().add(deliveryFee));
+        BigDecimal deliveryFee = resolveDeliveryFee(userId, shop, addressId, vo.getDeliveryFee());
+        vo.setDeliveryFee(deliveryFee);
+        vo.setTotalAmount(vo.getGoodsAmount().add(deliveryFee).setScale(2, RoundingMode.HALF_UP));
         return vo;
+    }
+
+    /**
+     * 计算配送费：按距离阶梯计价时，用收货地址与店铺坐标的距离算；否则用固定配送费。
+     */
+    private BigDecimal resolveDeliveryFee(Long userId, Shop shop, Long addressId, BigDecimal defaultFee) {
+        if (shop == null) {
+            return defaultFee == null ? BigDecimal.ZERO : defaultFee.setScale(2, RoundingMode.HALF_UP);
+        }
+        BigDecimal baseFee = shop.getDeliveryFee() == null ? BigDecimal.ZERO : shop.getDeliveryFee();
+        if (addressId == null || !Integer.valueOf(DeliveryFeeUtils.TYPE_BY_DISTANCE).equals(shop.getDeliveryFeeType())) {
+            return baseFee.setScale(2, RoundingMode.HALF_UP);
+        }
+        UserAddress address = addressMapper.selectById(addressId);
+        // 地址不存在或不属于当前用户时，退回固定配送费，不泄露他人地址信息
+        if (address == null || !userId.equals(address.getUserId())) {
+            return baseFee.setScale(2, RoundingMode.HALF_UP);
+        }
+        BigDecimal km = GeoUtils.distanceKm(shop.getLatitude(), shop.getLongitude(),
+                address.getLatitude(), address.getLongitude());
+        return DeliveryFeeUtils.calculate(baseFee, shop.getDeliveryFeeType(), km);
     }
 
     @Override

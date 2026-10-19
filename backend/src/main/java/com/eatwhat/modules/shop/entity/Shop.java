@@ -48,6 +48,9 @@ public class Shop extends BaseEntity {
     /** 配送费 */
     private BigDecimal deliveryFee;
 
+    /** 配送费计费方式：0 固定 / 1 按距离阶梯 */
+    private Integer deliveryFeeType;
+
     /** 配送范围（米） */
     private Integer deliveryRange;
 
@@ -175,6 +178,14 @@ public class Shop extends BaseEntity {
 
     public void setDeliveryFee(BigDecimal deliveryFee) {
         this.deliveryFee = deliveryFee;
+    }
+
+    public Integer getDeliveryFeeType() {
+        return deliveryFeeType;
+    }
+
+    public void setDeliveryFeeType(Integer deliveryFeeType) {
+        this.deliveryFeeType = deliveryFeeType;
     }
 
     public Integer getDeliveryRange() {

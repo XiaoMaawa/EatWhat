@@ -71,6 +71,15 @@
           <el-input-number v-model="form.deliveryFee" :min="0" :precision="2" :step="1" style="width: 180px" />
           <span class="unit">元</span>
         </el-form-item>
+        <el-form-item label="计费方式">
+          <el-radio-group v-model="form.deliveryFeeType">
+            <el-radio :value="0">固定配送费</el-radio>
+            <el-radio :value="1">按距离阶梯计价</el-radio>
+          </el-radio-group>
+          <div v-if="form.deliveryFeeType === 1" class="unit fee-tip">
+            3 公里内收 {{ form.deliveryFee }} 元，每超出 1 公里加收 1 元
+          </div>
+        </el-form-item>
         <el-form-item label="配送范围" prop="deliveryRange">
           <el-input-number v-model="form.deliveryRange" :min="100" :step="100" style="width: 180px" />
           <span class="unit">米</span>
@@ -116,6 +125,7 @@ const form = reactive({
   latitude: null,
   minOrderAmount: 20,
   deliveryFee: 3,
+  deliveryFeeType: 0,
   deliveryRange: 3000
 })
 
@@ -150,6 +160,7 @@ async function load() {
         latitude: Number(shop.value.latitude ?? 0),
         minOrderAmount: Number(shop.value.minOrderAmount ?? 0),
         deliveryFee: Number(shop.value.deliveryFee ?? 0),
+        deliveryFeeType: Number(shop.value.deliveryFeeType ?? 0),
         deliveryRange: shop.value.deliveryRange ?? 3000
       })
       openTime.value = trimClock(shop.value.openTime)
@@ -247,5 +258,11 @@ onMounted(load)
 .unit {
   margin-left: 8px;
   color: #909399;
+}
+.fee-tip {
+  width: 100%;
+  color: #909399;
+  font-size: 12px;
+  margin-top: 4px;
 }
 </style>

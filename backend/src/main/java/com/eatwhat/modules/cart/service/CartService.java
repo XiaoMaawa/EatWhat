@@ -14,6 +14,13 @@ public interface CartService {
     CartVO view(Long userId);
 
     /**
+     * 查看购物车，并按收货地址的距离计算阶梯配送费。
+     *
+     * @param addressId 收货地址 ID，为空时使用店铺固定配送费
+     */
+    CartVO view(Long userId, Long addressId);
+
+    /**
      * 加入购物车，跨店铺时先清空旧店铺。
      */
     CartVO add(Long userId, AddCartRequest request);

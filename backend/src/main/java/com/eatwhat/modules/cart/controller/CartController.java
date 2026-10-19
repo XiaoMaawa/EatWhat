@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -36,8 +37,8 @@ public class CartController {
 
     @Operation(summary = "查看购物车")
     @GetMapping
-    public R<CartVO> view() {
-        return R.ok(cartService.view(UserContext.userId()));
+    public R<CartVO> view(@RequestParam(required = false) Long addressId) {
+        return R.ok(cartService.view(UserContext.userId(), addressId));
     }
 
     @Operation(summary = "加入购物车")

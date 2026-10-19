@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.eatwhat.common.exception.BizException;
 import com.eatwhat.common.exception.ErrorCode;
 import com.eatwhat.common.result.PageResult;
+import com.eatwhat.common.utils.DeliveryFeeUtils;
 import com.eatwhat.common.utils.GeoUtils;
 import com.eatwhat.common.utils.TimeUtils;
 import com.eatwhat.modules.dish.entity.Dish;
@@ -104,6 +105,7 @@ public class ShopServiceImpl implements ShopService {
         vo.setPhone(shop.getPhone());
         vo.setMinOrderAmount(shop.getMinOrderAmount());
         vo.setDeliveryFee(shop.getDeliveryFee());
+        vo.setDeliveryFeeType(shop.getDeliveryFeeType());
         vo.setDeliveryRange(shop.getDeliveryRange());
         vo.setOpenTime(shop.getOpenTime());
         vo.setCloseTime(shop.getCloseTime());
@@ -188,6 +190,12 @@ public class ShopServiceImpl implements ShopService {
         shop.setPhone(request.getPhone());
         shop.setMinOrderAmount(request.getMinOrderAmount());
         shop.setDeliveryFee(request.getDeliveryFee());
+        if (request.getDeliveryFeeType() != null) {
+            if (!DeliveryFeeUtils.isValidType(request.getDeliveryFeeType())) {
+                throw BizException.of(ErrorCode.PARAM_INVALID, "配送费计费方式只能为 0（固定）或 1（按距离）");
+            }
+            shop.setDeliveryFeeType(request.getDeliveryFeeType());
+        }
         shop.setDeliveryRange(request.getDeliveryRange());
         shop.setOpenTime(TimeUtils.parseClock(request.getOpenTime()));
         shop.setCloseTime(TimeUtils.parseClock(request.getCloseTime()));

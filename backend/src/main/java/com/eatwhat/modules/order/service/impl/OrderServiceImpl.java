@@ -8,6 +8,7 @@ import com.eatwhat.common.exception.BizException;
 import com.eatwhat.common.exception.ErrorCode;
 import com.eatwhat.common.result.PageResult;
 import com.eatwhat.common.utils.BizNoGenerator;
+import com.eatwhat.common.utils.DeliveryFeeUtils;
 import com.eatwhat.common.utils.GeoUtils;
 import com.eatwhat.common.utils.UserContext;
 import com.eatwhat.modules.cart.entity.CartItem;
@@ -164,18 +165,21 @@ public class OrderServiceImpl implements OrderService {
                     "未达到起送金额 ¥" + minOrderAmount.setScale(2, RoundingMode.HALF_UP));
         }
 
-        // 配送范围校验
+        // 配送范围校验，同时把距离用于阶梯配送费计算
+        BigDecimal distanceKm = null;
         if (address.getLatitude() != null && address.getLongitude() != null
                 && shop.getLatitude() != null && shop.getLongitude() != null) {
-            BigDecimal km = GeoUtils.distanceKm(shop.getLatitude(), shop.getLongitude(),
+            distanceKm = GeoUtils.distanceKm(shop.getLatitude(), shop.getLongitude(),
                     address.getLatitude(), address.getLongitude());
-            if (km != null && shop.getDeliveryRange() != null
-                    && km.multiply(BigDecimal.valueOf(1000)).compareTo(BigDecimal.valueOf(shop.getDeliveryRange())) > 0) {
+            if (distanceKm != null && shop.getDeliveryRange() != null
+                    && distanceKm.multiply(BigDecimal.valueOf(1000))
+                    .compareTo(BigDecimal.valueOf(shop.getDeliveryRange())) > 0) {
                 throw BizException.of(ErrorCode.OUT_OF_DELIVERY_RANGE);
             }
         }
 
-        BigDecimal deliveryFee = shop.getDeliveryFee() == null ? BigDecimal.ZERO : shop.getDeliveryFee();
+        BigDecimal baseFee = shop.getDeliveryFee() == null ? BigDecimal.ZERO : shop.getDeliveryFee();
+        BigDecimal deliveryFee = DeliveryFeeUtils.calculate(baseFee, shop.getDeliveryFeeType(), distanceKm);
         BigDecimal totalAmount = goodsAmount.add(deliveryFee).setScale(2, RoundingMode.HALF_UP);
 
         Order order = new Order();

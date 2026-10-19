@@ -25,6 +25,7 @@ public class ShopDetailVO {
     private String phone;
     private BigDecimal minOrderAmount;
     private BigDecimal deliveryFee;
+    private Integer deliveryFeeType;
     private Integer deliveryRange;
 
     @JsonFormat(pattern = "HH:mm")
@@ -174,6 +175,14 @@ public class ShopDetailVO {
 
     public void setDeliveryFee(BigDecimal deliveryFee) {
         this.deliveryFee = deliveryFee;
+    }
+
+    public Integer getDeliveryFeeType() {
+        return deliveryFeeType;
+    }
+
+    public void setDeliveryFeeType(Integer deliveryFeeType) {
+        this.deliveryFeeType = deliveryFeeType;
     }
 
     public Integer getDeliveryRange() {

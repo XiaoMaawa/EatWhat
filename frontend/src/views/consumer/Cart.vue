@@ -57,7 +57,7 @@
             <span class="section-title">收货地址</span>
             <el-button link type="primary" @click="$router.push('/address')">管理地址</el-button>
           </div>
-          <el-radio-group v-model="addressId" class="address-list">
+          <el-radio-group v-model="addressId" class="address-list" @change="refreshFee">
             <el-radio v-for="addr in addresses" :key="addr.id" :value="addr.id" class="address-item">
               <span class="addr-name">{{ addr.contactName }} {{ addr.phone }}</span>
               <span class="ew-muted">
@@ -120,13 +120,18 @@ const belowMin = computed(() => {
 async function load() {
   loading.value = true
   try {
-    cart.value = await cartApi.get()
     addresses.value = (await userApi.addresses()) || []
     const def = addresses.value.find((a) => a.isDefault === 1)
     addressId.value = def?.id || addresses.value[0]?.id || null
+    cart.value = await cartApi.get(addressId.value)
   } finally {
     loading.value = false
   }
+}
+
+// 切换收货地址后重新试算配送费与合计
+async function refreshFee() {
+  cart.value = await cartApi.get(addressId.value)
 }
 
 async function updateQuantity(item, quantity) {

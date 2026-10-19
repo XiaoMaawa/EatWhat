@@ -39,7 +39,7 @@ export const favoriteApi = {
 
 // ===== 购物车 =====
 export const cartApi = {
-  get: () => request.get('/cart'),
+  get: (addressId) => request.get('/cart', { params: { addressId } }),
   add: (data) => request.post('/cart', data),
   update: (id, quantity) => request.put(`/cart/${id}`, { quantity }),
   remove: (id) => request.delete(`/cart/${id}`),

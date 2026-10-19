@@ -98,6 +98,7 @@ CREATE TABLE `shop` (
   `phone`            VARCHAR(20)     NOT NULL                COMMENT '联系电话',
   `min_order_amount` DECIMAL(10,2)   NOT NULL DEFAULT 0.00   COMMENT '起送价',
   `delivery_fee`     DECIMAL(10,2)   NOT NULL DEFAULT 0.00   COMMENT '配送费',
+  `delivery_fee_type` TINYINT        NOT NULL DEFAULT 0      COMMENT '配送费计费方式 0固定 1按距离阶梯',
   `delivery_range`   INT             NOT NULL DEFAULT 3000   COMMENT '配送范围(米)',
   `open_time`        TIME            DEFAULT NULL            COMMENT '开始营业时间',
   `close_time`       TIME            DEFAULT NULL            COMMENT '结束营业时间',
@@ -394,10 +395,10 @@ INSERT INTO `merchant` (`id`, `user_id`, `real_name`, `id_card`, `license_img`, 
 (2, 5, '周麦香', '330106199205055678', NULL, '13800000011', 1, '资质齐全，审核通过', NOW()),
 (3, 8, '林轻食', '330106199308089012', NULL, '13800000012', 1, '资质齐全，审核通过', NOW());
 
-INSERT INTO `shop` (`id`, `merchant_id`, `name`, `logo`, `description`, `notice`, `address`, `longitude`, `latitude`, `phone`, `min_order_amount`, `delivery_fee`, `delivery_range`, `open_time`, `close_time`, `is_open`, `avg_score`, `month_sales`, `status`) VALUES
-(1, 1, '川味小厨', NULL, '正宗川菜，麻辣鲜香，现炒现做', '本店所有菜品均使用非转基因食用油', '浙江省杭州市西湖区文三路 88 号 1 层', 120.1250000, 30.2770000, '13800000010', 20.00, 3.00, 3000, '09:00:00', '21:00:00', 1, 4.80, 1268, 1),
-(2, 2, '麦香烘焙', NULL, '手作面包与甜点，每日现烤', '下午 3 点后全场 8 折', '浙江省杭州市西湖区学院路 200 号', 120.1300000, 30.2800000, '13800000011', 15.00, 2.00, 2500, '08:00:00', '20:00:00', 1, 4.60, 892, 1),
-(3, 3, '麦香轻食', NULL, '轻食沙拉与低卡套餐', '支持预订次日餐', '浙江省杭州市西湖区教工路 55 号', 120.1350000, 30.2850000, '13800000012', 18.00, 2.50, 2000, '10:00:00', '19:00:00', 1, 4.50, 431, 1);
+INSERT INTO `shop` (`id`, `merchant_id`, `name`, `logo`, `description`, `notice`, `address`, `longitude`, `latitude`, `phone`, `min_order_amount`, `delivery_fee`, `delivery_fee_type`, `delivery_range`, `open_time`, `close_time`, `is_open`, `avg_score`, `month_sales`, `status`) VALUES
+(1, 1, '川味小厨', NULL, '正宗川菜，麻辣鲜香，现炒现做', '本店所有菜品均使用非转基因食用油', '浙江省杭州市西湖区文三路 88 号 1 层', 120.1250000, 30.2770000, '13800000010', 20.00, 3.00, 1, 3000, '09:00:00', '21:00:00', 1, 4.80, 1268, 1),
+(2, 2, '麦香烘焙', NULL, '手作面包与甜点，每日现烤', '下午 3 点后全场 8 折', '浙江省杭州市西湖区学院路 200 号', 120.1300000, 30.2800000, '13800000011', 15.00, 2.00, 0, 2500, '08:00:00', '20:00:00', 1, 4.60, 892, 1),
+(3, 3, '麦香轻食', NULL, '轻食沙拉与低卡套餐', '支持预订次日餐', '浙江省杭州市西湖区教工路 55 号', 120.1350000, 30.2850000, '13800000012', 18.00, 2.50, 1, 2000, '10:00:00', '19:00:00', 1, 4.50, 431, 1);
 
 INSERT INTO `dish_category` (`id`, `shop_id`, `name`, `sort`) VALUES
 (1, 1, '招牌热菜', 1),
