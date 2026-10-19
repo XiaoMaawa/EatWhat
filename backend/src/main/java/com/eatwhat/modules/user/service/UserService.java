@@ -32,4 +32,9 @@ public interface UserService {
 
     /** 删除地址 */
     void deleteAddress(Long id);
+
+    /**
+     * 注销账号：仅限消费者，存在进行中订单时拒绝。注销后账号立即失效，历史数据保留。
+     */
+    void deactivate();
 }

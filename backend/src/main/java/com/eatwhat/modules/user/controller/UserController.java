@@ -78,6 +78,14 @@ public class UserController {
         return R.ok();
     }
 
+    @Operation(summary = "注销账号")
+    @RequireRole("CONSUMER")
+    @PostMapping("/me/deactivate")
+    public R<Void> deactivate() {
+        userService.deactivate();
+        return R.ok();
+    }
+
     @Operation(summary = "删除收货地址")
     @RequireRole("CONSUMER")
     @DeleteMapping("/me/addresses/{id}")

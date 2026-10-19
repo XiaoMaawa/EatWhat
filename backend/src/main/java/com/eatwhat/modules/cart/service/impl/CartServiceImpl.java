@@ -7,6 +7,10 @@ import com.eatwhat.common.exception.ErrorCode;
 import com.eatwhat.common.utils.DeliveryFeeUtils;
 import com.eatwhat.common.utils.GeoUtils;
 import com.eatwhat.modules.cart.dto.AddCartRequest;
+import com.eatwhat.modules.order.entity.Order;
+import com.eatwhat.modules.order.entity.OrderItem;
+import com.eatwhat.modules.order.mapper.OrderMapper;
+import com.eatwhat.modules.order.mapper.OrderItemMapper;
 import com.eatwhat.modules.cart.entity.CartItem;
 import com.eatwhat.modules.cart.mapper.CartItemMapper;
 import com.eatwhat.modules.cart.service.CartService;
@@ -22,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,13 +41,17 @@ public class CartServiceImpl implements CartService {
     private final DishMapper dishMapper;
     private final ShopMapper shopMapper;
     private final UserAddressMapper addressMapper;
+    private final OrderMapper orderMapper;
+    private final OrderItemMapper orderItemMapper;
 
     public CartServiceImpl(CartItemMapper cartItemMapper, DishMapper dishMapper, ShopMapper shopMapper,
-                          UserAddressMapper addressMapper) {
+                          UserAddressMapper addressMapper, OrderMapper orderMapper, OrderItemMapper orderItemMapper) {
         this.cartItemMapper = cartItemMapper;
         this.dishMapper = dishMapper;
         this.shopMapper = shopMapper;
         this.addressMapper = addressMapper;
+        this.orderMapper = orderMapper;
+        this.orderItemMapper = orderItemMapper;
     }
 
     @Override
@@ -205,6 +214,42 @@ public class CartServiceImpl implements CartService {
         cartItemMapper.delete(new LambdaQueryWrapper<CartItem>()
                 .eq(CartItem::getUserId, userId)
                 .eq(CartItem::getShopId, shopId));
+    }
+
+    @Override
+    public CartVO reorder(Long userId, Long orderId) {
+        Order order = orderMapper.selectById(orderId);
+        if (order == null || !order.getUserId().equals(userId)) {
+            throw BizException.of(ErrorCode.ORDER_NOT_FOUND);
+        }
+        if (order.getStatus() == null || (order.getStatus() != CommonConstants.ORDER_COMPLETED
+                && order.getStatus() != CommonConstants.ORDER_CANCELLED)) {
+            throw BizException.of(ErrorCode.ORDER_STATUS_ILLEGAL, "只有已完成或已取消的订单才能再来一单");
+        }
+        List<OrderItem> orderItems = orderItemMapper.selectList(new LambdaQueryWrapper<OrderItem>()
+                .eq(OrderItem::getOrderId, orderId));
+        if (orderItems.isEmpty()) {
+            throw BizException.of(ErrorCode.PARAM_INVALID, "该订单没有菜品明细");
+        }
+        // 先清空原购物车，再来一单语义是按原订单重新选菜
+        cartItemMapper.delete(new LambdaQueryWrapper<CartItem>().eq(CartItem::getUserId, userId));
+        List<Long> unavailable = new ArrayList<>();
+        for (OrderItem orderItem : orderItems) {
+            Dish dish = dishMapper.selectById(orderItem.getDishId());
+            if (dish == null || !Integer.valueOf(CommonConstants.DISH_ON).equals(dish.getStatus())
+                    || dish.getStock() == null || dish.getStock() <= 0) {
+                unavailable.add(orderItem.getDishId());
+                continue;
+            }
+            AddCartRequest add = new AddCartRequest();
+            add.setDishId(dish.getId());
+            add.setQuantity(orderItem.getQuantity());
+            add(userId, add);
+        }
+        if (unavailable.size() == orderItems.size()) {
+            throw BizException.of(ErrorCode.DISH_OFF_SALE, "原订单菜品均已下架或售罄，无法再来一单");
+        }
+        return view(userId);
     }
 
     private CartItem requireOwned(Long userId, Long cartItemId) {

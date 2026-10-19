@@ -91,7 +91,8 @@
         <el-button v-if="order.status === 0 || order.status === 1" @click="cancel">取消订单</el-button>
         <el-button v-if="order.status === 4" type="success" @click="confirm">确认收货</el-button>
         <el-button v-if="order.status === 1" type="warning" plain @click="openAfterSale(1)">申请退款</el-button>
-        <el-button v-if="order.status === 5" type="warning" plain @click="openAfterSale(2)">申请售后</el-button>
+        <el-button v-if="order.status === 5 || order.status === 6" type="primary" plain @click="reorder">再来一单</el-button>
+<el-button v-if="order.status === 5" type="warning" plain @click="openAfterSale(2)">申请售后</el-button>
         <el-button @click="$router.back()">返回</el-button>
       </div>
     </div>
@@ -140,13 +141,14 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
-import { afterSaleApi, fileApi, orderApi } from '@/api'
+import { afterSaleApi, cartApi, fileApi, orderApi } from '@/api'
 import { orderStatusText, orderStatusType } from '@/utils/orderStatus'
 
 const route = useRoute()
+const router = useRouter()
 const orderId = Number(route.params.id)
 const loading = ref(false)
 const order = ref(null)
@@ -197,6 +199,17 @@ async function confirm() {
   await orderApi.confirm(orderId)
   ElMessage.success('已确认收货')
   await load()
+}
+
+async function reorder() {
+  try {
+    await ElMessageBox.confirm('将按原订单菜品重新加入购物车，已下架或售罄的菜品会自动跳过。', '再来一单', { type: 'info', confirmButtonText: '加入购物车' })
+  } catch {
+    return
+  }
+  const cart = await cartApi.reorder(orderId)
+  ElMessage.success('已将原订单菜品加入购物车')
+  router.push('/cart')
 }
 
 function callRider() {

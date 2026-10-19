@@ -39,4 +39,11 @@ public interface CartService {
      * 结算后清空指定店铺的购物车。
      */
     void clearByShop(Long userId, Long shopId);
+
+    /**
+     * 再来一单：把历史订单的菜品重新加入购物车。
+     *
+     * @return 加入后的购物车（含店铺信息）
+     */
+    CartVO reorder(Long userId, Long orderId);
 }

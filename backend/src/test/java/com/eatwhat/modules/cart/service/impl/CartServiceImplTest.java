@@ -14,6 +14,8 @@ import com.eatwhat.modules.dish.entity.Dish;
 import com.eatwhat.modules.dish.mapper.DishMapper;
 import com.eatwhat.modules.shop.entity.Shop;
 import com.eatwhat.modules.shop.mapper.ShopMapper;
+import com.eatwhat.modules.order.mapper.OrderMapper;
+import com.eatwhat.modules.order.mapper.OrderItemMapper;
 import com.eatwhat.modules.user.mapper.UserAddressMapper;
 import org.apache.ibatis.builder.MapperBuilderAssistant;
 import org.junit.jupiter.api.BeforeAll;
@@ -44,6 +46,8 @@ class CartServiceImplTest {
     private DishMapper dishMapper;
     private ShopMapper shopMapper;
     private UserAddressMapper addressMapper;
+    private OrderMapper orderMapper;
+    private OrderItemMapper orderItemMapper;
     private CartServiceImpl service;
 
     @BeforeAll
@@ -60,7 +64,9 @@ class CartServiceImplTest {
         dishMapper = mock(DishMapper.class);
         shopMapper = mock(ShopMapper.class);
         addressMapper = mock(UserAddressMapper.class);
-        service = new CartServiceImpl(cartItemMapper, dishMapper, shopMapper, addressMapper);
+        orderMapper = mock(OrderMapper.class);
+        orderItemMapper = mock(OrderItemMapper.class);
+        service = new CartServiceImpl(cartItemMapper, dishMapper, shopMapper, addressMapper, orderMapper, orderItemMapper);
     }
 
     private Dish dish(Long id, Long shopId, int status, int stock, String price) {

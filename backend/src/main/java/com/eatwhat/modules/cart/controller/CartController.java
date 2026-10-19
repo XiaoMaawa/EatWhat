@@ -53,6 +53,12 @@ public class CartController {
         return R.ok(cartService.updateQuantity(UserContext.userId(), id, request.getQuantity()));
     }
 
+    @Operation(summary = "再来一单")
+    @PostMapping("/reorder/{orderId}")
+    public R<CartVO> reorder(@PathVariable Long orderId) {
+        return R.ok(cartService.reorder(UserContext.userId(), orderId));
+    }
+
     @Operation(summary = "删除购物车项")
     @DeleteMapping("/{id}")
     public R<Void> remove(@PathVariable Long id) {

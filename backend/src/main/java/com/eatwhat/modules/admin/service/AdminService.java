@@ -16,6 +16,16 @@ import java.util.Map;
 public interface AdminService {
 
     /**
+     * 管理员账号列表。
+     */
+    PageResult<SysUser> pageAdmins(String keyword, Integer status, int page, int size);
+
+    /**
+     * 新增管理员账号。
+     */
+    SysUser createAdmin(String phone, String nickname, String password);
+
+    /**
      * 用户列表。
      */
     PageResult<SysUser> pageUsers(String keyword, String role, Integer status, int page, int size);

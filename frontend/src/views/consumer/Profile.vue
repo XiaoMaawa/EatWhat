@@ -56,6 +56,7 @@
         </el-form-item>
         <el-form-item>
           <el-button type="primary" :loading="changing" @click="changePassword">修改密码</el-button>
+          <el-button type="danger" plain @click="deactivateAccount">注销账号</el-button>
         </el-form-item>
       </el-form>
     </div>
@@ -173,6 +174,19 @@ async function changePassword() {
   } finally {
     changing.value = false
   }
+}
+
+
+async function deactivateAccount() {
+  try {
+    await ElMessageBox.confirm('注销后账号将无法登录，历史订单数据将保留用于对账，且不可恢复。确定要注销吗？', '注销账号', { type: 'warning', confirmButtonText: '确认注销', cancelButtonText: '再想想' })
+  } catch {
+    return
+  }
+  await userApi.deactivate()
+  ElMessage.success('账号已注销，感谢使用 EatWhat')
+  userStore.logout()
+  location.href = '/login'
 }
 
 onMounted(load)

@@ -3,11 +3,13 @@ package com.eatwhat.modules.admin.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.eatwhat.common.constant.CommonConstants;
+import com.eatwhat.common.constant.RoleConstants;
 import com.eatwhat.common.constant.OrderStatus;
 import com.eatwhat.common.exception.BizException;
 import com.eatwhat.common.exception.ErrorCode;
 import com.eatwhat.common.result.PageResult;
 import com.eatwhat.modules.admin.entity.OperationLog;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import com.eatwhat.modules.admin.mapper.OperationLogMapper;
 import com.eatwhat.modules.admin.service.AdminService;
 import com.eatwhat.modules.auth.entity.SysUser;
@@ -56,6 +58,7 @@ public class AdminServiceImpl implements AdminService {
     private final DishMapper dishMapper;
     private final OrderService orderService;
     private final OperationLogMapper operationLogMapper;
+    private final PasswordEncoder passwordEncoder;
 
     public AdminServiceImpl(SysUserMapper userMapper,
                             MerchantMapper merchantMapper,
@@ -65,7 +68,8 @@ public class AdminServiceImpl implements AdminService {
                             OrderItemMapper orderItemMapper,
                             DishMapper dishMapper,
                             OrderService orderService,
-                            OperationLogMapper operationLogMapper) {
+                            OperationLogMapper operationLogMapper,
+                            PasswordEncoder passwordEncoder) {
         this.userMapper = userMapper;
         this.merchantMapper = merchantMapper;
         this.riderMapper = riderMapper;
@@ -75,6 +79,41 @@ public class AdminServiceImpl implements AdminService {
         this.dishMapper = dishMapper;
         this.orderService = orderService;
         this.operationLogMapper = operationLogMapper;
+        this.passwordEncoder = passwordEncoder;
+    }
+
+    @Override
+    public PageResult<SysUser> pageAdmins(String keyword, Integer status, int page, int size) {
+        LambdaQueryWrapper<SysUser> wrapper = new LambdaQueryWrapper<SysUser>()
+                .and(keyword != null && !keyword.isBlank(), w -> w
+                        .like(SysUser::getPhone, keyword.trim())
+                        .or().like(SysUser::getNickname, keyword.trim()))
+                .eq(SysUser::getRole, RoleConstants.ADMIN)
+                .eq(status != null, SysUser::getStatus, status)
+                .orderByDesc(SysUser::getId);
+        return PageResult.of(userMapper.selectPage(new Page<>(page, size), wrapper));
+    }
+
+    @Override
+    public SysUser createAdmin(String phone, String nickname, String password) {
+        if (phone == null || !phone.matches("1[3-9]\\d{9}")) {
+            throw BizException.of(ErrorCode.PARAM_INVALID, "手机号格式不正确");
+        }
+        if (password == null || password.length() < 6 || password.length() > 20) {
+            throw BizException.of(ErrorCode.PARAM_INVALID, "密码长度需在 6 至 20 位之间");
+        }
+        Long count = userMapper.selectCount(new LambdaQueryWrapper<SysUser>().eq(SysUser::getPhone, phone));
+        if (count != null && count > 0) {
+            throw BizException.of(ErrorCode.PHONE_ALREADY_EXISTS);
+        }
+        SysUser admin = new SysUser();
+        admin.setPhone(phone);
+        admin.setNickname(nickname == null || nickname.isBlank() ? "管理员" + phone.substring(7) : nickname);
+        admin.setPassword(passwordEncoder.encode(password));
+        admin.setRole(RoleConstants.ADMIN);
+        admin.setStatus(CommonConstants.USER_ENABLED);
+        userMapper.insert(admin);
+        return admin;
     }
 
     @Override

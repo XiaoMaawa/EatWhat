@@ -1,5 +1,7 @@
 package com.eatwhat.modules.admin.controller;
 
+import com.eatwhat.common.exception.BizException;
+import com.eatwhat.common.exception.ErrorCode;
 import com.eatwhat.common.result.PageResult;
 import com.eatwhat.common.result.R;
 import com.eatwhat.common.utils.UserContext;
@@ -53,6 +55,28 @@ public class AdminController {
     }
 
     @Operation(summary = "用户列表")
+    @GetMapping("/admins")
+    public R<PageResult<SysUser>> admins(@RequestParam(required = false) String keyword,
+                                         @RequestParam(required = false) Integer status,
+                                         @RequestParam(defaultValue = "1") int page,
+                                         @RequestParam(defaultValue = "10") int size) {
+        return R.ok(adminService.pageAdmins(keyword, status, page, size));
+    }
+
+    @PostMapping("/admins")
+    public R<SysUser> createAdmin(@RequestBody Map<String, String> body) {
+        String phone = body.get("phone");
+        String nickname = body.get("nickname");
+        String password = body.get("password");
+        if (phone == null || phone.isBlank()) {
+            throw BizException.of(ErrorCode.PARAM_MISSING, "手机号不能为空");
+        }
+        if (password == null || password.isBlank()) {
+            throw BizException.of(ErrorCode.PARAM_MISSING, "初始密码不能为空");
+        }
+        return R.ok(adminService.createAdmin(phone.trim(), nickname, password));
+    }
+
     @GetMapping("/users")
     public R<PageResult<SysUser>> users(@RequestParam(required = false) String keyword,
                                         @RequestParam(required = false) String role,

@@ -14,6 +14,10 @@
           <el-icon><TrendCharts /></el-icon>
           <span>平台统计</span>
         </el-menu-item>
+        <el-menu-item index="/admin/admins">
+          <el-icon><UserFilled /></el-icon>
+          <span>管理员账号</span>
+        </el-menu-item>
         <el-menu-item index="/admin/daily-stats">
           <el-icon><Calendar /></el-icon>
           <span>每日汇总</span>
@@ -97,7 +101,7 @@ import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
-import { ArrowDown, Bell, Bicycle, Calendar, ChatDotSquare, DataBoard, Dish, Document, List, Setting, Shop, TrendCharts, User, Wallet, Warning } from '@element-plus/icons-vue'
+import { UserFilled, ArrowDown, Bell, Bicycle, Calendar, ChatDotSquare, DataBoard, Dish, Document, List, Setting, Shop, TrendCharts, User, Wallet, Warning } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()

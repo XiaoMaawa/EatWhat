@@ -2,6 +2,7 @@ package com.eatwhat.modules.user.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.eatwhat.common.constant.RoleConstants;
 import com.eatwhat.common.exception.BizException;
 import com.eatwhat.common.exception.ErrorCode;
 import com.eatwhat.common.utils.MaskUtils;
@@ -12,6 +13,8 @@ import com.eatwhat.modules.user.dto.AddressRequest;
 import com.eatwhat.modules.user.dto.UpdateProfileRequest;
 import com.eatwhat.modules.user.entity.UserAddress;
 import com.eatwhat.modules.user.mapper.UserAddressMapper;
+import com.eatwhat.modules.order.entity.Order;
+import com.eatwhat.modules.order.mapper.OrderMapper;
 import com.eatwhat.modules.user.service.UserService;
 import com.eatwhat.modules.user.vo.UserInfoVO;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -29,11 +32,14 @@ public class UserServiceImpl implements UserService {
     private final SysUserMapper userMapper;
     private final UserAddressMapper addressMapper;
     private final PasswordEncoder passwordEncoder;
+    private final OrderMapper orderMapper;
 
-    public UserServiceImpl(SysUserMapper userMapper, UserAddressMapper addressMapper, PasswordEncoder passwordEncoder) {
+    public UserServiceImpl(SysUserMapper userMapper, UserAddressMapper addressMapper, PasswordEncoder passwordEncoder,
+                           OrderMapper orderMapper) {
         this.userMapper = userMapper;
         this.addressMapper = addressMapper;
         this.passwordEncoder = passwordEncoder;
+        this.orderMapper = orderMapper;
     }
 
     @Override
@@ -151,6 +157,26 @@ public class UserServiceImpl implements UserService {
                         .set(UserAddress::getIsDefault, 1));
             }
         }
+    }
+
+    @Override
+    public void deactivate() {
+        Long userId = UserContext.userId();
+        SysUser user = userMapper.selectById(userId);
+        if (user == null) {
+            throw BizException.of(ErrorCode.USER_NOT_FOUND);
+        }
+        if (!RoleConstants.CONSUMER.equals(user.getRole())) {
+            throw BizException.of(ErrorCode.ROLE_NOT_ALLOWED, "仅消费者账号支持自助注销，商家与骑手请联系平台处理");
+        }
+        // 存在进行中的订单（待支付/待接单/备餐中/待配送/配送中）时禁止注销
+        Long ongoing = orderMapper.selectCount(new LambdaQueryWrapper<Order>()
+                .eq(Order::getUserId, userId)
+                .in(Order::getStatus, 0, 1, 2, 3, 4));
+        if (ongoing != null && ongoing > 0) {
+            throw BizException.of(ErrorCode.ORDER_STATUS_ILLEGAL, "您有正在进行中的订单，完成后才能注销账号");
+        }
+        userMapper.deleteById(userId);
     }
 
     private void clearDefault(Long userId) {

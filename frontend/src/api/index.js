@@ -15,6 +15,7 @@ export const userApi = {
   profile: () => request.get('/users/me'),
   updateProfile: (data) => request.put('/users/me', data),
   changePassword: (data) => request.put('/users/me/password', data),
+  deactivate: () => request.post('/users/me/deactivate'),
   addresses: () => request.get('/users/me/addresses'),
   addAddress: (data) => request.post('/users/me/addresses', data),
   updateAddress: (id, data) => request.put(`/users/me/addresses/${id}`, data),
@@ -43,7 +44,8 @@ export const cartApi = {
   add: (data) => request.post('/cart', data),
   update: (id, quantity) => request.put(`/cart/${id}`, { quantity }),
   remove: (id) => request.delete(`/cart/${id}`),
-  clear: () => request.delete('/cart')
+  clear: () => request.delete('/cart'),
+  reorder: (orderId) => request.post(`/cart/reorder/${orderId}`)
 }
 
 // ===== 订单 =====
@@ -139,6 +141,8 @@ export const fileApi = {
 // ===== 管理端 =====
 export const adminApi = {
   users: (params) => request.get('/admin/users', { params }),
+  admins: (params) => request.get('/admin/admins', { params }),
+  createAdmin: (data) => request.post('/admin/admins', data),
   userDetail: (id) => request.get(`/admin/users/${id}`),
   userOrders: (id, params) => request.get(`/admin/users/${id}/orders`, { params }),
   updateUserStatus: (id, status) => request.patch(`/admin/users/${id}/status`, { status }),
