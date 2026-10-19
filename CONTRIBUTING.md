@@ -38,7 +38,7 @@ git clone https://github.com/xiaomayo233/EatWhat.git
 cd EatWhat
 
 # 2. 初始化数据库
-mysql -u root -p < sql/init.sql
+mysql -u root -p --default-character-set=utf8mb4 < sql/init.sql
 
 # 3. 配置环境变量（复制示例文件后填写真实值）
 copy .env.example .env.local
@@ -107,8 +107,7 @@ git commit -m "WIP"             # 无意义
 
 **可选 type**：`feat` `fix` `docs` `style` `refactor` `perf` `test` `build` `ci` `chore` `revert`
 
-**推荐 scope**：`auth` `user` `shop` `dish` `cart` `order` `delivery` `review` `admin` `common` `db` `docs`
-
+**推荐 scope**：`auth` `user` `shop` `dish` `cart` `order` `delivery` `review` `aftersale` `message` `content` `merchant` `rider` `admin` `stats` `file` `common` `security` `db` `docs` `deps` `config` `ci`
 ---
 
 ## 代码规范
