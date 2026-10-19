@@ -35,6 +35,10 @@ public class AddressRequest {
 
     private Integer isDefault;
 
+    /** 地址标签：家 / 公司 / 学校 */
+    @Size(max = 20, message = "地址标签不能超过 20 个字符")
+    private String tag;
+
     public String getContactName() {
         return contactName;
     }
@@ -105,5 +109,13 @@ public class AddressRequest {
 
     public void setIsDefault(Integer isDefault) {
         this.isDefault = isDefault;
+    }
+
+    public String getTag() {
+        return tag;
+    }
+
+    public void setTag(String tag) {
+        this.tag = tag;
     }
 }

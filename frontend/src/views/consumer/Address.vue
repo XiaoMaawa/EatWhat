@@ -13,6 +13,7 @@
               <span class="name">{{ addr.contactName }}</span>
               <span class="ew-muted">{{ addr.phone }}</span>
               <el-tag v-if="addr.isDefault === 1" size="small" type="success">默认</el-tag>
+              <el-tag v-if="addr.tag" size="small" type="warning" effect="plain">{{ addr.tag }}</el-tag>
             </div>
             <div class="address-detail">
               {{ addr.province }}{{ addr.city }}{{ addr.district }}{{ addr.detail }}
@@ -52,6 +53,13 @@
         <el-form-item label="详细地址" prop="detail">
           <el-input v-model="form.detail" type="textarea" :rows="2" maxlength="120" show-word-limit placeholder="街道、门牌号、楼栋等" />
         </el-form-item>
+        <el-form-item label="地址标签">
+          <el-radio-group v-model="form.tag">
+            <el-radio-button value="家">家</el-radio-button>
+            <el-radio-button value="公司">公司</el-radio-button>
+            <el-radio-button value="学校">学校</el-radio-button>
+          </el-radio-group>
+        </el-form-item>
         <el-form-item label="设为默认">
           <el-switch v-model="form.isDefault" :active-value="1" :inactive-value="0" />
         </el-form-item>
@@ -83,7 +91,8 @@ const form = reactive({
   city: '',
   district: '',
   detail: '',
-  isDefault: 0
+  isDefault: 0,
+  tag: '家'
 })
 
 const rules = {
@@ -119,10 +128,14 @@ function openDialog(addr) {
     city: '',
     district: '',
     detail: '',
-    isDefault: list.value.length === 0 ? 1 : 0
+    isDefault: list.value.length === 0 ? 1 : 0,
+    tag: '家'
   })
   if (addr) {
     Object.assign(form, addr)
+    if (!form.tag) {
+      form.tag = '家'
+    }
   }
   visible.value = true
 }

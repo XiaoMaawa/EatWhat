@@ -138,6 +138,19 @@ public class UserServiceImpl implements UserService {
             throw BizException.of(ErrorCode.ADDRESS_NOT_FOUND);
         }
         addressMapper.deleteById(id);
+
+        // 删除的是默认地址时，自动把最近新增的一条设为默认
+        if (Integer.valueOf(1).equals(exist.getIsDefault())) {
+            UserAddress latest = addressMapper.selectOne(new LambdaQueryWrapper<UserAddress>()
+                    .eq(UserAddress::getUserId, userId)
+                    .orderByDesc(UserAddress::getId)
+                    .last("LIMIT 1"));
+            if (latest != null) {
+                addressMapper.update(null, new LambdaUpdateWrapper<UserAddress>()
+                        .eq(UserAddress::getId, latest.getId())
+                        .set(UserAddress::getIsDefault, 1));
+            }
+        }
     }
 
     private void clearDefault(Long userId) {
@@ -157,6 +170,7 @@ public class UserServiceImpl implements UserService {
         target.setLongitude(request.getLongitude());
         target.setLatitude(request.getLatitude());
         target.setIsDefault(request.getIsDefault());
+        target.setTag(request.getTag());
     }
 
     private SysUser requireUser() {

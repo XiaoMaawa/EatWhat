@@ -41,6 +41,9 @@ public class UserAddress extends BaseEntity {
     /** 1 默认 0 非默认 */
     private Integer isDefault;
 
+    /** 地址标签：家 / 公司 / 学校 */
+    private String tag;
+
     @TableLogic
     @JsonIgnore
     private Integer deleted;
@@ -131,6 +134,14 @@ public class UserAddress extends BaseEntity {
 
     public void setIsDefault(Integer isDefault) {
         this.isDefault = isDefault;
+    }
+
+    public String getTag() {
+        return tag;
+    }
+
+    public void setTag(String tag) {
+        this.tag = tag;
     }
 
     public Integer getDeleted() {
