@@ -340,8 +340,16 @@ public class OrderServiceImpl implements OrderService {
                 riderInfo.setId(rider.getId());
                 riderInfo.setName(rider.getRealName());
                 riderInfo.setPhone(rider.getContactPhone());
+                riderInfo.setTotalOrders(rider.getTotalOrders());
                 vo.setRider(riderInfo);
             }
+        }
+
+        // 预计送达时间：下单时间 + 30 分钟备餐 + 配送距离每公里 3 分钟
+        if (order.getCreatedAt() != null) {
+            BigDecimal km = resolveDistanceKm(order);
+            long minutes = 30L + (km == null ? 0L : km.multiply(BigDecimal.valueOf(3)).setScale(0, RoundingMode.CEILING).longValue());
+            vo.setEstimatedArrivalAt(order.getCreatedAt().plusMinutes(minutes));
         }
 
         vo.setItems(orderItemMapper.selectList(new LambdaQueryWrapper<OrderItem>()
@@ -585,6 +593,25 @@ public class OrderServiceImpl implements OrderService {
                     ? first.getDishName() + " ×" + totalQuantity
                     : first.getDishName() + " 等 " + items.size() + " 件");
         }
+    }
+
+    /**
+     * 估算订单配送距离（公里）：优先用订单是否还有对应配送任务的距离，否则用店铺与收货地址坐标计算。
+     */
+    private BigDecimal resolveDistanceKm(Order order) {
+        Shop shop = shopMapper.selectById(order.getShopId());
+        if (shop == null || shop.getLatitude() == null || shop.getLongitude() == null) {
+            return null;
+        }
+        UserAddress address = addressMapper.selectOne(new LambdaQueryWrapper<UserAddress>()
+                .eq(UserAddress::getUserId, order.getUserId())
+                .eq(UserAddress::getIsDefault, 1)
+                .last("LIMIT 1"));
+        if (address == null || address.getLatitude() == null || address.getLongitude() == null) {
+            return null;
+        }
+        return GeoUtils.distanceKm(shop.getLatitude(), shop.getLongitude(),
+                address.getLatitude(), address.getLongitude());
     }
 
     private String fullAddress(UserAddress address) {

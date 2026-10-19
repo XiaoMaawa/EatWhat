@@ -43,6 +43,10 @@ public class OrderDetailVO {
     private Integer tablewareCount;
     private String cancelReason;
 
+    /** 预计送达时间（下单时间 + 30 分钟 + 每公里 3 分钟） */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime estimatedArrivalAt;
+
     private ShopInfo shop;
     private RiderInfo rider;
     private List<OrderItem> items = new ArrayList<>();
@@ -91,6 +95,8 @@ public class OrderDetailVO {
         private Long id;
         private String name;
         private String phone;
+        /** 骑手累计配送单量，用于展示配送经验 */
+        private Integer totalOrders;
 
         public Long getId() {
             return id;
@@ -114,6 +120,14 @@ public class OrderDetailVO {
 
         public void setPhone(String phone) {
             this.phone = phone;
+        }
+
+        public Integer getTotalOrders() {
+            return totalOrders;
+        }
+
+        public void setTotalOrders(Integer totalOrders) {
+            this.totalOrders = totalOrders;
         }
     }
 
@@ -259,6 +273,14 @@ public class OrderDetailVO {
 
     public void setTablewareCount(Integer tablewareCount) {
         this.tablewareCount = tablewareCount;
+    }
+
+    public LocalDateTime getEstimatedArrivalAt() {
+        return estimatedArrivalAt;
+    }
+
+    public void setEstimatedArrivalAt(LocalDateTime estimatedArrivalAt) {
+        this.estimatedArrivalAt = estimatedArrivalAt;
     }
 
     public String getCancelReason() {

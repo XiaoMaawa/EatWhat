@@ -59,7 +59,16 @@
 
       <div v-if="order.rider" class="section">
         <span class="label">骑手</span>
-        <span>{{ order.rider.name }} {{ order.rider.phone }}</span>
+        <span>
+          {{ order.rider.name }} {{ order.rider.phone }}
+          <span class="ew-muted" v-if="order.rider.totalOrders >= 0">· 累计 {{ order.rider.totalOrders }} 单</span>
+          <el-button link type="primary" @click="callRider">拨打</el-button>
+        </span>
+      </div>
+
+      <div v-if="order.estimatedArrivalAt && order.status < 5 && order.status !== 6" class="section">
+        <span class="label">预计送达</span>
+        <span>{{ order.estimatedArrivalAt }}</span>
       </div>
 
       <el-divider />
@@ -140,6 +149,11 @@ async function confirm() {
   await orderApi.confirm(orderId)
   ElMessage.success('已确认收货')
   await load()
+}
+
+function callRider() {
+  if (!order.value?.rider?.phone) return
+  window.location.href = `tel:${order.value.rider.phone}`
 }
 
 onMounted(load)
