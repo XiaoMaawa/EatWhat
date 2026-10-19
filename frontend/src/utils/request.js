@@ -45,16 +45,28 @@ request.interceptors.response.use(
   },
   (error) => {
     const status = error.response?.status
-    if (status === 401) {
-      ElMessage.error('登录已过期，请重新登录')
-    } else if (status === 403) {
-      ElMessage.error('无访问权限')
+    const body = error.response?.data
+    // 认证失效（HTTP 401 或业务码 1004/1005/2000）：清理登录态并跳转登录页
+    if (status === 401 || body?.code === 1004 || body?.code === 1005 || body?.code === 2000) {
+      const userStore = useUserStore()
+      userStore.logout()
+      const current = router.currentRoute.value
+      if (current.path !== '/login') {
+        ElMessage.error(body?.message || '登录已过期，请重新登录')
+        router.replace({ path: '/login', query: { redirect: current.fullPath } })
+      }
+      return Promise.reject(new Error(body?.message || '登录已过期，请重新登录'))
+    }
+    if (status === 403) {
+      ElMessage.error(body?.message || '无访问权限')
+    } else if (status === 404) {
+      ElMessage.error(body?.message || '请求的资源不存在')
     } else if (status >= 500) {
       ElMessage.error('服务器开小差了，请稍后重试')
     } else if (error.code === 'ECONNABORTED') {
       ElMessage.error('请求超时，请检查网络')
     } else {
-      ElMessage.error(error.response?.data?.message || error.message || '网络异常')
+      ElMessage.error(body?.message || error.message || '网络异常')
     }
     return Promise.reject(error)
   }
