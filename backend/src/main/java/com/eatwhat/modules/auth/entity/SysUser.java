@@ -33,6 +33,12 @@ public class SysUser extends BaseEntity {
     /** CONSUMER / MERCHANT / RIDER / ADMIN */
     private String role;
 
+    /** 顾客-08：性别 0 未知 1 男 2 女 */
+    private Integer gender;
+
+    /** 顾客-08：生日 */
+    private java.time.LocalDate birthday;
+
     /** 1 正常 0 禁用 */
     private Integer status;
 
@@ -93,9 +99,7 @@ public class SysUser extends BaseEntity {
 
     public Integer getStatus() {
         return status;
-    }
-
-    public void setStatus(Integer status) {
+    }    public void setStatus(Integer status) {
         this.status = status;
     }
 
@@ -105,6 +109,22 @@ public class SysUser extends BaseEntity {
 
     public void setLastLoginAt(LocalDateTime lastLoginAt) {
         this.lastLoginAt = lastLoginAt;
+    }
+
+    public Integer getGender() {
+        return gender;
+    }
+
+    public void setGender(Integer gender) {
+        this.gender = gender;
+    }
+
+    public java.time.LocalDate getBirthday() {
+        return birthday;
+    }
+
+    public void setBirthday(java.time.LocalDate birthday) {
+        this.birthday = birthday;
     }
 
     public Integer getDeleted() {

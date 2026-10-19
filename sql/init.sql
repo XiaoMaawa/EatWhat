@@ -25,6 +25,8 @@ CREATE TABLE `sys_user` (
   `nickname`      VARCHAR(50)     DEFAULT NULL            COMMENT '昵称',
   `avatar`        VARCHAR(255)    DEFAULT NULL            COMMENT '头像URL',
   `role`          VARCHAR(20)     NOT NULL DEFAULT 'CONSUMER' COMMENT 'CONSUMER/MERCHANT/RIDER/ADMIN',
+  `gender`        TINYINT         NOT NULL DEFAULT 0      COMMENT '性别 0未知 1男 2女',
+  `birthday`      DATE            DEFAULT NULL            COMMENT '生日',
   `status`        TINYINT         NOT NULL DEFAULT 1      COMMENT '1正常 0禁用',
   `last_login_at` DATETIME        DEFAULT NULL            COMMENT '最后登录时间',
   `created_at`    DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',

@@ -19,6 +19,13 @@ public class UserInfoVO implements Serializable {
     private String role;
     private Integer status;
 
+    /** 顾客-08：性别 0 未知 1 男 2 女 */
+    private Integer gender;
+
+    /** 顾客-08：生日 */
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private java.time.LocalDate birthday;
+
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime lastLoginAt;
 
@@ -87,5 +94,21 @@ public class UserInfoVO implements Serializable {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public Integer getGender() {
+        return gender;
+    }
+
+    public void setGender(Integer gender) {
+        this.gender = gender;
+    }
+
+    public java.time.LocalDate getBirthday() {
+        return birthday;
+    }
+
+    public void setBirthday(java.time.LocalDate birthday) {
+        this.birthday = birthday;
     }
 }

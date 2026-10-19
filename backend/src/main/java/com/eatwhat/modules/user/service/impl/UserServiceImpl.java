@@ -52,6 +52,8 @@ public class UserServiceImpl implements UserService {
         vo.setAvatar(user.getAvatar());
         vo.setRole(user.getRole());
         vo.setStatus(user.getStatus());
+        vo.setGender(user.getGender());
+        vo.setBirthday(user.getBirthday());
         vo.setLastLoginAt(user.getLastLoginAt());
         vo.setCreatedAt(user.getCreatedAt());
         return vo;
@@ -67,6 +69,31 @@ public class UserServiceImpl implements UserService {
         }
         if (request.getAvatar() != null) {
             update.setAvatar(request.getAvatar());
+        }
+        // 顾客-08：性别与生日
+        if (request.getGender() != null) {
+            if (request.getGender() < 0 || request.getGender() > 2) {
+                throw BizException.of(ErrorCode.PARAM_INVALID, "性别取值应为 0 未知 / 1 男 / 2 女");
+            }
+            update.setGender(request.getGender());
+        }
+        if (request.getBirthday() != null) {
+            if (request.getBirthday().isBlank()) {
+                // update-strategy=not_null 下 setBirthday(null) 不会落库，这里显式置空
+                userMapper.update(null, new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<SysUser>()
+                        .eq(SysUser::getId, user.getId())
+                        .set(SysUser::getBirthday, null));
+            } else {
+                try {
+                    java.time.LocalDate birthday = java.time.LocalDate.parse(request.getBirthday());
+                    if (birthday.isAfter(java.time.LocalDate.now())) {
+                        throw BizException.of(ErrorCode.PARAM_INVALID, "生日不能晚于今天");
+                    }
+                    update.setBirthday(birthday);
+                } catch (java.time.format.DateTimeParseException e) {
+                    throw BizException.of(ErrorCode.PARAM_INVALID, "生日格式应为 yyyy-MM-dd");
+                }
+            }
         }
         userMapper.updateById(update);
         UserContext.LoginUser loginUser = UserContext.get();

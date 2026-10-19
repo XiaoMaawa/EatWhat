@@ -26,6 +26,23 @@
         <el-form-item label="昵称">
           <el-input v-model="form.nickname" maxlength="50" show-word-limit />
         </el-form-item>
+        <el-form-item label="性别">
+          <el-radio-group v-model="form.gender">
+            <el-radio :value="0">保密</el-radio>
+            <el-radio :value="1">男</el-radio>
+            <el-radio :value="2">女</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="生日">
+          <el-date-picker
+            v-model="form.birthday"
+            type="date"
+            placeholder="选择生日"
+            value-format="YYYY-MM-DD"
+            :disabled-date="(d) => d.getTime() > Date.now()"
+            style="width: 200px"
+          />
+        </el-form-item>
         <el-form-item label="手机号">
           <el-input :model-value="profile.phone" disabled />
         </el-form-item>
@@ -75,7 +92,7 @@ const saving = ref(false)
 const changing = ref(false)
 const uploading = ref(false)
 const profile = ref({})
-const form = reactive({ nickname: '', avatar: '' })
+const form = reactive({ nickname: '', avatar: '', gender: 0, birthday: '' })
 const pwdFormRef = ref()
 const pwdForm = reactive({ oldPassword: '', newPassword: '', confirmPassword: '' })
 
@@ -115,6 +132,8 @@ async function load() {
     profile.value = await userApi.profile()
     form.nickname = profile.value.nickname
     form.avatar = profile.value.avatar
+    form.gender = profile.value.gender ?? 0
+    form.birthday = profile.value.birthday || ''
   } finally {
     loading.value = false
   }
@@ -127,7 +146,12 @@ async function saveProfile() {
   }
   saving.value = true
   try {
-    await userApi.updateProfile({ nickname: form.nickname, avatar: form.avatar })
+    await userApi.updateProfile({
+      nickname: form.nickname,
+      avatar: form.avatar,
+      gender: form.gender,
+      birthday: form.birthday || null
+    })
     userStore.setUserInfo({ nickname: form.nickname, avatar: form.avatar })
     ElMessage.success('资料已更新')
     await load()

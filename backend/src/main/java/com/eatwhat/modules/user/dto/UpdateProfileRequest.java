@@ -15,6 +15,28 @@ public class UpdateProfileRequest {
     @Size(max = 255, message = "头像地址过长")
     private String avatar;
 
+    /** 顾客-08：性别 0 未知 1 男 2 女 */
+    private Integer gender;
+
+    /** 顾客-08：生日 yyyy-MM-dd */
+    private String birthday;
+
+    public Integer getGender() {
+        return gender;
+    }
+
+    public void setGender(Integer gender) {
+        this.gender = gender;
+    }
+
+    public String getBirthday() {
+        return birthday;
+    }
+
+    public void setBirthday(String birthday) {
+        this.birthday = birthday;
+    }
+
     public String getNickname() {
         return nickname;
     }
