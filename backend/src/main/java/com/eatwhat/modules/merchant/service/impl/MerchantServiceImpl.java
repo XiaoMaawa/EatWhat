@@ -174,11 +174,12 @@ public class MerchantServiceImpl implements MerchantService {
                 : totalAmount.divide(BigDecimal.valueOf(orderCount), 2, RoundingMode.HALF_UP));
 
         List<Map<String, Object>> hotDishes = new ArrayList<>();
-        for (Map<String, Object> row : orderMapper.topDishes(merchant.getId(), start, end, 5)) {
+        for (Map<String, Object> row : orderMapper.topDishes(merchant.getId(), start, end, 10)) {
             Map<String, Object> dish = new LinkedHashMap<>();
             dish.put("dishId", row.get("dishId"));
             dish.put("dishName", row.get("dishName"));
             dish.put("sales", toLong(row.get("sales")));
+            dish.put("amount", toDecimal(row.get("amount")).setScale(2, RoundingMode.HALF_UP));
             hotDishes.add(dish);
         }
         result.put("hotDishes", hotDishes);

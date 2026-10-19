@@ -30,7 +30,8 @@ public interface OrderMapper extends BaseMapper<Order> {
     /**
      * 商家热销菜品 Top N。
      */
-    @Select("SELECT oi.dish_id AS dishId, oi.dish_name AS dishName, SUM(oi.quantity) AS sales "
+    @Select("SELECT oi.dish_id AS dishId, oi.dish_name AS dishName, SUM(oi.quantity) AS sales, "
+            + "IFNULL(SUM(oi.quantity * oi.price), 0) AS amount "
             + "FROM order_item oi JOIN orders o ON oi.order_id = o.id "
             + "WHERE o.merchant_id = #{merchantId} AND o.deleted = 0 AND o.status NOT IN (0, 6) "
             + "AND o.created_at >= #{start} AND o.created_at < #{end} "

@@ -48,11 +48,14 @@
     </div>
 
     <div class="ew-card">
-      <h3 class="ew-title">热销菜品 TOP 5</h3>
+      <h3 class="ew-title">热销菜品 TOP 10</h3>
       <el-table :data="stats.hotDishes || []" size="default">
         <el-table-column type="index" label="#" width="60" />
         <el-table-column prop="dishName" label="菜品" />
-        <el-table-column prop="sales" label="销量" width="120" />
+        <el-table-column prop="sales" label="销量" width="100" />
+        <el-table-column label="销售额" width="120">
+          <template #default="{ row }">¥{{ Number(row.amount ?? 0).toFixed(2) }}</template>
+        </el-table-column>
         <el-table-column label="占比" width="220">
           <template #default="{ row }">
             <el-progress :percentage="percentOf(row.sales)" :stroke-width="12" />
