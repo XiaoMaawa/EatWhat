@@ -7,6 +7,8 @@ import com.eatwhat.common.constant.OrderStatus;
 import com.eatwhat.common.exception.BizException;
 import com.eatwhat.common.exception.ErrorCode;
 import com.eatwhat.common.result.PageResult;
+import com.eatwhat.modules.admin.entity.OperationLog;
+import com.eatwhat.modules.admin.mapper.OperationLogMapper;
 import com.eatwhat.modules.admin.service.AdminService;
 import com.eatwhat.modules.auth.entity.SysUser;
 import com.eatwhat.modules.auth.mapper.SysUserMapper;
@@ -53,6 +55,7 @@ public class AdminServiceImpl implements AdminService {
     private final OrderItemMapper orderItemMapper;
     private final DishMapper dishMapper;
     private final OrderService orderService;
+    private final OperationLogMapper operationLogMapper;
 
     public AdminServiceImpl(SysUserMapper userMapper,
                             MerchantMapper merchantMapper,
@@ -61,7 +64,8 @@ public class AdminServiceImpl implements AdminService {
                             OrderMapper orderMapper,
                             OrderItemMapper orderItemMapper,
                             DishMapper dishMapper,
-                            OrderService orderService) {
+                            OrderService orderService,
+                            OperationLogMapper operationLogMapper) {
         this.userMapper = userMapper;
         this.merchantMapper = merchantMapper;
         this.riderMapper = riderMapper;
@@ -70,6 +74,7 @@ public class AdminServiceImpl implements AdminService {
         this.orderItemMapper = orderItemMapper;
         this.dishMapper = dishMapper;
         this.orderService = orderService;
+        this.operationLogMapper = operationLogMapper;
     }
 
     @Override
@@ -337,8 +342,22 @@ public class AdminServiceImpl implements AdminService {
         return result;
     }
 
-    private void fillShopInfo(Merchant merchant) {
-        Shop shop = shopMapper.selectOne(new LambdaQueryWrapper<Shop>()
+    @Override
+    public PageResult<OperationLog> pageOperationLogs(String operatorRole, String module, Integer result,
+                                                      String startDate, String endDate, int page, int size) {
+        LambdaQueryWrapper<OperationLog> wrapper = new LambdaQueryWrapper<OperationLog>()
+                .eq(operatorRole != null && !operatorRole.isBlank(), OperationLog::getOperatorRole, operatorRole)
+                .eq(module != null && !module.isBlank(), OperationLog::getModule, module)
+                .eq(result != null, OperationLog::getResult, result)
+                .ge(startDate != null && !startDate.isBlank(), OperationLog::getCreatedAt,
+                        startDate == null || startDate.isBlank() ? null : LocalDateTime.parse(startDate + "T00:00:00"))
+                .lt(endDate != null && !endDate.isBlank(), OperationLog::getCreatedAt,
+                        endDate == null || endDate.isBlank() ? null : LocalDateTime.parse(endDate + "T00:00:00").plusDays(1))
+                .orderByDesc(OperationLog::getId);
+        return PageResult.of(operationLogMapper.selectPage(new Page<>(page, size), wrapper));
+    }
+
+    private void fillShopInfo(Merchant merchant) {        Shop shop = shopMapper.selectOne(new LambdaQueryWrapper<Shop>()
                 .eq(Shop::getMerchantId, merchant.getId())
                 .last("LIMIT 1"));
         if (shop != null) {

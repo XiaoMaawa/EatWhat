@@ -130,5 +130,6 @@ export const adminApi = {
   dishes: (params) => request.get('/admin/dishes', { params }),
   offlineDish: (id) => request.patch(`/admin/dishes/${id}/offline`),
 
-  dashboard: () => request.get('/admin/dashboard')
+  dashboard: () => request.get('/admin/dashboard'),
+  operationLogs: (params) => request.get('/admin/operation-logs', { params })
 }

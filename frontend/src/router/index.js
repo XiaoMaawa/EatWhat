@@ -24,6 +24,7 @@ const routes = [
       { path: 'cart', name: 'cart', component: () => import('@/views/consumer/Cart.vue'), meta: { title: '购物车' } },
       { path: 'orders', name: 'orders', component: () => import('@/views/consumer/Orders.vue'), meta: { title: '我的订单' } },
       { path: 'orders/:id', name: 'orderDetail', component: () => import('@/views/consumer/OrderDetail.vue'), meta: { title: '订单详情' } },
+      { path: 'reviews', name: 'myReviews', component: () => import('@/views/consumer/Reviews.vue'), meta: { title: '我的评价' } },
       { path: 'profile', name: 'profile', component: () => import('@/views/consumer/Profile.vue'), meta: { title: '个人中心' } },
       { path: 'address', name: 'address', component: () => import('@/views/consumer/Address.vue'), meta: { title: '收货地址' } }
     ]
@@ -65,7 +66,8 @@ const routes = [
       { path: 'merchants', name: 'adminMerchants', component: () => import('@/views/admin/Merchants.vue'), meta: { title: '商家审核' } },
       { path: 'riders', name: 'adminRiders', component: () => import('@/views/admin/Riders.vue'), meta: { title: '骑手审核' } },
       { path: 'orders', name: 'adminOrders', component: () => import('@/views/admin/Orders.vue'), meta: { title: '订单监管' } },
-      { path: 'dishes', name: 'adminDishes', component: () => import('@/views/admin/Dishes.vue'), meta: { title: '菜品监管' } }
+      { path: 'dishes', name: 'adminDishes', component: () => import('@/views/admin/Dishes.vue'), meta: { title: '菜品监管' } },
+      { path: 'logs', name: 'adminLogs', component: () => import('@/views/admin/OperationLogs.vue'), meta: { title: '操作日志' } }
     ]
   },
   { path: '/:pathMatch(.*)*', redirect: '/' }

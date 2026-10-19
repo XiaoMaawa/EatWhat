@@ -5,7 +5,6 @@ import com.eatwhat.common.constant.CommonConstants;
 import com.eatwhat.common.constant.OrderStatus;
 import com.eatwhat.modules.delivery.entity.DeliveryTask;
 import com.eatwhat.modules.delivery.mapper.DeliveryTaskMapper;
-import com.eatwhat.modules.dish.entity.Dish;
 import com.eatwhat.modules.dish.mapper.DishMapper;
 import com.eatwhat.modules.order.entity.Order;
 import com.eatwhat.modules.order.entity.OrderItem;
@@ -76,13 +75,11 @@ public class OrderTimeoutTask {
         update.setCancelReason(reason);
         orderMapper.updateById(update);
 
-        // 回滚库存
+        // 回滚库存：复用 restoreStock，库存归位后同时把「售罄」还原为「在售」
         List<OrderItem> items = orderItemMapper.selectList(new LambdaQueryWrapper<OrderItem>()
                 .eq(OrderItem::getOrderId, order.getId()));
         for (OrderItem item : items) {
-            dishMapper.update(null, new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<Dish>()
-                    .eq(Dish::getId, item.getDishId())
-                    .setSql("stock = stock + " + item.getQuantity()));
+            dishMapper.restoreStock(item.getDishId(), item.getQuantity());
         }
 
         // 取消配送任务（若已生成）

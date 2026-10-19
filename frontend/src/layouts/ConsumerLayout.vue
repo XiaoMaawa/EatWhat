@@ -10,6 +10,7 @@
         <nav class="nav">
           <router-link to="/" class="nav-item">首页</router-link>
           <router-link to="/orders" class="nav-item">我的订单</router-link>
+          <router-link to="/reviews" class="nav-item">我的评价</router-link>
           <router-link to="/cart" class="nav-item">
             购物车
             <el-badge v-if="cartCount > 0" :value="cartCount" class="badge" />

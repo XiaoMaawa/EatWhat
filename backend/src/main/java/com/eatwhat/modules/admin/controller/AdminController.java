@@ -2,6 +2,7 @@ package com.eatwhat.modules.admin.controller;
 
 import com.eatwhat.common.result.PageResult;
 import com.eatwhat.common.result.R;
+import com.eatwhat.modules.admin.entity.OperationLog;
 import com.eatwhat.modules.admin.service.AdminService;
 import com.eatwhat.modules.auth.entity.SysUser;
 import com.eatwhat.modules.delivery.entity.Rider;
@@ -166,5 +167,17 @@ public class AdminController {
     @GetMapping("/dashboard")
     public R<Map<String, Object>> dashboard() {
         return R.ok(adminService.dashboard());
+    }
+
+    @Operation(summary = "操作日志")
+    @GetMapping("/operation-logs")
+    public R<PageResult<OperationLog>> operationLogs(@RequestParam(required = false) String operatorRole,
+                                                     @RequestParam(required = false) String module,
+                                                     @RequestParam(required = false) Integer result,
+                                                     @RequestParam(required = false) String startDate,
+                                                     @RequestParam(required = false) String endDate,
+                                                     @RequestParam(defaultValue = "1") int page,
+                                                     @RequestParam(defaultValue = "20") int size) {
+        return R.ok(adminService.pageOperationLogs(operatorRole, module, result, startDate, endDate, page, size));
     }
 }

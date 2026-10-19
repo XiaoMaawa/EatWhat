@@ -1,6 +1,7 @@
 package com.eatwhat.modules.admin.service;
 
 import com.eatwhat.common.result.PageResult;
+import com.eatwhat.modules.admin.entity.OperationLog;
 import com.eatwhat.modules.auth.entity.SysUser;
 import com.eatwhat.modules.dish.entity.Dish;
 import com.eatwhat.modules.merchant.entity.Merchant;
@@ -93,4 +94,10 @@ public interface AdminService {
      * 首页看板。
      */
     Map<String, Object> dashboard();
+
+    /**
+     * 操作日志分页查询。
+     */
+    PageResult<OperationLog> pageOperationLogs(String operatorRole, String module, Integer result,
+                                               String startDate, String endDate, int page, int size);
 }
