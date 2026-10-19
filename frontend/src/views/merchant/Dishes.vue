@@ -54,7 +54,7 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="200" fixed="right">
+        <el-table-column label="操作" width="270" fixed="right">
           <template #default="{ row }">
             <el-button size="small" link type="primary" @click="openDishDialog(row)">编辑</el-button>
             <el-button
@@ -65,6 +65,7 @@
             >
               {{ row.status === 1 ? '下架' : '上架' }}
             </el-button>
+            <el-button size="small" link type="primary" @click="openSpecDialog(row)">规格加料</el-button>
             <el-button size="small" link type="danger" @click="removeDish(row)">删除</el-button>
           </template>
         </el-table-column>
@@ -134,7 +135,94 @@
         </el-table-column>
       </el-table>
     </el-dialog>
-  </div>
+    <!-- 顾客-27/28：规格与加料维护 -->
+    <el-dialog v-model="specVisible" :title="`规格与加料 - ${specDish?.name || ''}`" width="620px">
+      <el-tabs v-model="specTab">
+        <el-tab-pane label="规格" name="spec">
+          <div class="spec-toolbar">
+            <el-button size="small" type="primary" @click="openSpecForm()">新增规格</el-button>
+            <span class="ew-muted">同一菜品可配置多个规格，价格各自独立；默认规格会作为顾客下单时的预选项</span>
+          </div>
+          <el-table :data="specs" size="small" border>
+            <el-table-column prop="name" label="规格名称" min-width="120" />
+            <el-table-column label="价格" width="100">
+              <template #default="{ row }">¥{{ row.price }}</template>
+            </el-table-column>
+            <el-table-column label="默认" width="80">
+              <template #default="{ row }">
+                <el-tag v-if="row.isDefault === 1" size="small" type="success">默认</el-tag>
+                <span v-else class="ew-muted">—</span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="sort" label="排序" width="70" />
+            <el-table-column label="操作" width="130">
+              <template #default="{ row }">
+                <el-button size="small" link type="primary" @click="openSpecForm(row)">编辑</el-button>
+                <el-button size="small" link type="danger" @click="removeSpec(row)">删除</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </el-tab-pane>
+        <el-tab-pane label="加料" name="addon">
+          <div class="spec-toolbar">
+            <el-button size="small" type="primary" @click="openAddonForm()">新增加料</el-button>
+            <span class="ew-muted">顾客下单时最多可选 5 项加料，价格叠加到菜品单价上</span>
+          </div>
+          <el-table :data="addons" size="small" border>
+            <el-table-column prop="name" label="加料名称" min-width="120" />
+            <el-table-column label="价格" width="100">
+              <template #default="{ row }">+¥{{ row.price }}</template>
+            </el-table-column>
+            <el-table-column prop="sort" label="排序" width="70" />
+            <el-table-column label="操作" width="130">
+              <template #default="{ row }">
+                <el-button size="small" link type="primary" @click="openAddonForm(row)">编辑</el-button>
+                <el-button size="small" link type="danger" @click="removeAddon(row)">删除</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </el-tab-pane>
+      </el-tabs>
+    </el-dialog>
+
+    <el-dialog v-model="specFormVisible" :title="specForm.id ? '编辑规格' : '新增规格'" width="420px">
+      <el-form :model="specForm" label-width="90px">
+        <el-form-item label="规格名称">
+          <el-input v-model="specForm.name" maxlength="50" placeholder="如 大份 / 中份 / 小份" />
+        </el-form-item>
+        <el-form-item label="价格">
+          <el-input-number v-model="specForm.price" :min="0" :precision="2" :step="0.5" />
+        </el-form-item>
+        <el-form-item label="设为默认">
+          <el-switch v-model="specForm.isDefault" :active-value="1" :inactive-value="0" />
+        </el-form-item>
+        <el-form-item label="排序">
+          <el-input-number v-model="specForm.sort" :min="0" :max="999" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="specFormVisible = false">取消</el-button>
+        <el-button type="primary" :loading="specSubmitting" @click="submitSpec">保存</el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog v-model="addonFormVisible" :title="addonForm.id ? '编辑加料' : '新增加料'" width="420px">
+      <el-form :model="addonForm" label-width="90px">
+        <el-form-item label="加料名称">
+          <el-input v-model="addonForm.name" maxlength="50" placeholder="如 加米饭 / 加卤蛋" />
+        </el-form-item>
+        <el-form-item label="价格">
+          <el-input-number v-model="addonForm.price" :min="0" :precision="2" :step="0.5" />
+        </el-form-item>
+        <el-form-item label="排序">
+          <el-input-number v-model="addonForm.sort" :min="0" :max="999" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="addonFormVisible = false">取消</el-button>
+        <el-button type="primary" :loading="specSubmitting" @click="submitAddon">保存</el-button>
+      </template>
+    </el-dialog>  </div>
 </template>
 
 <script setup>
@@ -321,6 +409,140 @@ onMounted(async () => {
   await loadCategories()
   await loadDishes()
 })
+// 顾客-27/28：规格与加料维护
+const specVisible = ref(false)
+const specTab = ref('spec')
+const specDish = ref(null)
+const specs = ref([])
+const addons = ref([])
+const specFormVisible = ref(false)
+const addonFormVisible = ref(false)
+const specSubmitting = ref(false)
+const specForm = reactive({ id: null, name: '', price: 0, isDefault: 0, sort: 0 })
+const addonForm = reactive({ id: null, name: '', price: 0, sort: 0 })
+
+async function openSpecDialog(row) {
+  specDish.value = row
+  specTab.value = 'spec'
+  specVisible.value = true
+  await loadSpecs()
+  await loadAddons()
+}
+
+async function loadSpecs() {
+  if (!specDish.value) return
+  specs.value = (await merchantApi.specs(specDish.value.id)) || []
+}
+
+async function loadAddons() {
+  if (!specDish.value) return
+  addons.value = (await merchantApi.addons(specDish.value.id)) || []
+}
+
+function openSpecForm(row) {
+  if (row) {
+    Object.assign(specForm, {
+      id: row.id,
+      name: row.name,
+      price: Number(row.price),
+      isDefault: row.isDefault,
+      sort: row.sort
+    })
+  } else {
+    Object.assign(specForm, { id: null, name: '', price: 0, isDefault: 0, sort: 0 })
+  }
+  specFormVisible.value = true
+}
+
+async function submitSpec() {
+  if (!specForm.name.trim()) {
+    ElMessage.warning('请填写规格名称')
+    return
+  }
+  specSubmitting.value = true
+  try {
+    const payload = {
+      name: specForm.name.trim(),
+      price: specForm.price,
+      isDefault: specForm.isDefault,
+      sort: specForm.sort
+    }
+    if (specForm.id) {
+      await merchantApi.updateSpec(specDish.value.id, specForm.id, payload)
+    } else {
+      await merchantApi.createSpec(specDish.value.id, payload)
+    }
+    ElMessage.success('规格已保存')
+    specFormVisible.value = false
+    await loadSpecs()
+  } catch {
+    // 错误提示由请求拦截器统一处理
+  } finally {
+    specSubmitting.value = false
+  }
+}
+
+async function removeSpec(row) {
+  try {
+    await ElMessageBox.confirm(`确定要删除规格「${row.name}」吗？`, '删除规格', { type: 'warning' })
+  } catch {
+    return
+  }
+  try {
+    await merchantApi.removeSpec(specDish.value.id, row.id)
+    ElMessage.success('规格已删除')
+    await loadSpecs()
+  } catch {
+    // 错误提示由请求拦截器统一处理
+  }
+}
+
+function openAddonForm(row) {
+  if (row) {
+    Object.assign(addonForm, { id: row.id, name: row.name, price: Number(row.price), sort: row.sort })
+  } else {
+    Object.assign(addonForm, { id: null, name: '', price: 0, sort: 0 })
+  }
+  addonFormVisible.value = true
+}
+
+async function submitAddon() {
+  if (!addonForm.name.trim()) {
+    ElMessage.warning('请填写加料名称')
+    return
+  }
+  specSubmitting.value = true
+  try {
+    const payload = { name: addonForm.name.trim(), price: addonForm.price, sort: addonForm.sort }
+    if (addonForm.id) {
+      await merchantApi.updateAddon(specDish.value.id, addonForm.id, payload)
+    } else {
+      await merchantApi.createAddon(specDish.value.id, payload)
+    }
+    ElMessage.success('加料已保存')
+    addonFormVisible.value = false
+    await loadAddons()
+  } catch {
+    // 错误提示由请求拦截器统一处理
+  } finally {
+    specSubmitting.value = false
+  }
+}
+
+async function removeAddon(row) {
+  try {
+    await ElMessageBox.confirm(`确定要删除加料「${row.name}」吗？`, '删除加料', { type: 'warning' })
+  } catch {
+    return
+  }
+  try {
+    await merchantApi.removeAddon(specDish.value.id, row.id)
+    ElMessage.success('加料已删除')
+    await loadAddons()
+  } catch {
+    // 错误提示由请求拦截器统一处理
+  }
+}
 </script>
 
 <style scoped>
@@ -389,6 +611,12 @@ onMounted(async () => {
 .category-add {
   display: flex;
   gap: 10px;
+  margin-bottom: 12px;
+}
+.spec-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   margin-bottom: 12px;
 }
 </style>

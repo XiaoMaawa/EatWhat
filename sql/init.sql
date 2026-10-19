@@ -146,6 +146,7 @@ CREATE TABLE `dish` (
   `stock`       INT             NOT NULL DEFAULT 0      COMMENT '库存(份)',
   `month_sales` INT             NOT NULL DEFAULT 0      COMMENT '月销量',
   `status`      TINYINT         NOT NULL DEFAULT 1      COMMENT '1在售 0下架 2售罄',
+  `has_spec`    TINYINT         NOT NULL DEFAULT 0      COMMENT '是否有规格 0否 1是',
   `sort`        INT             NOT NULL DEFAULT 0      COMMENT '排序值',
   `created_at`  DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updated_at`  DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
@@ -165,11 +166,17 @@ CREATE TABLE `cart_item` (
   `user_id`    BIGINT UNSIGNED NOT NULL                COMMENT '用户ID',
   `shop_id`    BIGINT UNSIGNED NOT NULL                COMMENT '店铺ID',
   `dish_id`    BIGINT UNSIGNED NOT NULL                COMMENT '菜品ID',
+  `spec_id`    BIGINT UNSIGNED DEFAULT NULL            COMMENT '规格ID',
+  `spec_name`  VARCHAR(50)     DEFAULT NULL            COMMENT '规格名称快照',
+  `addon_ids`  VARCHAR(255)    DEFAULT NULL            COMMENT '加料ID,逗号分隔',
+  `addon_names` VARCHAR(255)   DEFAULT NULL            COMMENT '加料名称快照',
+  `addon_price` DECIMAL(10,2)  NOT NULL DEFAULT 0.00   COMMENT '加料合计价格',
+  `unit_price` DECIMAL(10,2)   DEFAULT NULL            COMMENT '含规格与加料的单价',
   `quantity`   INT             NOT NULL DEFAULT 1      COMMENT '数量',
   `created_at` DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updated_at` DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_cart_user_dish` (`user_id`, `dish_id`),
+  KEY `idx_cart_user_dish` (`user_id`, `dish_id`),
   KEY `idx_cart_user_shop` (`user_id`, `shop_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='购物车表';
 
@@ -221,6 +228,9 @@ CREATE TABLE `order_item` (
   `order_id`   BIGINT UNSIGNED NOT NULL                COMMENT '订单ID',
   `dish_id`    BIGINT UNSIGNED NOT NULL                COMMENT '菜品ID',
   `dish_name`  VARCHAR(100)    NOT NULL                COMMENT '菜品名称快照',
+  `spec_name`  VARCHAR(50)     DEFAULT NULL            COMMENT '规格名称快照',
+  `addon_names` VARCHAR(255)   DEFAULT NULL            COMMENT '加料名称快照',
+  `addon_price` DECIMAL(10,2)  NOT NULL DEFAULT 0.00   COMMENT '加料合计价格',
   `dish_image` VARCHAR(255)    DEFAULT NULL            COMMENT '菜品图片快照',
   `price`      DECIMAL(10,2)   NOT NULL                COMMENT '单价快照',
   `quantity`   INT             NOT NULL                COMMENT '数量',
@@ -549,6 +559,40 @@ CREATE TABLE `stats_daily` (
   UNIQUE KEY `uk_stats_daily_date` (`stat_date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='每日统计汇总表';
 
+-- ---------------------------------------------------------------------
+-- 23. 菜品规格表
+-- ---------------------------------------------------------------------
+DROP TABLE IF EXISTS `dish_spec`;
+CREATE TABLE `dish_spec` (
+  `id`         BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `dish_id`    BIGINT UNSIGNED NOT NULL                COMMENT '菜品ID',
+  `name`       VARCHAR(50)     NOT NULL                COMMENT '规格名称,如大份/中份/小份',
+  `price`      DECIMAL(10,2)   NOT NULL                COMMENT '规格价格',
+  `is_default` TINYINT         NOT NULL DEFAULT 0      COMMENT '是否默认 0否 1是',
+  `sort`       INT             NOT NULL DEFAULT 0      COMMENT '排序',
+  `created_at` DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted`    TINYINT         NOT NULL DEFAULT 0      COMMENT '逻辑删除',
+  PRIMARY KEY (`id`),
+  KEY `idx_dish_spec_dish` (`dish_id`, `sort`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='菜品规格表';
+
+-- ---------------------------------------------------------------------
+-- 24. 菜品加料表
+-- ---------------------------------------------------------------------
+DROP TABLE IF EXISTS `dish_addon`;
+CREATE TABLE `dish_addon` (
+  `id`         BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `dish_id`    BIGINT UNSIGNED NOT NULL                COMMENT '菜品ID',
+  `name`       VARCHAR(50)     NOT NULL                COMMENT '加料名称,如加米饭/加卤蛋',
+  `price`      DECIMAL(10,2)   NOT NULL DEFAULT 0.00   COMMENT '加料价格',
+  `sort`       INT             NOT NULL DEFAULT 0      COMMENT '排序',
+  `created_at` DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted`    TINYINT         NOT NULL DEFAULT 0      COMMENT '逻辑删除',
+  PRIMARY KEY (`id`),
+  KEY `idx_dish_addon_dish` (`dish_id`, `sort`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='菜品加料表';
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- =====================================================================
@@ -618,6 +662,22 @@ INSERT INTO `dish` (`id`, `shop_id`, `category_id`, `name`, `image`, `descriptio
 (17, 3, 8, '低卡轻食套餐 A', NULL, '鸡胸沙拉 + 全麦面包 + 无糖豆浆', 38.00, 30, 88, 1, 1),
 (18, 3, 8, '低卡轻食套餐 B', NULL, '牛油果沙拉 + 水煮蛋 + 黑咖啡', 42.00, 30, 66, 1, 2);
 
+-- 菜品规格与加料种子数据（米饭支持大份/中份/小份与加料）
+UPDATE `dish` SET `has_spec` = 1 WHERE `id` IN (5, 6);
+
+INSERT INTO `dish_spec` (`dish_id`, `name`, `price`, `is_default`, `sort`) VALUES
+(5, '大份', 3.00, 1, 0),
+(5, '中份', 2.50, 0, 1),
+(5, '小份', 2.00, 0, 2),
+(6, '大份', 2.00, 1, 0),
+(6, '小份', 1.50, 0, 1);
+
+INSERT INTO `dish_addon` (`dish_id`, `name`, `price`, `sort`) VALUES
+(5, '加米饭', 1.00, 0),
+(5, '加卤蛋', 2.00, 1),
+(5, '加青菜', 1.50, 2),
+(6, '加米饭', 1.00, 0),
+(6, '加卤蛋', 2.00, 1);
 INSERT INTO `rider` (`id`, `user_id`, `real_name`, `id_card`, `health_img`, `contact_phone`, `audit_status`, `audit_remark`, `audited_at`, `total_orders`, `total_income`) VALUES
 (1, 6, '王强', '330106199303031234', NULL, '13800000020', 1, '健康证有效，审核通过', NOW(), 0, 0.00),
 (2, 7, '赵敏', '330106199407075678', NULL, '13800000021', 1, '健康证有效，审核通过', NOW(), 0, 0.00);

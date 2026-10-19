@@ -46,6 +46,8 @@ class CartServiceImplTest {
     private DishMapper dishMapper;
     private ShopMapper shopMapper;
     private UserAddressMapper addressMapper;
+    private com.eatwhat.modules.dish.mapper.DishSpecMapper specMapper;
+    private com.eatwhat.modules.dish.mapper.DishAddonMapper addonMapper;
     private OrderMapper orderMapper;
     private OrderItemMapper orderItemMapper;
     private CartServiceImpl service;
@@ -64,9 +66,11 @@ class CartServiceImplTest {
         dishMapper = mock(DishMapper.class);
         shopMapper = mock(ShopMapper.class);
         addressMapper = mock(UserAddressMapper.class);
+        specMapper = mock(com.eatwhat.modules.dish.mapper.DishSpecMapper.class);
+        addonMapper = mock(com.eatwhat.modules.dish.mapper.DishAddonMapper.class);
         orderMapper = mock(OrderMapper.class);
         orderItemMapper = mock(OrderItemMapper.class);
-        service = new CartServiceImpl(cartItemMapper, dishMapper, shopMapper, addressMapper, orderMapper, orderItemMapper);
+        service = new CartServiceImpl(cartItemMapper, dishMapper, shopMapper, addressMapper, orderMapper, orderItemMapper, specMapper, addonMapper);
     }
 
     private Dish dish(Long id, Long shopId, int status, int stock, String price) {

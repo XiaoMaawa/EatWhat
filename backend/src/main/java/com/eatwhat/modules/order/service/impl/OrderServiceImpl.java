@@ -20,6 +20,8 @@ import com.eatwhat.modules.delivery.entity.Rider;
 import com.eatwhat.modules.delivery.mapper.RiderMapper;
 import com.eatwhat.modules.delivery.service.DeliveryService;
 import com.eatwhat.modules.dish.entity.Dish;
+import com.eatwhat.modules.dish.entity.DishAddon;
+import com.eatwhat.modules.dish.entity.DishSpec;
 import com.eatwhat.modules.dish.mapper.DishMapper;
 import com.eatwhat.modules.merchant.entity.Merchant;
 import com.eatwhat.modules.merchant.mapper.MerchantMapper;
@@ -68,6 +70,8 @@ public class OrderServiceImpl implements OrderService {
     private final ShopMapper shopMapper;
     private final DishMapper dishMapper;
     private final CartItemMapper cartItemMapper;
+    private final com.eatwhat.modules.dish.mapper.DishSpecMapper specMapper;
+    private final com.eatwhat.modules.dish.mapper.DishAddonMapper addonMapper;
     private final CartService cartService;
     private final UserAddressMapper addressMapper;
     private final RiderMapper riderMapper;
@@ -85,6 +89,8 @@ public class OrderServiceImpl implements OrderService {
                             ShopMapper shopMapper,
                             DishMapper dishMapper,
                             CartItemMapper cartItemMapper,
+            com.eatwhat.modules.dish.mapper.DishSpecMapper specMapper,
+            com.eatwhat.modules.dish.mapper.DishAddonMapper addonMapper,
                             CartService cartService,
                             UserAddressMapper addressMapper,
                             RiderMapper riderMapper,
@@ -97,6 +103,8 @@ public class OrderServiceImpl implements OrderService {
         this.shopMapper = shopMapper;
         this.dishMapper = dishMapper;
         this.cartItemMapper = cartItemMapper;
+        this.specMapper = specMapper;
+        this.addonMapper = addonMapper;
         this.cartService = cartService;
         this.addressMapper = addressMapper;
         this.riderMapper = riderMapper;
@@ -136,6 +144,8 @@ public class OrderServiceImpl implements OrderService {
                 CreateOrderRequest.Item item = new CreateOrderRequest.Item();
                 item.setDishId(cartItem.getDishId());
                 item.setQuantity(cartItem.getQuantity());
+                item.setSpecId(cartItem.getSpecId());
+                item.setAddonIds(parseIds(cartItem.getAddonIds()));
                 requested.add(item);
             }
         }
@@ -156,14 +166,29 @@ public class OrderServiceImpl implements OrderService {
             if (dish.getStock() == null || dish.getStock() < requestItem.getQuantity()) {
                 throw BizException.of(ErrorCode.STOCK_NOT_ENOUGH, "菜品【" + dish.getName() + "】库存不足");
             }
-            BigDecimal subtotal = dish.getPrice().multiply(BigDecimal.valueOf(requestItem.getQuantity()));
+
+            // 顾客-27/28：规格决定单价，加料叠加价格
+            DishSpec spec = resolveSpec(dish, requestItem.getSpecId());
+            BigDecimal unitPrice = spec == null || spec.getPrice() == null ? dish.getPrice() : spec.getPrice();
+            List<DishAddon> addons = resolveAddons(dish, requestItem.getAddonIds());
+            BigDecimal addonPrice = BigDecimal.ZERO;
+            List<String> addonNames = new ArrayList<>();
+            for (DishAddon addon : addons) {
+                addonNames.add(addon.getName());
+                addonPrice = addonPrice.add(addon.getPrice() == null ? BigDecimal.ZERO : addon.getPrice());
+            }
+            BigDecimal finalPrice = unitPrice.add(addonPrice).setScale(2, RoundingMode.HALF_UP);
+            BigDecimal subtotal = finalPrice.multiply(BigDecimal.valueOf(requestItem.getQuantity()));
             goodsAmount = goodsAmount.add(subtotal);
 
             OrderItem orderItem = new OrderItem();
             orderItem.setDishId(dish.getId());
             orderItem.setDishName(dish.getName());
             orderItem.setDishImage(dish.getImage());
-            orderItem.setPrice(dish.getPrice());
+            orderItem.setSpecName(spec == null ? null : spec.getName());
+            orderItem.setAddonNames(addonNames.isEmpty() ? null : String.join(",", addonNames));
+            orderItem.setAddonPrice(addonPrice.setScale(2, RoundingMode.HALF_UP));
+            orderItem.setPrice(finalPrice);
             orderItem.setQuantity(requestItem.getQuantity());
             orderItem.setSubtotal(subtotal.setScale(2, RoundingMode.HALF_UP));
             items.add(orderItem);
@@ -586,6 +611,56 @@ public class OrderServiceImpl implements OrderService {
     /**
      * 订单备注敏感词检测。
      */
+    /** 解析菜品规格：显式指定则校验归属，否则取默认规格，无规格返回 null */
+    private DishSpec resolveSpec(Dish dish, Long specId) {
+        if (specId != null) {
+            DishSpec spec = specMapper.selectById(specId);
+            if (spec == null || !spec.getDishId().equals(dish.getId())) {
+                throw BizException.of(ErrorCode.PARAM_INVALID, "菜品规格不存在");
+            }
+            return spec;
+        }
+        return specMapper.selectOne(new LambdaQueryWrapper<DishSpec>()
+                .eq(DishSpec::getDishId, dish.getId())
+                .eq(DishSpec::getIsDefault, 1)
+                .last("LIMIT 1"));
+    }
+
+    /** 解析加料列表：校验数量上限与归属 */
+    private List<DishAddon> resolveAddons(Dish dish, List<Long> addonIds) {
+        if (addonIds == null || addonIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+        if (addonIds.size() > 5) {
+            throw BizException.of(ErrorCode.PARAM_INVALID, "单个菜品最多选择 5 项加料");
+        }
+        List<DishAddon> addons = addonMapper.selectList(new LambdaQueryWrapper<DishAddon>()
+                .in(DishAddon::getId, addonIds));
+        if (addons.size() != addonIds.size()) {
+            throw BizException.of(ErrorCode.PARAM_INVALID, "存在无效的加料选项");
+        }
+        for (DishAddon addon : addons) {
+            if (!addon.getDishId().equals(dish.getId())) {
+                throw BizException.of(ErrorCode.PARAM_INVALID, "加料不属于当前菜品");
+            }
+        }
+        return addons;
+    }
+
+    /** 把逗号分隔的 ID 串解析为列表 */
+    private List<Long> parseIds(String joined) {
+        List<Long> ids = new ArrayList<>();
+        if (joined == null || joined.isBlank()) {
+            return ids;
+        }
+        for (String part : joined.split(",")) {
+            String trimmed = part.trim();
+            if (!trimmed.isEmpty()) {
+                ids.add(Long.valueOf(trimmed));
+            }
+        }
+        return ids;
+    }
     private void checkRemark(String remark) {
         if (sensitiveWordService == null || remark == null || remark.isBlank()) {
             return;

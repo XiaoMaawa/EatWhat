@@ -43,15 +43,21 @@ public class CartServiceImpl implements CartService {
     private final UserAddressMapper addressMapper;
     private final OrderMapper orderMapper;
     private final OrderItemMapper orderItemMapper;
+    private final com.eatwhat.modules.dish.mapper.DishSpecMapper specMapper;
+    private final com.eatwhat.modules.dish.mapper.DishAddonMapper addonMapper;
 
     public CartServiceImpl(CartItemMapper cartItemMapper, DishMapper dishMapper, ShopMapper shopMapper,
-                          UserAddressMapper addressMapper, OrderMapper orderMapper, OrderItemMapper orderItemMapper) {
+                          UserAddressMapper addressMapper, OrderMapper orderMapper, OrderItemMapper orderItemMapper,
+                          com.eatwhat.modules.dish.mapper.DishSpecMapper specMapper,
+                          com.eatwhat.modules.dish.mapper.DishAddonMapper addonMapper) {
         this.cartItemMapper = cartItemMapper;
         this.dishMapper = dishMapper;
         this.shopMapper = shopMapper;
         this.addressMapper = addressMapper;
         this.orderMapper = orderMapper;
         this.orderItemMapper = orderItemMapper;
+        this.specMapper = specMapper;
+        this.addonMapper = addonMapper;
     }
 
     @Override
@@ -89,12 +95,19 @@ public class CartServiceImpl implements CartService {
             if (dish == null) {
                 continue;
             }
+            // 顾客-27/28：有规格或加料时按快照单价计价
+            BigDecimal unitPrice = item.getUnitPrice() == null ? dish.getPrice() : item.getUnitPrice();
             CartVO.Item voItem = new CartVO.Item();
             voItem.setId(item.getId());
             voItem.setDishId(dish.getId());
             voItem.setDishName(dish.getName());
             voItem.setDishImage(dish.getImage());
-            voItem.setPrice(dish.getPrice());
+            voItem.setPrice(unitPrice);
+            voItem.setUnitPrice(unitPrice);
+            voItem.setSpecId(item.getSpecId());
+            voItem.setSpecName(item.getSpecName());
+            voItem.setAddonNames(item.getAddonNames());
+            voItem.setAddonPrice(item.getAddonPrice() == null ? BigDecimal.ZERO : item.getAddonPrice());
             voItem.setQuantity(item.getQuantity());
             voItem.setStock(dish.getStock());
             boolean onSale = Integer.valueOf(CommonConstants.DISH_ON).equals(dish.getStatus());
@@ -102,7 +115,7 @@ public class CartServiceImpl implements CartService {
             voItem.setAvailable(onSale && enough);
             vo.getItems().add(voItem);
 
-            BigDecimal subtotal = dish.getPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
+            BigDecimal subtotal = unitPrice.multiply(BigDecimal.valueOf(item.getQuantity()));
             vo.setGoodsAmount(vo.getGoodsAmount().add(subtotal));
         }
         BigDecimal deliveryFee = resolveDeliveryFee(userId, shop, addressId, vo.getDeliveryFee());
@@ -155,28 +168,34 @@ public class CartServiceImpl implements CartService {
             cartItemMapper.delete(new LambdaQueryWrapper<CartItem>().eq(CartItem::getUserId, userId));
         }
 
+        // 顾客-27/28：解析规格与加料，计算含规格与加料的单价
+        CartItem snapshot = resolveSelection(dish, request.getSpecId(), request.getAddonIds());
+
+        int quantity = request.getQuantity() == null ? 1 : request.getQuantity();
         CartItem current = existing.stream()
                 .filter(item -> item.getDishId().equals(dish.getId()))
+                .filter(item -> java.util.Objects.equals(item.getSpecId(), snapshot.getSpecId()))
+                .filter(item -> java.util.Objects.equals(item.getAddonIds(), snapshot.getAddonIds()))
                 .findFirst()
                 .orElse(null);
-        int quantity = request.getQuantity() == null ? 1 : request.getQuantity();
         if (current != null) {
             int target = current.getQuantity() + quantity;
             if (target > dish.getStock()) {
                 throw BizException.of(ErrorCode.STOCK_NOT_ENOUGH);
             }
             current.setQuantity(target);
+            current.setUnitPrice(snapshot.getUnitPrice());
+            current.setAddonPrice(snapshot.getAddonPrice());
             cartItemMapper.updateById(current);
         } else {
             if (quantity > dish.getStock()) {
                 throw BizException.of(ErrorCode.STOCK_NOT_ENOUGH);
             }
-            CartItem item = new CartItem();
-            item.setUserId(userId);
-            item.setShopId(dish.getShopId());
-            item.setDishId(dish.getId());
-            item.setQuantity(quantity);
-            cartItemMapper.insert(item);
+            snapshot.setUserId(userId);
+            snapshot.setShopId(dish.getShopId());
+            snapshot.setDishId(dish.getId());
+            snapshot.setQuantity(quantity);
+            cartItemMapper.insert(snapshot);
         }
         return view(userId);
     }
@@ -252,6 +271,60 @@ public class CartServiceImpl implements CartService {
         return view(userId);
     }
 
+    /**
+     * 解析规格与加料选择：返回带快照信息的购物车项（不含用户与数量）。
+     * 规格为空时取默认规格；加料按传入 ID 校验归属并累加价格。
+     */
+    private CartItem resolveSelection(Dish dish, Long specId, List<Long> addonIds) {
+        CartItem item = new CartItem();
+        BigDecimal unitPrice = dish.getPrice() == null ? BigDecimal.ZERO : dish.getPrice();
+
+        com.eatwhat.modules.dish.entity.DishSpec spec = null;
+        if (specId != null) {
+            spec = specMapper.selectById(specId);
+            if (spec == null || !spec.getDishId().equals(dish.getId())) {
+                throw BizException.of(ErrorCode.PARAM_INVALID, "菜品规格不存在");
+            }
+        } else {
+            spec = specMapper.selectOne(new LambdaQueryWrapper<com.eatwhat.modules.dish.entity.DishSpec>()
+                    .eq(com.eatwhat.modules.dish.entity.DishSpec::getDishId, dish.getId())
+                    .eq(com.eatwhat.modules.dish.entity.DishSpec::getIsDefault, 1)
+                    .last("LIMIT 1"));
+        }
+        if (spec != null) {
+            item.setSpecId(spec.getId());
+            item.setSpecName(spec.getName());
+            unitPrice = spec.getPrice() == null ? unitPrice : spec.getPrice();
+        }
+
+        BigDecimal addonPrice = BigDecimal.ZERO;
+        if (addonIds != null && !addonIds.isEmpty()) {
+            if (addonIds.size() > 5) {
+                throw BizException.of(ErrorCode.PARAM_INVALID, "单个菜品最多选择 5 项加料");
+            }
+            List<com.eatwhat.modules.dish.entity.DishAddon> addons = addonMapper.selectList(
+                    new LambdaQueryWrapper<com.eatwhat.modules.dish.entity.DishAddon>()
+                            .in(com.eatwhat.modules.dish.entity.DishAddon::getId, addonIds));
+            if (addons.size() != addonIds.size()) {
+                throw BizException.of(ErrorCode.PARAM_INVALID, "存在无效的加料选项");
+            }
+            List<String> names = new ArrayList<>();
+            List<Long> ids = new ArrayList<>();
+            for (com.eatwhat.modules.dish.entity.DishAddon addon : addons) {
+                if (!addon.getDishId().equals(dish.getId())) {
+                    throw BizException.of(ErrorCode.PARAM_INVALID, "加料不属于当前菜品");
+                }
+                names.add(addon.getName());
+                ids.add(addon.getId());
+                addonPrice = addonPrice.add(addon.getPrice() == null ? BigDecimal.ZERO : addon.getPrice());
+            }
+            item.setAddonIds(ids.stream().map(String::valueOf).collect(java.util.stream.Collectors.joining(",")));
+            item.setAddonNames(String.join(",", names));
+        }
+        item.setAddonPrice(addonPrice);
+        item.setUnitPrice(unitPrice.add(addonPrice).setScale(2, RoundingMode.HALF_UP));
+        return item;
+    }
     private CartItem requireOwned(Long userId, Long cartItemId) {
         CartItem item = cartItemMapper.selectById(cartItemId);
         if (item == null) {

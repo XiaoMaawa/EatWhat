@@ -22,6 +22,16 @@ public class CartVO {
         private Long dishId;
         private String dishName;
         private String dishImage;
+        private Long specId;
+
+        private String specName;
+
+        private String addonNames;
+
+        private BigDecimal addonPrice;
+
+        /** 含规格与加料的单价 */
+        private BigDecimal unitPrice;
         private BigDecimal price;
         private Integer quantity;
         private Integer stock;
@@ -59,6 +69,46 @@ public class CartVO {
         public void setDishImage(String dishImage) {
             this.dishImage = dishImage;
         }
+        public Long getSpecId() {
+            return specId;
+        }
+
+        public void setSpecId(Long specId) {
+            this.specId = specId;
+        }
+
+        public String getSpecName() {
+            return specName;
+        }
+
+        public void setSpecName(String specName) {
+            this.specName = specName;
+        }
+
+        public String getAddonNames() {
+            return addonNames;
+        }
+
+        public void setAddonNames(String addonNames) {
+            this.addonNames = addonNames;
+        }
+
+        public BigDecimal getAddonPrice() {
+            return addonPrice;
+        }
+
+        public void setAddonPrice(BigDecimal addonPrice) {
+            this.addonPrice = addonPrice;
+        }
+
+        public BigDecimal getUnitPrice() {
+            return unitPrice;
+        }
+
+        public void setUnitPrice(BigDecimal unitPrice) {
+            this.unitPrice = unitPrice;
+        }
+
 
         public BigDecimal getPrice() {
             return price;

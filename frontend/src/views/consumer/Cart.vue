@@ -17,6 +17,10 @@
             </div>
             <div class="item-info">
               <div class="item-name">{{ item.dishName }}</div>
+              <div v-if="item.specName || item.addonNames" class="item-spec">
+                <span v-if="item.specName">{{ item.specName }}</span>
+                <span v-if="item.addonNames">加料：{{ item.addonNames }}</span>
+              </div>
               <div class="ew-muted">单价 ¥{{ item.price }} · 库存 {{ item.stock }}</div>
               <el-tag v-if="!item.available" size="small" type="warning">暂不可售</el-tag>
             </div>
@@ -328,5 +332,12 @@ onMounted(load)
   align-items: center;
   gap: 12px;
   margin-top: 12px;
+}
+.item-spec {
+  display: flex;
+  gap: 10px;
+  font-size: 12px;
+  color: #909399;
+  margin-top: 2px;
 }
 </style>

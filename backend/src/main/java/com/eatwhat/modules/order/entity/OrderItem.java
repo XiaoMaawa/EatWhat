@@ -24,6 +24,12 @@ public class OrderItem extends CreatedEntity {
 
     /** 下单时的菜品名称快照 */
     private String dishName;
+    private String specName;
+
+    private String addonNames;
+
+    private BigDecimal addonPrice;
+
 
     /** 下单时的菜品图片快照 */
     private String dishImage;
@@ -98,4 +104,28 @@ public class OrderItem extends CreatedEntity {
     public void setSubtotal(BigDecimal subtotal) {
         this.subtotal = subtotal;
     }
+    public String getSpecName() {
+        return specName;
+    }
+
+    public void setSpecName(String specName) {
+        this.specName = specName;
+    }
+
+    public String getAddonNames() {
+        return addonNames;
+    }
+
+    public void setAddonNames(String addonNames) {
+        this.addonNames = addonNames;
+    }
+
+    public BigDecimal getAddonPrice() {
+        return addonPrice;
+    }
+
+    public void setAddonPrice(BigDecimal addonPrice) {
+        this.addonPrice = addonPrice;
+    }
+
 }

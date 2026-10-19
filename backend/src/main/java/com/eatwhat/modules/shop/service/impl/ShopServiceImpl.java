@@ -43,17 +43,20 @@ public class ShopServiceImpl implements ShopService {
     private final DishMapper dishMapper;
     private final DishCategoryMapper categoryMapper;
     private final ReviewMapper reviewMapper;
+    private final com.eatwhat.modules.dish.service.DishSpecService dishSpecService;
 
     public ShopServiceImpl(ShopMapper shopMapper,
                            MerchantMapper merchantMapper,
                            DishMapper dishMapper,
                            DishCategoryMapper categoryMapper,
-                           ReviewMapper reviewMapper) {
+                           ReviewMapper reviewMapper,
+                           @org.springframework.context.annotation.Lazy com.eatwhat.modules.dish.service.DishSpecService dishSpecService) {
         this.shopMapper = shopMapper;
         this.merchantMapper = merchantMapper;
         this.dishMapper = dishMapper;
         this.categoryMapper = categoryMapper;
         this.reviewMapper = reviewMapper;
+        this.dishSpecService = dishSpecService;
     }
 
     @Override
@@ -137,6 +140,17 @@ public class ShopServiceImpl implements ShopService {
             cv.setSort(category.getSort());
             cv.setDishes(grouped.getOrDefault(category.getId(), new ArrayList<>()));
             categoryVos.add(cv);
+        }
+        // 顾客-27/28：为菜品填充规格与加料，顾客-30：填充近 30 天好评率
+        List<Long> dishIds = dishes.stream().map(Dish::getId).collect(Collectors.toList());
+        Map<Long, List<com.eatwhat.modules.dish.entity.DishSpec>> specMap =
+                dishSpecService.mapSpecsByDish(dishIds);
+        Map<Long, List<com.eatwhat.modules.dish.entity.DishAddon>> addonMap =
+                dishSpecService.mapAddonsByDish(dishIds);
+        for (Dish dish : dishes) {
+            dish.setSpecs(specMap.get(dish.getId()));
+            dish.setAddons(addonMap.get(dish.getId()));
+            dish.setGoodRate(reviewMapper.goodRateByDish(dish.getId()));
         }
         vo.setCategories(categoryVos);
         return vo;

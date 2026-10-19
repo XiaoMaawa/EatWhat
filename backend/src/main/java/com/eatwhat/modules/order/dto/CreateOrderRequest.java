@@ -33,6 +33,10 @@ public class CreateOrderRequest {
     public static class Item {
         @NotNull(message = "菜品不能为空")
         private Long dishId;
+        private Long specId;
+
+        private java.util.List<Long> addonIds;
+
 
         @NotNull(message = "数量不能为空")
         @Min(value = 1, message = "数量最少 1 份")
@@ -47,6 +51,21 @@ public class CreateOrderRequest {
             this.dishId = dishId;
         }
 
+        public Long getSpecId() {
+            return specId;
+        }
+
+        public void setSpecId(Long specId) {
+            this.specId = specId;
+        }
+
+        public java.util.List<Long> getAddonIds() {
+            return addonIds;
+        }
+
+        public void setAddonIds(java.util.List<Long> addonIds) {
+            this.addonIds = addonIds;
+        }
         public Integer getQuantity() {
             return quantity;
         }

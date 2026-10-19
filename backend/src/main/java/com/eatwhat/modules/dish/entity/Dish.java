@@ -52,6 +52,17 @@ public class Dish extends BaseEntity {
     @TableField(exist = false)
     private String categoryName;
 
+    /** 规格列表（非数据库字段，顾客端菜品详情用） */
+    @TableField(exist = false)
+    private java.util.List<DishSpec> specs;
+
+    /** 加料列表（非数据库字段，顾客端菜品详情用） */
+    @TableField(exist = false)
+    private java.util.List<DishAddon> addons;
+
+    /** 近 30 天好评率（非数据库字段，保留一位小数） */
+    @TableField(exist = false)
+    private java.math.BigDecimal goodRate;
     /** 所属店铺名称（非数据库字段，后台展示用） */
     @TableField(exist = false)
     private String shopName;
@@ -167,4 +178,28 @@ public class Dish extends BaseEntity {
     public void setShopName(String shopName) {
         this.shopName = shopName;
     }
+    public java.util.List<DishSpec> getSpecs() {
+        return specs;
+    }
+
+    public void setSpecs(java.util.List<DishSpec> specs) {
+        this.specs = specs;
+    }
+
+    public java.util.List<DishAddon> getAddons() {
+        return addons;
+    }
+
+    public void setAddons(java.util.List<DishAddon> addons) {
+        this.addons = addons;
+    }
+
+    public java.math.BigDecimal getGoodRate() {
+        return goodRate;
+    }
+
+    public void setGoodRate(java.math.BigDecimal goodRate) {
+        this.goodRate = goodRate;
+    }
+
 }

@@ -24,6 +24,21 @@ public class CartItem extends BaseEntity {
     private Long shopId;
 
     private Long dishId;
+    private Long specId;
+
+    private String specName;
+
+    /** 加料ID，逗号分隔 */
+    private String addonIds;
+
+    /** 加料名称，逗号分隔 */
+    private String addonNames;
+
+    /** 加料合计价格 */
+    private BigDecimal addonPrice;
+
+    /** 含规格与加料的单价 */
+    private BigDecimal unitPrice;
 
     private Integer quantity;
 
@@ -78,4 +93,52 @@ public class CartItem extends BaseEntity {
     public void setPrice(BigDecimal price) {
         this.price = price;
     }
+    public Long getSpecId() {
+        return specId;
+    }
+
+    public void setSpecId(Long specId) {
+        this.specId = specId;
+    }
+
+    public String getSpecName() {
+        return specName;
+    }
+
+    public void setSpecName(String specName) {
+        this.specName = specName;
+    }
+
+    public String getAddonIds() {
+        return addonIds;
+    }
+
+    public void setAddonIds(String addonIds) {
+        this.addonIds = addonIds;
+    }
+
+    public String getAddonNames() {
+        return addonNames;
+    }
+
+    public void setAddonNames(String addonNames) {
+        this.addonNames = addonNames;
+    }
+
+    public BigDecimal getAddonPrice() {
+        return addonPrice;
+    }
+
+    public void setAddonPrice(BigDecimal addonPrice) {
+        this.addonPrice = addonPrice;
+    }
+
+    public BigDecimal getUnitPrice() {
+        return unitPrice;
+    }
+
+    public void setUnitPrice(BigDecimal unitPrice) {
+        this.unitPrice = unitPrice;
+    }
+
 }

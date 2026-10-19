@@ -91,9 +91,17 @@
               <div class="dish-info">
                 <div class="dish-name">{{ dish.name }}</div>
                 <div class="ew-muted text-ellipsis">{{ dish.description || '—' }}</div>
-                <div class="ew-muted">月售 {{ dish.monthSales }} · 库存 {{ dish.stock }}</div>
+                <div class="ew-muted">
+                  月售 {{ dish.monthSales }} · 库存 {{ dish.stock }}
+                  <span v-if="dish.goodRate != null" class="good-rate">好评率 {{ dish.goodRate }}%</span>
+                </div>
                 <div class="ew-flex-between ew-mt12">
-                  <span class="ew-price">{{ dish.price }}</span>
+                  <span class="ew-price">
+                    <template v-if="dish.specs && dish.specs.length">
+                      ¥{{ specMinPrice(dish) }} 起
+                    </template>
+                    <template v-else>¥{{ dish.price }}</template>
+                  </span>
                   <div class="ew-flex ew-gap8">
                     <el-tag v-if="dish.status === 0" size="small" type="info">已下架</el-tag>
                     <el-tag v-else-if="dish.status === 2 || dish.stock <= 0" size="small" type="warning">售罄</el-tag>
@@ -102,7 +110,7 @@
                       type="primary"
                       size="small"
                       :disabled="!shop?.isOpen"
-                      @click="addToCart(dish)"
+                      @click="openDish(dish)"
                     >
                       加入购物车
                     </el-button>
@@ -116,6 +124,59 @@
       </div>
     </div>
 
+    <!-- 顾客-27/28：规格与加料选择 -->
+    <el-dialog v-model="dishVisible" :title="activeDish?.name || '选择规格'" width="480px">
+      <div v-if="activeDish" class="dish-picker">
+        <div class="picker-dish">
+          <div class="dish-img">
+            <img v-if="activeDish.image" :src="activeDish.image" alt="" />
+            <span v-else>🍱</span>
+          </div>
+          <div class="picker-dish-info">
+            <div class="dish-name">{{ activeDish.name }}</div>
+            <div class="ew-muted text-ellipsis">{{ activeDish.description || '—' }}</div>
+          </div>
+        </div>
+
+        <div v-if="activeDish.specs && activeDish.specs.length" class="picker-block">
+          <div class="picker-label">规格 <span class="required">必选</span></div>
+          <el-radio-group v-model="selectedSpecId" class="spec-group">
+            <el-radio v-for="spec in activeDish.specs" :key="spec.id" :value="spec.id" border>
+              {{ spec.name }} ¥{{ spec.price }}
+            </el-radio>
+          </el-radio-group>
+        </div>
+
+        <div v-if="activeDish.addons && activeDish.addons.length" class="picker-block">
+          <div class="picker-label">加料 <span class="ew-muted">可多选，最多 5 项</span></div>
+          <el-checkbox-group v-model="selectedAddonIds" class="addon-group">
+            <el-checkbox
+              v-for="addon in activeDish.addons"
+              :key="addon.id"
+              :value="addon.id"
+              :disabled="selectedAddonIds.length >= 5 && !selectedAddonIds.includes(addon.id)"
+              border
+            >
+              {{ addon.name }} +¥{{ addon.price }}
+            </el-checkbox>
+          </el-checkbox-group>
+        </div>
+
+        <div class="picker-block">
+          <div class="picker-label">数量</div>
+          <el-input-number v-model="pickQuantity" :min="1" :max="Math.min(99, activeDish.stock || 99)" />
+        </div>
+
+        <div class="picker-total">
+          <span>小计</span>
+          <span class="ew-price">¥{{ pickTotal }}</span>
+        </div>
+      </div>
+      <template #footer>
+        <el-button @click="dishVisible = false">取消</el-button>
+        <el-button type="primary" :loading="adding" @click="confirmAdd">加入购物车</el-button>
+      </template>
+    </el-dialog>
     <div class="cart-bar" v-if="cartCount > 0">
       <span class="ew-flex ew-gap12">
         <el-icon size="22"><ShoppingCart /></el-icon>
@@ -207,6 +268,62 @@ async function refreshCart() {
     cartTotal.value = cart?.totalAmount || '0.00'
   } catch {
     cartCount.value = 0
+  }
+}
+
+// 顾客-27/28：规格与加料选择弹窗
+const dishVisible = ref(false)
+const activeDish = ref(null)
+const selectedSpecId = ref(null)
+const selectedAddonIds = ref([])
+const pickQuantity = ref(1)
+const adding = ref(false)
+
+const pickTotal = computed(() => {
+  const dish = activeDish.value
+  if (!dish) return '0.00'
+  let unit = Number(dish.price || 0)
+  const spec = (dish.specs || []).find((s) => s.id === selectedSpecId.value)
+  if (spec) unit = Number(spec.price)
+  for (const addon of dish.addons || []) {
+    if (selectedAddonIds.value.includes(addon.id)) unit += Number(addon.price || 0)
+  }
+  return (unit * pickQuantity.value).toFixed(2)
+})
+
+function specMinPrice(dish) {
+  const prices = (dish.specs || []).map((s) => Number(s.price))
+  if (!prices.length) return Number(dish.price || 0).toFixed(2)
+  return Math.min(...prices).toFixed(2)
+}
+
+function openDish(dish) {
+  activeDish.value = dish
+  const defaultSpec = (dish.specs || []).find((s) => s.isDefault === 1) || (dish.specs || [])[0]
+  selectedSpecId.value = defaultSpec ? defaultSpec.id : null
+  selectedAddonIds.value = []
+  pickQuantity.value = 1
+  dishVisible.value = true
+}
+
+async function confirmAdd() {
+  const dish = activeDish.value
+  if (!dish) return
+  adding.value = true
+  try {
+    await cartApi.add({
+      dishId: dish.id,
+      quantity: pickQuantity.value,
+      specId: selectedSpecId.value || undefined,
+      addonIds: selectedAddonIds.value.length ? selectedAddonIds.value : undefined
+    })
+    ElMessage.success('已加入购物车')
+    dishVisible.value = false
+    await refreshCart()
+  } catch {
+    // 错误提示由请求拦截器统一处理
+  } finally {
+    adding.value = false
   }
 }
 
@@ -445,5 +562,77 @@ onMounted(async () => {
 .cart-bar .ew-price {
   color: #ffd666;
   font-size: 17px;
+}
+.good-rate {
+  margin-left: 8px;
+  color: #e6a23c;
+}
+
+.dish-picker .picker-dish {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f0f2f5;
+}
+
+.dish-picker .picker-dish .dish-img {
+  width: 64px;
+  height: 64px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f5f7fa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+}
+
+.dish-picker .picker-dish .dish-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.dish-picker .picker-dish-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.picker-block {
+  margin-top: 16px;
+}
+
+.picker-label {
+  font-size: 13px;
+  color: #606266;
+  margin-bottom: 8px;
+}
+
+.picker-label .required {
+  color: #f56c6c;
+  font-size: 12px;
+}
+
+.spec-group,
+.addon-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.spec-group .el-radio,
+.addon-group .el-checkbox {
+  margin-right: 0;
+}
+
+.picker-total {
+  margin-top: 18px;
+  padding-top: 12px;
+  border-top: 1px dashed #ebeef5;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
 }
 </style>

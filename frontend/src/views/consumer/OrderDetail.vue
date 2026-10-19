@@ -36,7 +36,11 @@
 
       <div class="items">
         <div v-for="item in order.items" :key="item.dishId" class="item">
-          <span class="item-name">{{ item.dishName }}</span>
+          <span class="item-name">
+            {{ item.dishName }}
+            <span v-if="item.specName" class="item-spec-tag">{{ item.specName }}</span>
+            <span v-if="item.addonNames" class="item-spec-tag">加料 {{ item.addonNames }}</span>
+          </span>
           <span class="ew-muted">× {{ item.quantity }}</span>
           <span class="item-price">¥{{ item.subtotal }}</span>
         </div>
@@ -324,5 +328,11 @@ onMounted(load)
   gap: 10px;
   justify-content: flex-end;
   margin-top: 8px;
+}
+.item-spec-tag {
+  margin-left: 6px;
+  font-size: 12px;
+  color: #909399;
+  font-weight: normal;
 }
 </style>
