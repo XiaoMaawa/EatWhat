@@ -9,6 +9,7 @@ import com.eatwhat.common.exception.ErrorCode;
 import com.eatwhat.common.utils.MaskUtils;
 import com.eatwhat.modules.auth.dto.LoginRequest;
 import com.eatwhat.modules.auth.dto.RegisterRequest;
+import com.eatwhat.modules.auth.dto.ResetPasswordRequest;
 import com.eatwhat.modules.auth.entity.SysUser;
 import com.eatwhat.modules.auth.mapper.SysUserMapper;
 import com.eatwhat.modules.auth.service.AuthService;
@@ -137,6 +138,34 @@ public class AuthServiceImpl implements AuthService {
     public void logout(Long userId) {
         // 无状态 JWT：由客户端清除令牌；此处仅记录日志，预留黑名单扩展点
         log.info("用户 {} 退出登录", userId);
+    }
+
+    @Override
+    public void resetPassword(ResetPasswordRequest request) {
+        captchaService.validate(request.getCaptchaKey(), request.getCaptchaCode());
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            throw BizException.of(ErrorCode.PARAM_INVALID, "两次输入的密码不一致");
+        }
+
+        SysUser user = userMapper.selectOne(new LambdaQueryWrapper<SysUser>()
+                .eq(SysUser::getPhone, request.getPhone())
+                .last("LIMIT 1"));
+        if (user == null) {
+            throw BizException.of(ErrorCode.USER_NOT_FOUND, "该手机号尚未注册");
+        }
+        if (user.getStatus() != null && user.getStatus() == CommonConstants.USER_DISABLED) {
+            throw BizException.of(ErrorCode.ACCOUNT_DISABLED);
+        }
+        if (passwordEncoder.matches(request.getNewPassword(), user.getPassword())) {
+            throw BizException.of(ErrorCode.PARAM_INVALID, "新密码不能与原密码相同");
+        }
+
+        userMapper.update(null, new LambdaUpdateWrapper<SysUser>()
+                .eq(SysUser::getId, user.getId())
+                .set(SysUser::getPassword, passwordEncoder.encode(request.getNewPassword())));
+        // 重置成功后清除登录失败计数，避免用户继续被锁定
+        loginAttemptService.loginSuccess(request.getPhone());
+        log.info("用户 {} 通过验证码重置密码成功", user.getId());
     }
 
     private LoginVO buildLoginVO(SysUser user) {

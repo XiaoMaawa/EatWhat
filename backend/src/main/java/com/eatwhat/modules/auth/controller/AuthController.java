@@ -5,6 +5,7 @@ import com.eatwhat.common.utils.UserContext;
 import com.eatwhat.modules.auth.dto.LoginRequest;
 import com.eatwhat.modules.auth.dto.RefreshTokenRequest;
 import com.eatwhat.modules.auth.dto.RegisterRequest;
+import com.eatwhat.modules.auth.dto.ResetPasswordRequest;
 import com.eatwhat.modules.auth.service.AuthService;
 import com.eatwhat.modules.auth.vo.LoginVO;
 import com.eatwhat.security.PublicApi;
@@ -52,6 +53,14 @@ public class AuthController {
     @PostMapping("/refresh")
     public R<LoginVO> refresh(@Valid @RequestBody RefreshTokenRequest request) {
         return R.ok(authService.refresh(request.getRefreshToken()));
+    }
+
+    @PublicApi
+    @Operation(summary = "通过手机号与验证码重置密码")
+    @PostMapping("/reset-password")
+    public R<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        authService.resetPassword(request);
+        return R.ok();
     }
 
     @Operation(summary = "退出登录")

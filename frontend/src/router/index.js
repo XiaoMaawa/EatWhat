@@ -15,6 +15,12 @@ const routes = [
     meta: { title: '注册', public: true }
   },
   {
+    path: '/find-password',
+    name: 'findPassword',
+    component: () => import('@/views/FindPassword.vue'),
+    meta: { title: '找回密码', public: true }
+  },
+  {
     path: '/',
     component: () => import('@/layouts/ConsumerLayout.vue'),
     meta: { roles: ['CONSUMER'] },
@@ -25,6 +31,7 @@ const routes = [
       { path: 'orders', name: 'orders', component: () => import('@/views/consumer/Orders.vue'), meta: { title: '我的订单' } },
       { path: 'orders/:id', name: 'orderDetail', component: () => import('@/views/consumer/OrderDetail.vue'), meta: { title: '订单详情' } },
       { path: 'reviews', name: 'myReviews', component: () => import('@/views/consumer/Reviews.vue'), meta: { title: '我的评价' } },
+      { path: 'favorites', name: 'favorites', component: () => import('@/views/consumer/Favorites.vue'), meta: { title: '我的收藏' } },
       { path: 'profile', name: 'profile', component: () => import('@/views/consumer/Profile.vue'), meta: { title: '个人中心' } },
       { path: 'address', name: 'address', component: () => import('@/views/consumer/Address.vue'), meta: { title: '收货地址' } }
     ]
