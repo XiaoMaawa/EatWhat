@@ -150,8 +150,20 @@
       <el-table :data="categories" size="small">
         <el-table-column prop="name" label="分类名称" />
         <el-table-column prop="sort" label="排序" width="80" />
-        <el-table-column label="操作" width="140">
-          <template #default="{ row }">
+        <el-table-column label="操作" width="220">
+          <template #default="{ row, $index }">
+            <el-button size="small" link type="primary" :disabled="$index === 0" @click="moveCategory($index, -1)">
+              上移
+            </el-button>
+            <el-button
+              size="small"
+              link
+              type="primary"
+              :disabled="$index === categories.length - 1"
+              @click="moveCategory($index, 1)"
+            >
+              下移
+            </el-button>
             <el-button size="small" link type="primary" @click="renameCategory(row)">重命名</el-button>
             <el-button size="small" link type="danger" @click="removeCategory(row)">删除</el-button>
           </template>
@@ -491,6 +503,25 @@ async function removeCategory(row) {
   await merchantApi.deleteCategory(row.id)
   ElMessage.success('已删除')
   await loadCategories()
+}
+
+/** 商家-21：分类排序，上移 / 下移后重排 sort 并批量落库 */
+async function moveCategory(index, delta) {
+  const target = index + delta
+  if (target < 0 || target >= categories.value.length) return
+  const list = [...categories.value]
+  const [moved] = list.splice(index, 1)
+  list.splice(target, 0, moved)
+  categories.value = list
+  try {
+    await Promise.all(
+      list.map((c, i) => merchantApi.updateCategory(c.id, { name: c.name, sort: i + 1 }))
+    )
+    ElMessage.success('分类顺序已更新')
+    await loadCategories()
+  } catch {
+    await loadCategories()
+  }
 }
 
 onMounted(async () => {

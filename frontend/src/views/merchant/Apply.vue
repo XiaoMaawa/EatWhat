@@ -96,12 +96,40 @@
         </el-form-item>
 
         <el-form-item v-if="status !== 'pending' && status !== 'passed'">
-          <el-button type="primary" :loading="submitting" @click="submit">
+          <el-checkbox v-model="agreed">
+            我已阅读并同意
+            <el-link type="primary" :underline="false" @click.prevent.stop="agreementVisible = true">
+              《EatWhat 平台商家入驻协议》
+            </el-link>
+          </el-checkbox>
+        </el-form-item>
+
+        <el-form-item v-if="status !== 'pending' && status !== 'passed'">
+          <el-button type="primary" :loading="submitting" :disabled="!agreed" @click="submit">
             {{ status === 'rejected' ? '重新提交' : '提交申请' }}
           </el-button>
+          <span v-if="!agreed" class="ew-muted agree-hint">请先勾选同意入驻协议</span>
         </el-form-item>
       </el-form>
     </div>
+
+    <!-- 商家-05：入驻协议 -->
+    <el-dialog v-model="agreementVisible" title="EatWhat 平台商家入驻协议" width="640px">
+      <div class="agreement">
+        <p>欢迎您入驻 EatWhat 外卖平台。在提交入驻申请前，请您仔细阅读以下条款：</p>
+        <p><b>一、入驻资质</b><br />商家应提供真实、合法、有效的营业执照与经营者身份证件，并对所售食品的安全与质量承担全部责任。</p>
+        <p><b>二、经营范围</b><br />商家应在营业执照核准的经营范围内开展经营活动，不得销售法律法规禁止销售的食品。</p>
+        <p><b>三、订单履约</b><br />商家应及时处理顾客订单，按承诺时间完成出餐；因商家原因导致的订单取消与退款，平台有权从结算款中扣减相应费用。</p>
+        <p><b>四、配送与包装</b><br />商家应使用符合食品安全标准的包装材料，并按订单实际需求收取打包费。</p>
+        <p><b>五、价格与结算</b><br />商家自主设置菜品价格、起送价与配送费，平台按约定周期结算货款，商家应依法纳税。</p>
+        <p><b>六、评价与售后</b><br />商家应妥善处理顾客评价与售后申请，不得以任何形式干扰顾客的正常评价。</p>
+        <p><b>七、协议变更与终止</b><br />平台有权根据经营情况调整本协议并在平台公示；商家可随时申请退出平台，但应完成已产生订单的履约。</p>
+      </div>
+      <template #footer>
+        <el-button @click="agreementVisible = false">关闭</el-button>
+        <el-button type="primary" @click="agreeAndClose">同意并关闭</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -117,6 +145,13 @@ const submitting = ref(false)
 const uploading = ref(false)
 const profile = ref(null)
 const formRef = ref()
+const agreed = ref(false)
+const agreementVisible = ref(false)
+
+function agreeAndClose() {
+  agreed.value = true
+  agreementVisible.value = false
+}
 
 const form = reactive({
   realName: '',
@@ -185,6 +220,10 @@ async function uploadLicense(options) {
 }
 
 async function submit() {
+  if (!agreed.value) {
+    ElMessage.warning('请先阅读并勾选同意《EatWhat 平台商家入驻协议》')
+    return
+  }
   await formRef.value.validate()
   submitting.value = true
   try {
@@ -202,6 +241,23 @@ onMounted(load)
 <style scoped>
 .tip {
   margin-bottom: 12px;
+}
+
+.agree-hint {
+  margin-left: 12px;
+  font-size: 12px;
+}
+
+.agreement {
+  max-height: 460px;
+  overflow-y: auto;
+  line-height: 1.9;
+  font-size: 14px;
+  color: #606266;
+}
+
+.agreement p {
+  margin: 0 0 10px;
 }
 
 .form {
