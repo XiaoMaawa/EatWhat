@@ -26,6 +26,10 @@
           <el-icon><TrendCharts /></el-icon>
           <span>收益统计</span>
         </el-menu-item>
+        <el-menu-item index="/rider/messages" :disabled="menuDisabled('/rider/messages')">
+          <el-icon><ChatDotRound /></el-icon>
+          <span>订单消息</span>
+        </el-menu-item>
         <el-menu-item index="/rider/notices" :disabled="menuDisabled('/rider/notices')">
           <el-icon><Bell /></el-icon>
           <span>系统通知</span>
@@ -63,7 +67,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { riderApi } from '@/api'
-import { ArrowDown, Bell, Postcard, Promotion, Tickets, TrendCharts, Warning } from '@element-plus/icons-vue'
+import { ArrowDown, Bell, ChatDotRound, Postcard, Promotion, Tickets, TrendCharts, Warning } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()

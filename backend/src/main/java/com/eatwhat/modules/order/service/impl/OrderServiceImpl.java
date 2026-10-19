@@ -17,6 +17,7 @@ import com.eatwhat.modules.cart.mapper.CartItemMapper;
 import com.eatwhat.modules.cart.service.CartService;
 import com.eatwhat.modules.delivery.entity.DeliveryTask;
 import com.eatwhat.modules.delivery.entity.Rider;
+import com.eatwhat.modules.delivery.mapper.DeliveryTaskMapper;
 import com.eatwhat.modules.delivery.mapper.RiderMapper;
 import com.eatwhat.modules.delivery.service.DeliveryService;
 import com.eatwhat.modules.dish.entity.Dish;
@@ -76,6 +77,7 @@ public class OrderServiceImpl implements OrderService {
     private final CartService cartService;
     private final UserAddressMapper addressMapper;
     private final RiderMapper riderMapper;
+    private final DeliveryTaskMapper deliveryTaskMapper;
     private final MerchantMapper merchantMapper;
     private final DeliveryService deliveryService;
     private final MessageService messageService;
@@ -96,6 +98,7 @@ public class OrderServiceImpl implements OrderService {
                             CartService cartService,
                             UserAddressMapper addressMapper,
                             RiderMapper riderMapper,
+                            DeliveryTaskMapper deliveryTaskMapper,
                             MerchantMapper merchantMapper,
                             @Lazy DeliveryService deliveryService,
                             @Lazy MessageService messageService,
@@ -111,6 +114,7 @@ public class OrderServiceImpl implements OrderService {
         this.cartService = cartService;
         this.addressMapper = addressMapper;
         this.riderMapper = riderMapper;
+        this.deliveryTaskMapper = deliveryTaskMapper;
         this.merchantMapper = merchantMapper;
         this.deliveryService = deliveryService;
         this.messageService = messageService;
@@ -826,6 +830,32 @@ public class OrderServiceImpl implements OrderService {
             return;
         }
         messageService.send(order.getUserId(), 1, title, content, order.getId(), order.getOrderNo(), null);
+        notifyRider(order, toStatus, title, content);
+    }
+
+    /**
+     * 骑手-31：订单状态变更时同步给承接该订单的骑手推送一条站内消息。
+     * 未分配骑手时静默跳过，异常同样旁路吞掉，不影响订单主流程。
+     */
+    private void notifyRider(Order order, Integer toStatus, String title, String content) {
+        try {
+            DeliveryTask task = deliveryTaskMapper.selectOne(new LambdaQueryWrapper<DeliveryTask>()
+                    .eq(DeliveryTask::getOrderId, order.getId())
+                    .isNotNull(DeliveryTask::getRiderId)
+                    .orderByDesc(DeliveryTask::getId)
+                    .last("LIMIT 1"));
+            if (task == null || task.getRiderId() == null) {
+                return;
+            }
+            Rider rider = riderMapper.selectById(task.getRiderId());
+            if (rider == null || rider.getUserId() == null) {
+                return;
+            }
+            messageService.send(rider.getUserId(), 1, title, content,
+                    order.getId(), order.getOrderNo(), task.getId());
+        } catch (Exception e) {
+            log.warn("推送骑手订单消息失败，orderId={}, status={}", order.getId(), toStatus, e);
+        }
     }
 
     /**
