@@ -130,7 +130,8 @@ public class DeliveryServiceImpl implements DeliveryService {
     }
 
     @Override
-    public List<DeliveryTask> availableTasks(Long userId) {
+    public List<DeliveryTask> availableTasks(Long userId, String sortBy, BigDecimal minDistance,
+                                              BigDecimal maxDistance, BigDecimal minFee, BigDecimal maxFee) {
         Rider rider = requireApprovedRider(userId);
         if (!Integer.valueOf(1).equals(rider.getAccepting())) {
             throw BizException.of(ErrorCode.ORDER_STATUS_ILLEGAL, "已暂停接单，请先在「骑手认证」页开启接单开关");
@@ -152,6 +153,31 @@ public class DeliveryServiceImpl implements DeliveryService {
                 .filter(task -> task.getDistance() == null
                         || task.getDistance().compareTo(radius) <= 0)
                 .collect(java.util.stream.Collectors.toList());
+
+        // 骑手-13：按距离 / 收益区间筛选
+        tasks = tasks.stream()
+                .filter(task -> minDistance == null || task.getDistance() == null
+                        || task.getDistance().compareTo(minDistance) >= 0)
+                .filter(task -> maxDistance == null || task.getDistance() == null
+                        || task.getDistance().compareTo(maxDistance) <= 0)
+                .filter(task -> minFee == null || task.getFee() == null
+                        || task.getFee().compareTo(minFee) >= 0)
+                .filter(task -> maxFee == null || task.getFee() == null
+                        || task.getFee().compareTo(maxFee) <= 0)
+                .collect(java.util.stream.Collectors.toList());
+
+        // 骑手-09：接单偏好排序（distance 距离优先 / fee 收益优先）
+        java.util.Comparator<DeliveryTask> comparator = null;
+        if ("distance".equalsIgnoreCase(sortBy)) {
+            comparator = java.util.Comparator.comparing(DeliveryTask::getDistance,
+                    java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder()));
+        } else if ("fee".equalsIgnoreCase(sortBy)) {
+            comparator = java.util.Comparator.comparing(DeliveryTask::getFee,
+                    java.util.Comparator.nullsLast(java.util.Comparator.reverseOrder()));
+        }
+        if (comparator != null) {
+            tasks.sort(comparator);
+        }
 
         // 已达同时接单上限时不再展示新单
         if (ongoing >= maxOrders) {

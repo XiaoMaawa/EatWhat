@@ -58,6 +58,8 @@ public class Order extends BaseEntity {
     private String receiverPhone;
 
     private String receiverAddress;
+    private java.math.BigDecimal receiverLng;
+    private java.math.BigDecimal receiverLat;
 
     private String remark;
 
@@ -231,6 +233,21 @@ public class Order extends BaseEntity {
 
     public void setReceiverAddress(String receiverAddress) {
         this.receiverAddress = receiverAddress;
+    }
+    public java.math.BigDecimal getReceiverLng() {
+        return receiverLng;
+    }
+
+    public void setReceiverLng(java.math.BigDecimal receiverLng) {
+        this.receiverLng = receiverLng;
+    }
+
+    public java.math.BigDecimal getReceiverLat() {
+        return receiverLat;
+    }
+
+    public void setReceiverLat(java.math.BigDecimal receiverLat) {
+        this.receiverLat = receiverLat;
     }
 
     public String getRemark() {

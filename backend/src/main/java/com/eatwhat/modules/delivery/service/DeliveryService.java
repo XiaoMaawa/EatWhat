@@ -30,8 +30,16 @@ public interface DeliveryService {
 
     /**
      * 可抢的配送任务列表。
+     *
+     * @param sortBy 排序方式：distance 按距离升序 / fee 按配送费降序，空则按默认
+     * @param minDistance 最小配送距离（公里，可空）
+     * @param maxDistance 最大配送距离（公里，可空）
+     * @param minFee 最低配送费（元，可空）
+     * @param maxFee 最高配送费（元，可空）
      */
-    List<DeliveryTask> availableTasks(Long userId);
+    List<DeliveryTask> availableTasks(Long userId, String sortBy, java.math.BigDecimal minDistance,
+                                      java.math.BigDecimal maxDistance, java.math.BigDecimal minFee,
+                                      java.math.BigDecimal maxFee);
 
     /**
      * 更新骑手接单设置：接单开关、接单半径、同时接单上限。

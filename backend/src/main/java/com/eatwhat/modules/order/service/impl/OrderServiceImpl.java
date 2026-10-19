@@ -205,6 +205,8 @@ public class OrderServiceImpl implements OrderService {
         order.setReceiverName(address.getContactName());
         order.setReceiverPhone(address.getPhone());
         order.setReceiverAddress(fullAddress(address));
+        order.setReceiverLng(address.getLongitude());
+        order.setReceiverLat(address.getLatitude());
         checkRemark(request.getRemark());
         order.setRemark(request.getRemark());
         order.setTablewareCount(request.getTablewareCount() == null ? 0 : request.getTablewareCount());
@@ -479,9 +481,10 @@ public class OrderServiceImpl implements OrderService {
         Shop shop = shopMapper.selectById(order.getShopId());
         String pickup = shop == null ? "" : shop.getAddress();
         Double distance = null;
-        if (shop != null && shop.getLatitude() != null && shop.getLongitude() != null) {
-            // 无法获得收货坐标时按 0 距离估算
-            distance = 0.0;
+        if (shop != null && shop.getLatitude() != null && shop.getLongitude() != null
+                && order.getReceiverLng() != null && order.getReceiverLat() != null) {
+            distance = GeoUtils.distanceKm(shop.getLatitude(), shop.getLongitude(),
+                    order.getReceiverLat(), order.getReceiverLng()).doubleValue();
         }
         DeliveryTask task = deliveryService.createTask(orderId, order.getShopId(), pickup,
                 order.getReceiverAddress(), distance);

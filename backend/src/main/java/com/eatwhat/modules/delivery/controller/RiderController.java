@@ -58,8 +58,12 @@ public class RiderController {
 
     @Operation(summary = "可抢任务列表")
     @GetMapping("/tasks/available")
-    public R<List<DeliveryTask>> available() {
-        return R.ok(deliveryService.availableTasks(UserContext.userId()));
+    public R<List<DeliveryTask>> available(@RequestParam(required = false) String sortBy,
+                                           @RequestParam(required = false) java.math.BigDecimal minDistance,
+                                           @RequestParam(required = false) java.math.BigDecimal maxDistance,
+                                           @RequestParam(required = false) java.math.BigDecimal minFee,
+                                           @RequestParam(required = false) java.math.BigDecimal maxFee) {
+        return R.ok(deliveryService.availableTasks(UserContext.userId(), sortBy, minDistance, maxDistance, minFee, maxFee));
     }
 
     @Operation(summary = "更新接单设置")

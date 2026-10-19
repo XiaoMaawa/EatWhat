@@ -33,6 +33,28 @@
       <div v-if="profile" class="settings-hint">
         接单半径 {{ settings.maxDistance }} 公里 · 最多同时 {{ settings.maxOrders }} 单 · 每 30 秒自动刷新
       </div>
+      <div class="filter-bar">
+        <span class="filter-label">排序</span>
+        <el-radio-group v-model="sortBy" size="small" @change="load">
+          <el-radio-button value="">默认</el-radio-button>
+          <el-radio-button value="distance">距离优先</el-radio-button>
+          <el-radio-button value="fee">收益优先</el-radio-button>
+        </el-radio-group>
+        <span class="filter-label">距离</span>
+        <el-select v-model="distanceRange" size="small" style="width: 110px" @change="applyDistanceFilter">
+          <el-option label="全部" value="" />
+          <el-option label="3 公里内" value="0-3" />
+          <el-option label="3-5 公里" value="3-5" />
+          <el-option label="5 公里以上" value="5-" />
+        </el-select>
+        <span class="filter-label">配送费</span>
+        <el-select v-model="feeRange" size="small" style="width: 110px" @change="applyFeeFilter">
+          <el-option label="全部" value="" />
+          <el-option label="5 元以下" value="-5" />
+          <el-option label="5-8 元" value="5-8" />
+          <el-option label="8 元以上" value="8-" />
+        </el-select>
+      </div>
 
       <div class="tasks">
         <div v-for="task in tasks" :key="task.id" class="task">
@@ -83,6 +105,34 @@
         <el-button type="primary" :loading="savingSettings" @click="saveSettings(true)">保存</el-button>
       </template>
     </el-dialog>
+
+    <el-dialog v-model="filterVisible" title="订单筛选" width="420px">
+      <el-form label-width="90px">
+        <el-form-item label="配送距离">
+          <div class="filter-row">
+            <el-input-number v-model="filter.minDistance" :min="0" :max="20" :step="0.5" controls-position="right" />
+            <span class="unit">至</span>
+            <el-input-number v-model="filter.maxDistance" :min="0" :max="20" :step="0.5" controls-position="right" />
+            <span class="unit">公里</span>
+          </div>
+        </el-form-item>
+        <el-form-item label="配送费">
+          <div class="filter-row">
+            <el-input-number v-model="filter.minFee" :min="0" :max="50" :step="0.5" controls-position="right" />
+            <span class="unit">至</span>
+            <el-input-number v-model="filter.maxFee" :min="0" :max="50" :step="0.5" controls-position="right" />
+            <span class="unit">元</span>
+          </div>
+        </el-form-item>
+        <el-form-item label="">
+          <el-button link type="primary" @click="resetFilter">清空筛选条件</el-button>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="filterVisible = false">取消</el-button>
+        <el-button type="primary" @click="applyFilter">应用</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -100,17 +150,61 @@ const settingsVisible = ref(false)
 const savingSettings = ref(false)
 const settings = reactive({ accepting: 1, maxDistance: 5, maxOrders: 5 })
 
+// 骑手-09/13：接单偏好排序与区间筛选
+const sortBy = ref('')
+const distanceRange = ref('')
+const feeRange = ref('')
+const filterVisible = ref(false)
+const filter = reactive({ minDistance: undefined, maxDistance: undefined, minFee: undefined, maxFee: undefined })
+
+// 快捷区间下拉解析
+function applyDistanceFilter() {
+  const v = distanceRange.value
+  if (v === '') { filter.minDistance = undefined; filter.maxDistance = undefined }
+  else if (v === '0-3') { filter.minDistance = undefined; filter.maxDistance = 3 }
+  else if (v === '3-5') { filter.minDistance = 3; filter.maxDistance = 5 }
+  else if (v === '5-') { filter.minDistance = 5; filter.maxDistance = undefined }
+  load()
+}
+function applyFeeFilter() {
+  const v = feeRange.value
+  if (v === '') { filter.minFee = undefined; filter.maxFee = undefined }
+  else if (v === '-5') { filter.minFee = undefined; filter.maxFee = 5 }
+  else if (v === '5-8') { filter.minFee = 5; filter.maxFee = 8 }
+  else if (v === '8-') { filter.minFee = 8; filter.maxFee = undefined }
+  load()
+}
+
 let timer = null
 
 async function load() {
   loading.value = true
   try {
-    tasks.value = (await riderApi.available()) || []
+    const params = {}
+    if (sortBy.value) params.sortBy = sortBy.value
+    if (filter.minDistance != null) params.minDistance = filter.minDistance
+    if (filter.maxDistance != null) params.maxDistance = filter.maxDistance
+    if (filter.minFee != null) params.minFee = filter.minFee
+    if (filter.maxFee != null) params.maxFee = filter.maxFee
+    tasks.value = (await riderApi.available(params)) || []
   } catch {
     tasks.value = []
   } finally {
     loading.value = false
   }
+}
+
+function applyFilter() {
+  filterVisible.value = false
+  load()
+}
+
+function resetFilter() {
+  filter.minDistance = undefined
+  filter.maxDistance = undefined
+  filter.minFee = undefined
+  filter.maxFee = undefined
+  load()
 }
 
 async function saveSettings(closeDialog = false) {
@@ -175,6 +269,17 @@ onBeforeUnmount(() => {
 .switch-label {
   font-size: 13px;
   color: var(--ew-text-sub);
+}
+
+.filter-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filter-row .unit {
+  color: #909399;
+  font-size: 12px;
 }
 
 .settings-hint {
@@ -242,5 +347,17 @@ onBeforeUnmount(() => {
   justify-content: space-between;
   border-top: 1px solid var(--ew-border);
   padding-top: 10px;
+}
+
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 0 4px;
+  flex-wrap: wrap;
+}
+.filter-label {
+  color: #909399;
+  font-size: 13px;
 }
 </style>

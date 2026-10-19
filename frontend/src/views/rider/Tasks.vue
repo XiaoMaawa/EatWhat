@@ -30,8 +30,9 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="290" fixed="right">
+        <el-table-column label="操作" width="340" fixed="right">
           <template #default="{ row }">
+            <el-button v-if="row.status === 1 || row.status === 2" size="small" type="info" @click="navigate(row)">导航</el-button>
             <el-button v-if="row.status === 1" size="small" type="primary" @click="pickup(row)">确认取餐</el-button>
             <el-button v-if="row.status === 2" size="small" type="success" @click="deliver(row)">确认送达</el-button>
             <template v-if="row.status === 1 || row.status === 2">
@@ -138,6 +139,11 @@ async function load() {
 
 function search() {
   load()
+}
+
+function navigate(row) {
+  const q = encodeURIComponent(row.deliveryAddress || '')
+  window.open(`https://amap.com/dir?to=${q}`, '_blank')
 }
 
 async function pickup(row) {

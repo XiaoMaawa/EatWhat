@@ -195,6 +195,8 @@ CREATE TABLE `orders` (
   `receiver_name`    VARCHAR(50)     NOT NULL                COMMENT '收货人',
   `receiver_phone`   VARCHAR(20)     NOT NULL                COMMENT '收货电话',
   `receiver_address` VARCHAR(255)    NOT NULL                COMMENT '收货地址快照',
+  `receiver_lng`      DECIMAL(10,7)   DEFAULT NULL                                         COMMENT '收货经度',
+  `receiver_lat`      DECIMAL(10,7)   DEFAULT NULL                                         COMMENT '收货纬度',
   `remark`           VARCHAR(200)    DEFAULT NULL            COMMENT '订单备注',
   `tableware_count`  INT             NOT NULL DEFAULT 0      COMMENT '餐具份数',
   `cancel_reason`    VARCHAR(255)    DEFAULT NULL            COMMENT '取消原因',
