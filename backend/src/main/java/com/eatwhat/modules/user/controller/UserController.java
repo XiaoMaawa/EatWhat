@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -50,10 +51,13 @@ public class UserController {
         return R.ok();
     }
 
-    @Operation(summary = "修改密码")
+    @Operation(summary = "修改密码（顾客-07：修改成功后原令牌失效）")
     @PutMapping("/me/password")
-    public R<Void> changePassword(@Valid @RequestBody UpdateProfileRequest.ChangePasswordRequest request) {
-        userService.changePassword(request);
+    public R<Void> changePassword(@Valid @RequestBody UpdateProfileRequest.ChangePasswordRequest request,
+                                  @RequestHeader(value = "Authorization", required = false) String authorization) {
+        String accessToken = authorization != null && authorization.startsWith("Bearer ")
+                ? authorization.substring(7).trim() : null;
+        userService.changePassword(request, accessToken);
         return R.ok();
     }
 

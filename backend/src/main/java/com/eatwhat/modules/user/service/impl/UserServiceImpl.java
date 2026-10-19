@@ -29,17 +29,25 @@ import java.util.List;
 @Service
 public class UserServiceImpl implements UserService {
 
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(UserServiceImpl.class);
+
     private final SysUserMapper userMapper;
     private final UserAddressMapper addressMapper;
     private final PasswordEncoder passwordEncoder;
     private final OrderMapper orderMapper;
+    private final com.eatwhat.security.JwtTokenProvider tokenProvider;
+    private final com.eatwhat.security.TokenBlacklistService tokenBlacklistService;
 
     public UserServiceImpl(SysUserMapper userMapper, UserAddressMapper addressMapper, PasswordEncoder passwordEncoder,
-                           OrderMapper orderMapper) {
+                           OrderMapper orderMapper,
+                           com.eatwhat.security.JwtTokenProvider tokenProvider,
+                           com.eatwhat.security.TokenBlacklistService tokenBlacklistService) {
         this.userMapper = userMapper;
         this.addressMapper = addressMapper;
         this.passwordEncoder = passwordEncoder;
         this.orderMapper = orderMapper;
+        this.tokenProvider = tokenProvider;
+        this.tokenBlacklistService = tokenBlacklistService;
     }
 
     @Override
@@ -103,7 +111,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void changePassword(UpdateProfileRequest.ChangePasswordRequest request) {
+    public void changePassword(UpdateProfileRequest.ChangePasswordRequest request, String accessToken) {
         if (!request.getNewPassword().equals(request.getConfirmPassword())) {
             throw BizException.of(ErrorCode.PARAM_INVALID, "两次输入的新密码不一致");
         }
@@ -118,6 +126,14 @@ public class UserServiceImpl implements UserService {
         update.setId(user.getId());
         update.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userMapper.updateById(update);
+        // 顾客-07：密码变更后当前访问令牌立即失效，要求用新密码重新登录
+        if (accessToken != null && !accessToken.isBlank()) {
+            try {
+                tokenBlacklistService.revoke(tokenProvider.parse(accessToken));
+            } catch (Exception e) {
+                log.debug("修改密码后注销令牌跳过：{}", e.getMessage());
+            }
+        }
     }
 
     @Override

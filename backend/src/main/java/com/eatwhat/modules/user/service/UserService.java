@@ -18,8 +18,8 @@ public interface UserService {
     /** 修改个人资料 */
     void updateProfile(UpdateProfileRequest request);
 
-    /** 修改密码 */
-    void changePassword(UpdateProfileRequest.ChangePasswordRequest request);
+    /** 修改密码；传入当前访问令牌，修改成功后该令牌失效 */
+    void changePassword(UpdateProfileRequest.ChangePasswordRequest request, String accessToken);
 
     /** 地址列表 */
     List<UserAddress> listAddresses();
