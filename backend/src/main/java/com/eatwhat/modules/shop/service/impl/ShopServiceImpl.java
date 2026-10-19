@@ -44,19 +44,22 @@ public class ShopServiceImpl implements ShopService {
     private final DishCategoryMapper categoryMapper;
     private final ReviewMapper reviewMapper;
     private final com.eatwhat.modules.dish.service.DishSpecService dishSpecService;
+    private final com.eatwhat.modules.dish.service.DishComboService dishComboService;
 
     public ShopServiceImpl(ShopMapper shopMapper,
                            MerchantMapper merchantMapper,
                            DishMapper dishMapper,
                            DishCategoryMapper categoryMapper,
                            ReviewMapper reviewMapper,
-                           @org.springframework.context.annotation.Lazy com.eatwhat.modules.dish.service.DishSpecService dishSpecService) {
+                           @org.springframework.context.annotation.Lazy com.eatwhat.modules.dish.service.DishSpecService dishSpecService,
+                           @org.springframework.context.annotation.Lazy com.eatwhat.modules.dish.service.DishComboService dishComboService) {
         this.shopMapper = shopMapper;
         this.merchantMapper = merchantMapper;
         this.dishMapper = dishMapper;
         this.categoryMapper = categoryMapper;
         this.reviewMapper = reviewMapper;
         this.dishSpecService = dishSpecService;
+        this.dishComboService = dishComboService;
     }
 
     @Override
@@ -149,10 +152,20 @@ public class ShopServiceImpl implements ShopService {
                 dishSpecService.mapSpecsByDish(dishIds);
         Map<Long, List<com.eatwhat.modules.dish.entity.DishAddon>> addonMap =
                 dishSpecService.mapAddonsByDish(dishIds);
+        // 商家-28：套餐组成项
+        List<Long> comboIds = dishes.stream()
+                .filter(d -> Integer.valueOf(1).equals(d.getIsCombo()))
+                .map(Dish::getId)
+                .collect(Collectors.toList());
+        Map<Long, List<com.eatwhat.modules.dish.entity.DishComboItem>> comboMap =
+                dishComboService.mapItemsByCombo(comboIds);
         for (Dish dish : dishes) {
             dish.setSpecs(specMap.get(dish.getId()));
             dish.setAddons(addonMap.get(dish.getId()));
             dish.setGoodRate(reviewMapper.goodRateByDish(dish.getId()));
+            if (Integer.valueOf(1).equals(dish.getIsCombo())) {
+                dish.setComboItems(comboMap.get(dish.getId()));
+            }
         }
         vo.setCategories(categoryVos);
         return vo;

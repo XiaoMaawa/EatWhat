@@ -44,6 +44,9 @@ public class Dish extends BaseEntity {
 
     private Integer sort;
 
+    /** 商家-28：是否套餐 0 否 1 是 */
+    private Integer isCombo;
+
     @TableLogic
     @JsonIgnore
     private Integer deleted;
@@ -63,6 +66,15 @@ public class Dish extends BaseEntity {
     /** 近 30 天好评率（非数据库字段，保留一位小数） */
     @TableField(exist = false)
     private java.math.BigDecimal goodRate;
+
+    /** 商家-28：套餐组成项（非数据库字段） */
+    @TableField(exist = false)
+    private java.util.List<DishComboItem> comboItems;
+
+    /** 商家-28：套餐内菜品原价合计（非数据库字段） */
+    @TableField(exist = false)
+    private java.math.BigDecimal comboOriginalAmount;
+
     /** 所属店铺名称（非数据库字段，后台展示用） */
     @TableField(exist = false)
     private String shopName;
@@ -200,6 +212,30 @@ public class Dish extends BaseEntity {
 
     public void setGoodRate(java.math.BigDecimal goodRate) {
         this.goodRate = goodRate;
+    }
+
+    public Integer getIsCombo() {
+        return isCombo;
+    }
+
+    public void setIsCombo(Integer isCombo) {
+        this.isCombo = isCombo;
+    }
+
+    public java.util.List<DishComboItem> getComboItems() {
+        return comboItems;
+    }
+
+    public void setComboItems(java.util.List<DishComboItem> comboItems) {
+        this.comboItems = comboItems;
+    }
+
+    public java.math.BigDecimal getComboOriginalAmount() {
+        return comboOriginalAmount;
+    }
+
+    public void setComboOriginalAmount(java.math.BigDecimal comboOriginalAmount) {
+        this.comboOriginalAmount = comboOriginalAmount;
     }
 
 }

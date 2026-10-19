@@ -43,7 +43,10 @@
                 <span v-else>🍚</span>
               </div>
               <div>
-                <div class="dish-name">{{ row.name }}</div>
+                <div class="dish-name">
+                  {{ row.name }}
+                  <el-tag v-if="row.isCombo === 1" size="small" type="warning" effect="plain">套餐</el-tag>
+                </div>
                 <div class="ew-muted">{{ row.description || '暂无描述' }}</div>
               </div>
             </div>
@@ -71,7 +74,7 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="270" fixed="right">
+        <el-table-column label="操作" width="360" fixed="right">
           <template #default="{ row }">
             <el-button size="small" link type="primary" @click="openDishDialog(row)">编辑</el-button>
             <el-button
@@ -83,6 +86,9 @@
               {{ row.status === 1 ? '下架' : '上架' }}
             </el-button>
             <el-button size="small" link type="primary" @click="openSpecDialog(row)">规格加料</el-button>
+            <el-button size="small" link type="primary" @click="openComboDialog(row)">
+              {{ row.isCombo === 1 ? '套餐配置' : '设为套餐' }}
+            </el-button>
             <el-button size="small" link type="danger" @click="removeDish(row)">删除</el-button>
           </template>
         </el-table-column>
@@ -239,7 +245,68 @@
         <el-button @click="addonFormVisible = false">取消</el-button>
         <el-button type="primary" :loading="specSubmitting" @click="submitAddon">保存</el-button>
       </template>
-    </el-dialog>  </div>
+    </el-dialog>
+
+    <!-- 商家-28：套餐配置 -->
+    <el-dialog v-model="comboVisible" :title="`套餐配置 - ${comboDish?.name || ''}`" width="680px">
+      <el-alert
+        type="info"
+        :closable="false"
+        show-icon
+        class="combo-tip"
+        title="套餐自身是一条菜品记录，价格取该菜品的价格；下单时会同步扣减组成菜品的库存"
+      />
+      <div class="combo-head">
+        <div class="combo-price">
+          套餐价 <b>¥{{ money(comboDish?.price) }}</b>
+          <span class="ew-muted">
+            组成菜品原价合计 ¥{{ money(comboOriginal) }}
+            <template v-if="comboOriginal > 0">
+              （优惠 ¥{{ money(Math.max(0, comboOriginal - Number(comboDish?.price || 0))) }}）
+            </template>
+          </span>
+        </div>
+        <div class="combo-actions">
+          <el-select v-model="comboPickId" placeholder="选择本店菜品" filterable style="width: 200px">
+            <el-option
+              v-for="d in comboPickOptions"
+              :key="d.id"
+              :label="`${d.name}（¥${money(d.price)}）`"
+              :value="d.id"
+            />
+          </el-select>
+          <el-button type="primary" plain :disabled="!comboPickId" @click="addComboItem">加入套餐</el-button>
+        </div>
+      </div>
+      <el-table :data="comboItems" size="small" border>
+        <el-table-column prop="dishName" label="菜品" min-width="160" />
+        <el-table-column label="单价" width="100">
+          <template #default="{ row }">¥{{ money(comboDishPrice(row.dishId)) }}</template>
+        </el-table-column>
+        <el-table-column label="份数" width="140">
+          <template #default="{ row }">
+            <el-input-number v-model="row.quantity" :min="1" :max="20" size="small" style="width: 100px" />
+          </template>
+        </el-table-column>
+        <el-table-column label="小计" width="100">
+          <template #default="{ row }">
+            ¥{{ money(Number(comboDishPrice(row.dishId)) * (row.quantity || 1)) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="80">
+          <template #default="{ $index }">
+            <el-button size="small" link type="danger" @click="comboItems.splice($index, 1)">移除</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+      <el-empty v-if="comboItems.length === 0" description="还没有加入菜品，从上方下拉框选择" :image-size="60" />
+      <template #footer>
+        <el-button v-if="comboDish?.isCombo === 1" type="danger" plain @click="cancelCombo">取消套餐</el-button>
+        <el-button @click="comboVisible = false">关闭</el-button>
+        <el-button type="primary" :loading="comboSubmitting" @click="submitCombo">保存套餐</el-button>
+      </template>
+    </el-dialog>
+  </div>
 </template>
 
 <script setup>
@@ -564,6 +631,102 @@ async function removeAddon(row) {
     // 错误提示由请求拦截器统一处理
   }
 }
+
+// 商家-28：套餐配置
+const comboVisible = ref(false)
+const comboSubmitting = ref(false)
+const comboDish = ref(null)
+const comboItems = ref([])
+const comboPickId = ref(null)
+
+const comboOriginal = computed(() =>
+  comboItems.value.reduce(
+    (sum, item) => sum + Number(comboDishPrice(item.dishId) || 0) * (item.quantity || 1),
+    0
+  )
+)
+
+const comboPickOptions = computed(() =>
+  dishes.value.filter((d) => d.id !== comboDish.value?.id && d.isCombo !== 1)
+)
+
+function comboDishPrice(dishId) {
+  return dishes.value.find((d) => d.id === dishId)?.price ?? 0
+}
+
+async function openComboDialog(row) {
+  comboDish.value = row
+  comboPickId.value = null
+  comboVisible.value = true
+  try {
+    const items = await merchantApi.comboItems(row.id)
+    comboItems.value = (items || []).map((item) => ({ ...item, quantity: item.quantity || 1 }))
+  } catch {
+    comboItems.value = []
+  }
+}
+
+function addComboItem() {
+  const dish = dishes.value.find((d) => d.id === comboPickId.value)
+  if (!dish) return
+  if (comboItems.value.some((item) => item.dishId === dish.id)) {
+    ElMessage.warning('该菜品已在套餐中')
+    return
+  }
+  comboItems.value.push({
+    dishId: dish.id,
+    dishName: dish.name,
+    quantity: 1,
+    sort: comboItems.value.length
+  })
+  comboPickId.value = null
+}
+
+async function submitCombo() {
+  if (comboItems.value.length === 0) {
+    ElMessage.warning('套餐至少需要一个菜品')
+    return
+  }
+  if (comboOriginal.value > 0 && Number(comboDish.value.price) > comboOriginal.value) {
+    ElMessage.warning(`套餐价不能高于组成菜品原价合计 ¥${money(comboOriginal.value)}`)
+    return
+  }
+  comboSubmitting.value = true
+  try {
+    await merchantApi.saveComboItems(comboDish.value.id, {
+      items: comboItems.value.map((item, index) => ({
+        dishId: item.dishId,
+        quantity: item.quantity || 1,
+        sort: index
+      }))
+    })
+    ElMessage.success('套餐已保存')
+    comboVisible.value = false
+    await loadDishes()
+  } catch {
+    // 错误提示由请求拦截器统一处理
+  } finally {
+    comboSubmitting.value = false
+  }
+}
+
+async function cancelCombo() {
+  try {
+    await ElMessageBox.confirm('取消后该菜品将变回普通菜品，套餐组成会被清空，确定吗？', '取消套餐', {
+      type: 'warning'
+    })
+  } catch {
+    return
+  }
+  try {
+    await merchantApi.markCombo(comboDish.value.id, 0)
+    ElMessage.success('已取消套餐')
+    comboVisible.value = false
+    await loadDishes()
+  } catch {
+    // 错误提示由请求拦截器统一处理
+  }
+}
 </script>
 
 <style scoped>
@@ -654,5 +817,33 @@ async function removeAddon(row) {
   align-items: center;
   gap: 12px;
   margin-bottom: 12px;
+}
+
+.combo-tip {
+  margin-bottom: 12px;
+}
+
+.combo-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.combo-price {
+  font-size: 14px;
+}
+
+.combo-price b {
+  color: #f56c6c;
+  font-size: 18px;
+  margin-right: 8px;
+}
+
+.combo-actions {
+  display: flex;
+  gap: 10px;
 }
 </style>

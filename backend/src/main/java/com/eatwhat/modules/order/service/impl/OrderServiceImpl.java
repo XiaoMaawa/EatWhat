@@ -21,6 +21,7 @@ import com.eatwhat.modules.delivery.mapper.RiderMapper;
 import com.eatwhat.modules.delivery.service.DeliveryService;
 import com.eatwhat.modules.dish.entity.Dish;
 import com.eatwhat.modules.dish.entity.DishAddon;
+import com.eatwhat.modules.dish.entity.DishComboItem;
 import com.eatwhat.modules.dish.entity.DishSpec;
 import com.eatwhat.modules.dish.mapper.DishMapper;
 import com.eatwhat.modules.merchant.entity.Merchant;
@@ -78,6 +79,7 @@ public class OrderServiceImpl implements OrderService {
     private final MerchantMapper merchantMapper;
     private final DeliveryService deliveryService;
     private final MessageService messageService;
+    private final com.eatwhat.modules.dish.service.DishComboService dishComboService;
 
     /** 敏感词服务；单元测试环境下为空，调用前须判空 */
     @Autowired(required = false)
@@ -96,7 +98,8 @@ public class OrderServiceImpl implements OrderService {
                             RiderMapper riderMapper,
                             MerchantMapper merchantMapper,
                             @Lazy DeliveryService deliveryService,
-                            @Lazy MessageService messageService) {
+                            @Lazy MessageService messageService,
+                            com.eatwhat.modules.dish.service.DishComboService dishComboService) {
         this.orderMapper = orderMapper;
         this.orderItemMapper = orderItemMapper;
         this.statusLogMapper = statusLogMapper;
@@ -111,6 +114,7 @@ public class OrderServiceImpl implements OrderService {
         this.merchantMapper = merchantMapper;
         this.deliveryService = deliveryService;
         this.messageService = messageService;
+        this.dishComboService = dishComboService;
     }
 
     @Override
@@ -243,10 +247,7 @@ public class OrderServiceImpl implements OrderService {
         for (OrderItem item : items) {
             item.setOrderId(order.getId());
             orderItemMapper.insert(item);
-            int rows = dishMapper.deductStock(item.getDishId(), item.getQuantity());
-            if (rows == 0) {
-                throw BizException.of(ErrorCode.STOCK_NOT_ENOUGH, "菜品【" + item.getDishName() + "】库存不足");
-            }
+            deductDishStock(item.getDishId(), item.getQuantity());
         }
 
         // 清空该店铺购物车
@@ -622,7 +623,46 @@ public class OrderServiceImpl implements OrderService {
         List<OrderItem> items = orderItemMapper.selectList(new LambdaQueryWrapper<OrderItem>()
                 .eq(OrderItem::getOrderId, orderId));
         for (OrderItem item : items) {
-            dishMapper.restoreStock(item.getDishId(), item.getQuantity());
+            releaseDishStock(item.getDishId(), item.getQuantity());
+        }
+    }
+
+    /**
+     * 扣减菜品库存（商家-28：套餐同时扣减组成菜品的库存）。
+     */
+    private void deductDishStock(Long dishId, Integer quantity) {
+        int rows = dishMapper.deductStock(dishId, quantity);
+        if (rows == 0) {
+            Dish dish = dishMapper.selectById(dishId);
+            throw BizException.of(ErrorCode.STOCK_NOT_ENOUGH,
+                    "菜品【" + (dish == null ? dishId : dish.getName()) + "】库存不足");
+        }
+        Dish dish = dishMapper.selectById(dishId);
+        if (dish != null && Integer.valueOf(1).equals(dish.getIsCombo())) {
+            for (DishComboItem comboItem : dishComboService.mapItemsByCombo(List.of(dishId))
+                    .getOrDefault(dishId, List.of())) {
+                int need = comboItem.getQuantity() == null ? 1 : comboItem.getQuantity();
+                int subRows = dishMapper.deductStock(comboItem.getDishId(), need * quantity);
+                if (subRows == 0) {
+                    throw BizException.of(ErrorCode.STOCK_NOT_ENOUGH,
+                            "套餐【" + dish.getName() + "】中的菜品【" + comboItem.getDishName() + "】库存不足");
+                }
+            }
+        }
+    }
+
+    /**
+     * 归还菜品库存（商家-28：套餐同时归还组成菜品的库存）。
+     */
+    private void releaseDishStock(Long dishId, Integer quantity) {
+        dishMapper.restoreStock(dishId, quantity);
+        Dish dish = dishMapper.selectById(dishId);
+        if (dish != null && Integer.valueOf(1).equals(dish.getIsCombo())) {
+            for (DishComboItem comboItem : dishComboService.mapItemsByCombo(List.of(dishId))
+                    .getOrDefault(dishId, List.of())) {
+                int need = comboItem.getQuantity() == null ? 1 : comboItem.getQuantity();
+                dishMapper.restoreStock(comboItem.getDishId(), need * quantity);
+            }
         }
     }
 

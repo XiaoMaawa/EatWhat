@@ -147,8 +147,17 @@
                 <span v-else>🍱</span>
               </div>
               <div class="dish-info">
-                <div class="dish-name">{{ dish.name }}</div>
+                <div class="dish-name">
+                  {{ dish.name }}
+                  <el-tag v-if="dish.isCombo === 1" size="small" type="warning" effect="plain">套餐</el-tag>
+                </div>
                 <div class="ew-muted text-ellipsis">{{ dish.description || '—' }}</div>
+                <div v-if="dish.isCombo === 1 && dish.comboItems && dish.comboItems.length" class="combo-items">
+                  含
+                  <span v-for="(ci, idx) in dish.comboItems" :key="ci.id || idx" class="combo-item">
+                    {{ ci.dishName }} × {{ ci.quantity }}
+                  </span>
+                </div>
                 <div class="ew-muted">
                   月售 {{ dish.monthSales }} · 库存 {{ dish.stock }}
                   <span v-if="dish.goodRate != null" class="good-rate">好评率 {{ dish.goodRate }}%</span>
@@ -676,6 +685,21 @@ onMounted(async () => {
 .good-rate {
   margin-left: 8px;
   color: #e6a23c;
+}
+
+.combo-items {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #e6a23c;
+  line-height: 1.6;
+}
+
+.combo-item {
+  display: inline-block;
+  margin-right: 8px;
+  padding: 0 6px;
+  background: #fdf6ec;
+  border-radius: 4px;
 }
 
 .dish-picker .picker-dish {

@@ -98,6 +98,9 @@ export const merchantApi = {
   createAddon: (dishId, data) => request.post(`/merchant/dishes/${dishId}/addons`, data),
   updateAddon: (dishId, addonId, data) => request.put(`/merchant/dishes/${dishId}/addons/${addonId}`, data),
   removeAddon: (dishId, addonId) => request.delete(`/merchant/dishes/${dishId}/addons/${addonId}`),
+  comboItems: (dishId) => request.get(`/merchant/dishes/${dishId}/combo`),
+  saveComboItems: (dishId, data) => request.put(`/merchant/dishes/${dishId}/combo`, data),
+  markCombo: (dishId, isCombo) => request.patch(`/merchant/dishes/${dishId}/combo/flag`, { isCombo }),
 
   orders: (params) => request.get('/merchant/orders', { params }),
   accept: (id) => request.patch(`/merchant/orders/${id}/accept`),

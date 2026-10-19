@@ -149,6 +149,7 @@ CREATE TABLE `dish` (
   `month_sales` INT             NOT NULL DEFAULT 0      COMMENT '月销量',
   `status`      TINYINT         NOT NULL DEFAULT 1      COMMENT '1在售 0下架 2售罄',
   `has_spec`    TINYINT         NOT NULL DEFAULT 0      COMMENT '是否有规格 0否 1是',
+  `is_combo`    TINYINT         NOT NULL DEFAULT 0      COMMENT '是否套餐 0否 1是',
   `sort`        INT             NOT NULL DEFAULT 0      COMMENT '排序值',
   `created_at`  DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updated_at`  DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
@@ -598,6 +599,24 @@ CREATE TABLE `dish_addon` (
   PRIMARY KEY (`id`),
   KEY `idx_dish_addon_dish` (`dish_id`, `sort`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='菜品加料表';
+
+-- ---------------------------------------------------------------------
+-- 25. 套餐组成表（商家-28）
+-- ---------------------------------------------------------------------
+DROP TABLE IF EXISTS `dish_combo_item`;
+CREATE TABLE `dish_combo_item` (
+  `id`         BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `combo_id`   BIGINT UNSIGNED NOT NULL                COMMENT '套餐菜品ID(dish.id)',
+  `dish_id`    BIGINT UNSIGNED NOT NULL                COMMENT '组成菜品ID',
+  `dish_name`  VARCHAR(100)    NOT NULL                COMMENT '组成菜品名称快照',
+  `quantity`   INT             NOT NULL DEFAULT 1      COMMENT '份数',
+  `sort`       INT             NOT NULL DEFAULT 0      COMMENT '排序',
+  `created_at` DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted`    TINYINT         NOT NULL DEFAULT 0      COMMENT '逻辑删除',
+  PRIMARY KEY (`id`),
+  KEY `idx_combo_item_combo` (`combo_id`, `sort`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='套餐组成表';
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- =====================================================================
@@ -665,7 +684,20 @@ INSERT INTO `dish` (`id`, `shop_id`, `category_id`, `name`, `image`, `descriptio
 (15, 3, 7, '鸡胸肉沙拉', NULL, '低温慢煮鸡胸，油醋汁', 25.00, 50,  150,  1, 1),
 (16, 3, 7, '牛油果藜麦沙拉', NULL, '藜麦牛油果，膳食纤维丰富', 32.00, 40,  98,   1, 2),
 (17, 3, 8, '低卡轻食套餐 A', NULL, '鸡胸沙拉 + 全麦面包 + 无糖豆浆', 38.00, 30, 88, 1, 1),
-(18, 3, 8, '低卡轻食套餐 B', NULL, '牛油果沙拉 + 水煮蛋 + 黑咖啡', 42.00, 30, 66, 1, 2);
+(18, 3, 8, '低卡轻食套餐 B', NULL, '牛油果沙拉 + 水煮蛋 + 黑咖啡', 42.00, 30, 66, 1, 2),
+(19, 1, 2, '川味双拼套餐', NULL, '宫保鸡丁 + 麻婆豆腐 + 米饭（大份），一人食刚好', 49.00, 50, 130, 1, 5),
+(20, 2, 4, '早餐面包套餐', NULL, '原味吐司 + 可颂牛角包 + 美式咖啡，元气早餐', 36.00, 40, 95, 1, 3);
+
+-- 商家-28：套餐标记与组成
+UPDATE `dish` SET `is_combo` = 1 WHERE `id` IN (19, 20);
+
+INSERT INTO `dish_combo_item` (`combo_id`, `dish_id`, `dish_name`, `quantity`, `sort`) VALUES
+(19, 1, '宫保鸡丁', 1, 0),
+(19, 2, '麻婆豆腐', 1, 1),
+(19, 5, '米饭（大份）', 1, 2),
+(20, 9, '原味吐司', 1, 0),
+(20, 10, '可颂牛角包', 1, 1),
+(20, 13, '美式咖啡', 1, 2);
 
 -- 菜品规格与加料种子数据（米饭支持大份/中份/小份与加料）
 UPDATE `dish` SET `has_spec` = 1 WHERE `id` IN (5, 6);
