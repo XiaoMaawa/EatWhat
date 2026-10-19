@@ -68,7 +68,14 @@ public class ShopServiceImpl implements ShopService {
         LambdaQueryWrapper<Shop> wrapper = new LambdaQueryWrapper<Shop>()
                 .eq(Shop::getStatus, 1);
         if (keyword != null && !keyword.isBlank()) {
-            wrapper.like(Shop::getName, keyword.trim());
+            String kw = keyword.trim();
+            // 顾客-18：按店铺名称与菜品名称关键词搜索
+            List<Long> dishShopIds = shopIdsByDishKeyword(kw);
+            if (dishShopIds.isEmpty()) {
+                wrapper.like(Shop::getName, kw);
+            } else {
+                wrapper.and(w -> w.like(Shop::getName, kw).or().in(Shop::getId, dishShopIds));
+            }
         }
         Page<Shop> result = shopMapper.selectPage(new Page<>(page, size), wrapper);
         List<Shop> records = result.getRecords();
@@ -78,7 +85,10 @@ public class ShopServiceImpl implements ShopService {
         String sort = sortBy == null ? "" : sortBy.trim();
         switch (sort) {
             case "score" -> records.sort(Comparator.comparing(
-                    (Shop s) -> s.getAvgScore() == null ? BigDecimal.ZERO : s.getAvgScore()).reversed());
+                            (Shop s) -> s.getAvgScore() == null ? BigDecimal.ZERO : s.getAvgScore()).reversed()
+                    // 顾客-20：评分相同则按月售降序
+                    .thenComparing(Comparator.comparing(
+                            (Shop s) -> s.getMonthSales() == null ? 0 : s.getMonthSales()).reversed()));
             case "sales" -> records.sort(Comparator.comparing(
                     (Shop s) -> s.getMonthSales() == null ? 0 : s.getMonthSales()).reversed());
             case "distance" -> records.sort(Comparator.comparing(
@@ -89,7 +99,38 @@ public class ShopServiceImpl implements ShopService {
                         (Shop s) -> s.getMonthSales() == null ? 0 : s.getMonthSales()).reversed());
             }
         }
+        // 顾客-18：结果里命中的菜品名，供前端高亮匹配词
+        records.forEach(s -> s.setMatchedDishNames(
+                keyword == null || keyword.isBlank() ? List.of() : matchedDishNames(s.getId(), keyword.trim())));
         return PageResult.of(records, result.getTotal(), result.getCurrent(), result.getSize());
+    }
+
+    /**
+     * 顾客-18：关键词命中的菜品所属店铺 ID 集合。
+     */
+    private List<Long> shopIdsByDishKeyword(String keyword) {
+        List<Dish> dishes = dishMapper.selectList(new LambdaQueryWrapper<Dish>()
+                .like(Dish::getName, keyword)
+                .eq(Dish::getStatus, 1)
+                .select(Dish::getShopId));
+        return dishes.stream()
+                .map(Dish::getShopId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 顾客-18：该店铺下命中关键词的菜品名称列表（最多 3 个）。
+     */
+    private List<String> matchedDishNames(Long shopId, String keyword) {
+        List<Dish> dishes = dishMapper.selectList(new LambdaQueryWrapper<Dish>()
+                .eq(Dish::getShopId, shopId)
+                .like(Dish::getName, keyword)
+                .eq(Dish::getStatus, 1)
+                .orderByDesc(Dish::getMonthSales)
+                .last("LIMIT 3"));
+        return dishes.stream().map(Dish::getName).collect(Collectors.toList());
     }
 
     @Override

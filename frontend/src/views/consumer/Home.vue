@@ -28,7 +28,7 @@
     <div class="toolbar">
       <el-input
         v-model="query.keyword"
-        placeholder="搜店铺名称"
+        placeholder="搜店铺名称或菜品名称"
         clearable
         class="search"
         @keyup.enter="load"
@@ -43,6 +43,7 @@
       <el-radio-group v-model="query.sortBy" @change="load">
         <el-radio-button value="score">评分优先</el-radio-button>
         <el-radio-button value="sales">销量优先</el-radio-button>
+        <el-radio-button value="distance">距离最近</el-radio-button>
       </el-radio-group>
     </div>
 
@@ -59,15 +60,26 @@
         </div>
         <div class="shop-info">
           <div class="shop-name">
-            {{ shop.name }}
+            <span v-html="highlight(shop.name)"></span>
             <el-tag v-if="!shop.isOpen" size="small" type="info">休息中</el-tag>
           </div>
           <div class="shop-desc text-ellipsis">{{ shop.description || '暂无简介' }}</div>
+          <div v-if="shop.matchedDishNames && shop.matchedDishNames.length" class="shop-dishes">
+            菜品匹配：
+            <span v-for="(n, i) in shop.matchedDishNames" :key="n" class="dish-hit">
+              <span v-html="highlight(n)"></span>
+              <span v-if="i < shop.matchedDishNames.length - 1">、</span>
+            </span>
+          </div>
           <div class="shop-meta">
             <el-rate :model-value="Number(shop.avgScore) || 0" disabled size="small" allow-half />
             <span class="ew-muted">{{ shop.avgScore }} 分</span>
             <el-divider direction="vertical" />
             <span class="ew-muted">月售 {{ shop.monthSales }}</span>
+            <template v-if="shop.distance != null">
+              <el-divider direction="vertical" />
+              <span class="ew-muted">{{ shop.distance }} km</span>
+            </template>
           </div>
           <div class="shop-meta">
             <span class="ew-muted">起送 ¥{{ shop.minOrderAmount }}</span>
@@ -101,7 +113,7 @@
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { shopApi, commonApi } from '@/api'
+import { shopApi, commonApi, userApi } from '@/api'
 import { Search } from '@element-plus/icons-vue'
 
 const router = useRouter()
@@ -109,6 +121,7 @@ const loading = ref(false)
 const shops = ref([])
 const total = ref(0)
 const announcements = ref([])
+const defaultAddress = ref(null)
 
 const query = reactive({
   page: 1,
@@ -120,7 +133,13 @@ const query = reactive({
 async function load() {
   loading.value = true
   try {
-    const data = await shopApi.list({ ...query })
+    const params = { ...query }
+    // 顾客-19：带上默认收货地址坐标，列表即可展示距离并按距离排序
+    if (defaultAddress.value) {
+      params.longitude = defaultAddress.value.longitude
+      params.latitude = defaultAddress.value.latitude
+    }
+    const data = await shopApi.list(params)
     shops.value = data?.records || []
     total.value = data?.total || 0
   } finally {
@@ -128,8 +147,36 @@ async function load() {
   }
 }
 
+// 顾客-19：取默认收货地址用于距离计算
+async function loadDefaultAddress() {
+  try {
+    const list = await userApi.addresses()
+    const arr = Array.isArray(list) ? list : list?.records || []
+    defaultAddress.value = arr.find((a) => a.isDefault === 1) || arr[0] || null
+  } catch {
+    defaultAddress.value = null
+  }
+}
+
 function goShop(id) {
   router.push(`/shop/${id}`)
+}
+
+// 顾客-18：搜索关键词高亮
+function escapeHtml(text) {
+  return String(text == null ? '' : text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+}
+
+function highlight(text) {
+  const safe = escapeHtml(text)
+  const kw = (query.keyword || '').trim()
+  if (!kw) return safe
+  const escaped = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  return safe.replace(new RegExp(escaped, 'gi'), (m) => `<span class="kw-hit">${m}</span>`)
 }
 
 async function loadAnnouncements() {
@@ -141,7 +188,8 @@ async function loadAnnouncements() {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
+  await loadDefaultAddress()
   load()
   loadAnnouncements()
 })
@@ -276,6 +324,24 @@ onMounted(() => {
 .shop-desc {
   color: #909399;
   font-size: 13px;
+}
+
+.shop-dishes {
+  font-size: 12px;
+  color: #909399;
+}
+
+.dish-hit {
+  color: #e6a23c;
+}
+
+.shop-name :deep(.kw-hit),
+.shop-dishes :deep(.kw-hit) {
+  color: var(--el-color-primary);
+  font-weight: 700;
+  background: var(--el-color-primary-light-9);
+  border-radius: 3px;
+  padding: 0 2px;
 }
 
 .shop-meta {

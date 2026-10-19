@@ -12,6 +12,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.List;
 
 /**
  * 店铺实体（shop）。
@@ -89,6 +90,18 @@ public class Shop extends BaseEntity {
     /** 商家审核状态（非数据库字段，后台展示用） */
     @TableField(exist = false)
     private Integer merchantAuditStatus;
+
+    /** 顾客-18：关键词命中的菜品名称（非数据库字段，供列表高亮） */
+    @TableField(exist = false)
+    private List<String> matchedDishNames;
+
+    public List<String> getMatchedDishNames() {
+        return matchedDishNames;
+    }
+
+    public void setMatchedDishNames(List<String> matchedDishNames) {
+        this.matchedDishNames = matchedDishNames;
+    }
 
     public Long getId() {
         return id;
