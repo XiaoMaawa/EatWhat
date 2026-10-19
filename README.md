@@ -13,14 +13,14 @@
 
 本项目的技术重点在于两个问题：
 
-1. **多角色权限隔离** —— 基于 Spring Security 实现接口级 RBAC，并在 Service 层补充数据级归属校验，防止横向越权；
+1. **多角色权限隔离** —— 基于 JWT 令牌与拦截器实现接口级 RBAC（`@PublicApi` / `@RequireRole`），并在 Service 层补充数据级归属校验，防止横向越权；
 2. **订单全流程状态流转** —— 用枚举约束状态机、用乐观锁保证并发安全、用状态日志留存完整轨迹，避免状态错乱。
 
 ### 技术栈
 
 | 层 | 技术 |
 | --- | --- |
-| 后端 | Spring Boot 3.2、Spring Security 6、MyBatis-Plus、MySQL 8.0 |
+| 后端 | Spring Boot 3.2、MyBatis-Plus 3.5、MySQL 8.0、JWT(jjwt 0.11)、Knife4j |
 | 前端 | Vue 3、Element Plus、Pinia、Vue Router、Vite |
 | 构建 | Maven、pnpm |
 
@@ -30,10 +30,10 @@
 
 | 角色 | 核心功能 |
 | --- | --- |
-| 普通用户 | 注册登录、浏览店铺与菜品、购物车、下单支付、订单跟踪、售后、评价、消息 |
-| 入驻商家 | 资质入驻、店铺维护、菜品与分类管理、库存、上下架、接单/拒单/出餐、售后、经营统计 |
-| 配送骑手 | 资质认证、接单设置、抢单、取餐、送达、收入统计、消息 |
-| 平台管理员 | 用户管理、商家与骑手资质审核、订单监管与退款裁定、菜品监管、内容管理、数据看板 |
+| 普通用户 | 注册登录、浏览店铺与菜品、购物车、下单支付、订单跟踪、取消订单、订单评价、收货地址管理 |
+| 入驻商家 | 资质入驻、店铺维护、菜品与分类管理、库存与上下架、接单/拒单/出餐、评价回复、经营统计 |
+| 配送骑手 | 资质认证、抢单大厅、接单取餐、送达确认、收入统计 |
+| 平台管理员 | 用户管理、商家与骑手资质审核、订单监管与强制退款、菜品监管、数据看板 |
 
 功能项的完整清单见 [项目功能清单](docs/09-项目功能清单.md)。
 
@@ -87,13 +87,21 @@
 ```bash
 cd backend
 # 配置环境变量（数据库密码、JWT 密钥）
-export DB_USERNAME=eatwhat_app
+export DB_USERNAME=root
 export DB_PASSWORD=your_password
 export JWT_SECRET=your_32_bytes_secret_at_least
 mvn spring-boot:run
 ```
 
 服务默认监听 `http://localhost:8080`，接口文档见 `http://localhost:8080/doc.html`。
+
+也可以先打包再运行：
+
+```bash
+cd backend
+mvn clean package -DskipTests
+java -Dfile.encoding=UTF-8 -jar target/eatwhat-backend.jar
+```
 
 ### 前端启动
 
@@ -103,13 +111,24 @@ pnpm install
 pnpm dev
 ```
 
-前端默认运行在 `http://localhost:5173`。
+前端默认运行在 `http://localhost:5173`，开发环境通过 Vite 代理把 `/api`、`/uploads` 转发到后端 8080 端口。
 
 ### 数据库初始化
 
 ```bash
 mysql -u root -p < sql/init.sql
 ```
+
+脚本会重建 `eatwhat` 库、14 张表并写入种子数据。
+
+### 演示账号
+
+| 角色 | 手机号 | 密码 |
+| --- | --- | --- |
+| 管理员 | 13800000000 | Admin@123 |
+| 普通用户 | 13800000001 / 13800000002 | User@123 |
+| 商家 | 13800000010 / 13800000011 / 13800000012 | Merchant@123 |
+| 骑手 | 13800000020 / 13800000021 | Rider@123 |
 
 ---
 
@@ -131,26 +150,32 @@ mysql -u root -p < sql/init.sql
 
 ## 项目结构
 
-当前仓库已完成设计阶段交付物，`backend/`、`frontend/`、`sql/` 三个目录将按
-[项目计划](docs/07-项目计划与进度管理.md) 的阶段二至阶段三逐步建立。
+`backend/`、`frontend/`、`sql/` 三个目录已按下述结构落地实现：
 
 ```
 EatWhat/
 ├── .github/              # CI 流水线与 Issue/PR 模板
 ├── docs/                 # 设计文档（9 份）
 │   └── reference/        # 学校下发的任务书、开题报告原件
-├── backend/              # （待建）SpringBoot 后端工程
-│   └── src/main/java/com/eatwhat/
-│       ├── common/       # 通用：响应、异常、配置
-│       ├── security/     # 认证授权
-│       └── modules/      # 业务模块
-├── frontend/             # （待建）Vue3 前端工程
+├── backend/              # SpringBoot 后端工程
+│   ├── pom.xml
+│   └── src/main/
+│       ├── java/com/eatwhat/
+│       │   ├── common/   # 统一响应、错误码、异常、配置、工具
+│       │   ├── security/ # JWT 令牌、登录拦截器、权限注解
+│       │   └── modules/  # auth/user/shop/dish/cart/order/delivery/review/merchant/admin/file
+│       └── resources/application.yml
+├── frontend/             # Vue3 前端工程
+│   ├── package.json
+│   ├── vite.config.js
 │   └── src/
 │       ├── api/          # 接口封装
-│       ├── views/        # 页面
+│       ├── layouts/      # 四端布局
+│       ├── router/       # 路由与角色守卫
 │       ├── stores/       # Pinia 状态
-│       └── utils/        # 工具
-├── sql/                  # （待建）建库建表脚本
+│       ├── utils/        # 请求封装、格式化、状态字典
+│       └── views/        # consumer/merchant/rider/admin 四端页面
+├── sql/                  # init.sql：建库、14 张表、种子数据
 ├── .gitignore
 ├── .editorconfig
 ├── .gitattributes
@@ -161,9 +186,21 @@ EatWhat/
 └── README.md
 ```
 
-> **说明**：数据库建表脚本目前以完整 SQL 形式内嵌在
-> [数据库设计说明书](docs/04-数据库设计说明书.md) 中，编码阶段将抽取为
-> `sql/init.sql` 供自动化初始化使用。
+### 后端模块划分
+
+| 模块 | 职责 |
+| --- | --- |
+| `auth` | 注册、登录、刷新令牌、图形验证码 |
+| `user` | 个人资料、密码修改、收货地址 |
+| `shop` | 店铺列表、店铺详情（含分类与菜品） |
+| `dish` | 菜品分类与菜品的商家侧维护 |
+| `cart` | 购物车增删改查与金额试算 |
+| `order` | 下单、支付回调、状态流转、超时取消 |
+| `delivery` | 骑手资质、抢单、取餐、送达 |
+| `review` | 订单评价、商家回复 |
+| `merchant` | 商家入驻、审核状态、经营统计 |
+| `admin` | 用户/商家/骑手/订单/菜品监管与数据看板 |
+| `file` | 图片上传与静态资源访问 |
 
 ---
 
