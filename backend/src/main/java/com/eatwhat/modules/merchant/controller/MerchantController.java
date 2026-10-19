@@ -79,6 +79,14 @@ public class MerchantController {
         return R.ok(merchantService.profile(UserContext.userId()));
     }
 
+    @Operation(summary = "商家-58：修改联系人姓名与联系电话")
+    @PatchMapping("/account")
+    public R<Merchant> updateAccount(@RequestBody Map<String, String> body) {
+        return R.ok(merchantService.updateAccount(UserContext.userId(),
+                body == null ? null : body.get("realName"),
+                body == null ? null : body.get("contactPhone")));
+    }
+
     // ------------------------------------------------------------------ 店铺
 
     @Operation(summary = "查看我的店铺")

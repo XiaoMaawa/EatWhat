@@ -53,7 +53,8 @@ const routes = [
       { path: 'reviews', name: 'merchantReviews', component: () => import('@/views/merchant/Reviews.vue'), meta: { title: '评价管理' } },
       { path: 'analytics', name: 'merchantAnalytics', component: () => import('@/views/merchant/Analytics.vue'), meta: { title: '经营分析' } },
       { path: 'preview', name: 'merchantPreview', component: () => import('@/views/merchant/Preview.vue'), meta: { title: '顾客视角预览' } },
-      { path: 'qrcode', name: 'merchantQrCode', component: () => import('@/views/merchant/QrCode.vue'), meta: { title: '店铺二维码' } }
+      { path: 'qrcode', name: 'merchantQrCode', component: () => import('@/views/merchant/QrCode.vue'), meta: { title: '店铺二维码' } },
+      { path: 'account', name: 'merchantAccount', component: () => import('@/views/common/Account.vue'), meta: { title: '账号设置' } }
     ]
   },
   {
@@ -68,7 +69,8 @@ const routes = [
       { path: 'exceptions', name: 'riderExceptions', component: () => import('@/views/rider/Exceptions.vue'), meta: { title: '异常记录' } },
       { path: 'stats', name: 'riderStats', component: () => import('@/views/rider/Stats.vue'), meta: { title: '收益统计' } },
       { path: 'notices', name: 'riderNotices', component: () => import('@/views/rider/Notices.vue'), meta: { title: '系统通知' } },
-      { path: 'messages', name: 'riderMessages', component: () => import('@/views/rider/Messages.vue'), meta: { title: '订单消息' } }
+      { path: 'messages', name: 'riderMessages', component: () => import('@/views/rider/Messages.vue'), meta: { title: '订单消息' } },
+      { path: 'account', name: 'riderAccount', component: () => import('@/views/common/Account.vue'), meta: { title: '账号设置' } }
     ]
   },
   {
@@ -92,7 +94,8 @@ const routes = [
       { path: 'notices', name: 'adminNotices', component: () => import('@/views/admin/Notices.vue'), meta: { title: '发布公告' } },
     { path: 'announcements', name: 'adminAnnouncements', component: () => import('@/views/admin/Announcements.vue'), meta: { title: '公告管理' } },
     { path: 'sensitive-words', name: 'adminSensitiveWords', component: () => import('@/views/admin/SensitiveWords.vue'), meta: { title: '敏感词管理' } },
-    { path: 'configs', name: 'adminConfigs', component: () => import('@/views/admin/Configs.vue'), meta: { title: '平台参数' } }
+    { path: 'configs', name: 'adminConfigs', component: () => import('@/views/admin/Configs.vue'), meta: { title: '平台参数' } },
+    { path: 'account', name: 'adminAccount', component: () => import('@/views/common/Account.vue'), meta: { title: '账号设置' } }
     ]
   },
   { path: '/:pathMatch(.*)*', redirect: '/' }

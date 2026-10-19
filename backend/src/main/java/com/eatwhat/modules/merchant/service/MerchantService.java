@@ -39,4 +39,9 @@ public interface MerchantService {
      * 经营分析扩展（商家-51/55/56/57）：客单价、评分统计、评价评分统计、营业时段分析。
      */
     Map<String, Object> analytics(Long userId, String type);
+
+    /**
+     * 商家-58：修改联系人姓名与联系电话。
+     */
+    Merchant updateAccount(Long userId, String realName, String contactPhone);
 }

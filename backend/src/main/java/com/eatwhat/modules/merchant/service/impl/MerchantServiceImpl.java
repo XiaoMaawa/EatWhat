@@ -1,6 +1,7 @@
 package com.eatwhat.modules.merchant.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.eatwhat.common.constant.CommonConstants;
 import com.eatwhat.common.exception.BizException;
 import com.eatwhat.common.exception.ErrorCode;
@@ -264,6 +265,35 @@ public class MerchantServiceImpl implements MerchantService {
         result.put("peakHour", maxCount > 0 ? String.format("%02d:00", maxHour) : null);
         result.put("peakHourOrders", maxCount);
         return result;
+    }
+
+    @Override
+    public Merchant updateAccount(Long userId, String realName, String contactPhone) {
+        Merchant merchant = requireApprovedMerchant(userId);
+        String name = realName == null ? "" : realName.trim();
+        String phone = contactPhone == null ? "" : contactPhone.trim();
+        if (name.isEmpty()) {
+            throw BizException.of(ErrorCode.PARAM_INVALID, "联系人姓名不能为空");
+        }
+        if (name.length() > 50) {
+            throw BizException.of(ErrorCode.PARAM_INVALID, "联系人姓名不能超过 50 个字符");
+        }
+        if (!phone.matches("^1[3-9]\\d{9}$")) {
+            throw BizException.of(ErrorCode.PARAM_INVALID, "联系电话格式不正确");
+        }
+        merchant.setRealName(name);
+        merchant.setContactPhone(phone);
+        merchantMapper.updateById(merchant);
+        // 商家-58：店铺联系电话同步，避免顾客端看到的还是旧号码
+        Shop shop = shopMapper.selectOne(new LambdaQueryWrapper<Shop>()
+                .eq(Shop::getMerchantId, merchant.getId())
+                .last("LIMIT 1"));
+        if (shop != null) {
+            shopMapper.update(null, new LambdaUpdateWrapper<Shop>()
+                    .eq(Shop::getId, shop.getId())
+                    .set(Shop::getPhone, phone));
+        }
+        return merchant;
     }
 
     private long toLong(Object value) {

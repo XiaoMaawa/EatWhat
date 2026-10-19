@@ -69,6 +69,10 @@
           <el-icon><Bell /></el-icon>
           <span>发布公告</span>
         </el-menu-item>
+        <el-menu-item index="/admin/account">
+          <el-icon><UserFilled /></el-icon>
+          <span>账号设置</span>
+        </el-menu-item>
       </el-menu>
     </el-aside>
 

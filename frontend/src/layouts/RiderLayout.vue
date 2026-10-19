@@ -34,6 +34,10 @@
           <el-icon><Bell /></el-icon>
           <span>系统通知</span>
         </el-menu-item>
+        <el-menu-item index="/rider/account" :disabled="menuDisabled('/rider/account')">
+          <el-icon><Setting /></el-icon>
+          <span>账号设置</span>
+        </el-menu-item>
       </el-menu>
     </el-aside>
 
@@ -67,7 +71,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { riderApi } from '@/api'
-import { ArrowDown, Bell, ChatDotRound, Postcard, Promotion, Tickets, TrendCharts, Warning } from '@element-plus/icons-vue'
+import { ArrowDown, Bell, ChatDotRound, Postcard, Promotion, Setting, Tickets, TrendCharts, Warning } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()

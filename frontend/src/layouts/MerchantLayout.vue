@@ -46,6 +46,10 @@
           <el-icon><Iphone /></el-icon>
           <span>店铺二维码</span>
         </el-menu-item>
+        <el-menu-item index="/merchant/account" :disabled="menuDisabled('/merchant/account')">
+          <el-icon><Setting /></el-icon>
+          <span>账号设置</span>
+        </el-menu-item>
       </el-menu>
     </el-aside>
 
@@ -79,7 +83,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { merchantApi } from '@/api'
-import { ArrowDown, ChatDotSquare, DataLine, Dish, Iphone, List, Postcard, Shop, TrendCharts, View, Wallet } from '@element-plus/icons-vue'
+import { ArrowDown, ChatDotSquare, DataLine, Dish, Iphone, List, Postcard, Setting, Shop, TrendCharts, View, Wallet } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()

@@ -75,6 +75,8 @@ export const afterSaleApi = {
 export const merchantApi = {
   apply: (data) => request.post('/merchant/apply', data),
   profile: () => request.get('/merchant/profile'),
+  // 商家-58：修改联系人姓名与联系电话
+  updateAccount: (data) => request.patch('/merchant/account', data),
   shop: () => request.get('/merchant/shop'),
   updateShop: (data) => request.put('/merchant/shop', data),
   toggleShop: (isOpen) => request.patch('/merchant/shop/status', { isOpen }),
