@@ -362,6 +362,41 @@ CREATE TABLE `operation_log` (
   KEY `idx_oplog_module` (`module`, `created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='操作日志表';
 
+-- ---------------------------------------------------------------------
+-- 16. 售后申请表
+-- ---------------------------------------------------------------------
+DROP TABLE IF EXISTS `after_sale`;
+CREATE TABLE `after_sale` (
+  `id`                  BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `after_sale_no`       VARCHAR(32)     NOT NULL                COMMENT '售后单号',
+  `order_id`            BIGINT UNSIGNED NOT NULL                COMMENT '订单ID',
+  `order_no`            VARCHAR(32)     NOT NULL                COMMENT '订单号冗余',
+  `user_id`             BIGINT UNSIGNED NOT NULL                COMMENT '顾客ID',
+  `shop_id`             BIGINT UNSIGNED NOT NULL                COMMENT '店铺ID',
+  `merchant_id`         BIGINT UNSIGNED NOT NULL                COMMENT '商家ID冗余',
+  `type`                TINYINT         NOT NULL DEFAULT 1      COMMENT '1退款 2申诉',
+  `reason`              VARCHAR(500)    NOT NULL                COMMENT '申请原因',
+  `images`              VARCHAR(1000)   DEFAULT NULL            COMMENT '凭证图片,逗号分隔',
+  `amount`              DECIMAL(10,2)   NOT NULL DEFAULT 0.00   COMMENT '申请退款金额',
+  `status`              TINYINT         NOT NULL DEFAULT 0      COMMENT '0待商家处理 1商家同意 2商家拒绝 3已撤销 4待平台仲裁 5支持顾客 6支持商家',
+  `merchant_reply`      VARCHAR(500)    DEFAULT NULL            COMMENT '商家处理意见',
+  `merchant_handled_at` DATETIME        DEFAULT NULL            COMMENT '商家处理时间',
+  `admin_verdict`       VARCHAR(500)    DEFAULT NULL            COMMENT '平台裁定说明',
+  `admin_id`            BIGINT UNSIGNED DEFAULT NULL            COMMENT '裁定管理员ID',
+  `admin_verdict_at`    DATETIME        DEFAULT NULL            COMMENT '裁定时间',
+  `refunded_at`         DATETIME        DEFAULT NULL            COMMENT '退款完成时间',
+  `created_at`          DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at`          DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted`             TINYINT         NOT NULL DEFAULT 0      COMMENT '逻辑删除 0未删 1已删',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_after_sale_no` (`after_sale_no`),
+  KEY `idx_after_sale_order` (`order_id`),
+  KEY `idx_after_sale_user` (`user_id`, `status`),
+  KEY `idx_after_sale_merchant` (`merchant_id`, `status`),
+  KEY `idx_after_sale_status` (`status`),
+  KEY `idx_after_sale_created` (`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='售后申请';
+
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- =====================================================================

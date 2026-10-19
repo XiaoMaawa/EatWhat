@@ -12,6 +12,7 @@
           <router-link to="/favorites" class="nav-item">我的收藏</router-link>
           <router-link to="/orders" class="nav-item">我的订单</router-link>
           <router-link to="/reviews" class="nav-item">我的评价</router-link>
+          <router-link to="/after-sales" class="nav-item">退款售后</router-link>
           <router-link to="/cart" class="nav-item">
             购物车
             <el-badge v-if="cartCount > 0" :value="cartCount" class="badge" />

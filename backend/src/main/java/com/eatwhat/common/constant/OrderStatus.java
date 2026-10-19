@@ -98,8 +98,10 @@ public enum OrderStatus {
                         || ((f == PENDING_PAYMENT || f == PENDING_ACCEPT) && "CONSUMER".equals(role));
                 break;
             case REFUNDING:
+                // 商家拒单 / 商家同意退款 / 平台裁定支持顾客 均可把未完结订单转入退款中
                 legal = (f == PENDING_ACCEPT || f == DELIVERING || f == PENDING_DELIVERY)
-                        && ("MERCHANT".equals(role) || "CONSUMER".equals(role));
+                        && ("MERCHANT".equals(role) || "CONSUMER".equals(role) || "SYSTEM".equals(role))
+                        || ("SYSTEM".equals(role) && f != PENDING_PAYMENT);
                 break;
             default:
                 legal = false;

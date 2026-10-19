@@ -57,6 +57,17 @@ export const orderApi = {
   cancel: (id, reason) => request.patch(`/orders/${id}/status`, { targetStatus: 6, reason })
 }
 
+// ===== 售后 =====
+export const afterSaleApi = {
+  apply: (data) => request.post('/after-sales', data),
+  mine: (params) => request.get('/after-sales', { params }),
+  detail: (id) => request.get(`/after-sales/${id}`),
+  cancel: (id) => request.post(`/after-sales/${id}/cancel`),
+  escalate: (id) => request.post(`/after-sales/${id}/escalate`),
+  merchantList: (params) => request.get('/merchant/after-sales', { params }),
+  handle: (id, data) => request.post(`/merchant/after-sales/${id}/handle`, data)
+}
+
 // ===== 商家端 =====
 export const merchantApi = {
   apply: (data) => request.post('/merchant/apply', data),
@@ -141,5 +152,8 @@ export const adminApi = {
   offlineDish: (id) => request.patch(`/admin/dishes/${id}/offline`),
 
   dashboard: () => request.get('/admin/dashboard'),
-  operationLogs: (params) => request.get('/admin/operation-logs', { params })
+  operationLogs: (params) => request.get('/admin/operation-logs', { params }),
+  afterSales: (params) => request.get('/admin/after-sales', { params }),
+  afterSaleDetail: (id) => request.get(`/admin/after-sales/${id}`),
+  arbitrate: (id, data) => request.post(`/admin/after-sales/${id}/arbitrate`, data)
 }

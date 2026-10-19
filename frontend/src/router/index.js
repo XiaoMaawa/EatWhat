@@ -32,6 +32,7 @@ const routes = [
       { path: 'orders/:id', name: 'orderDetail', component: () => import('@/views/consumer/OrderDetail.vue'), meta: { title: '订单详情' } },
       { path: 'reviews', name: 'myReviews', component: () => import('@/views/consumer/Reviews.vue'), meta: { title: '我的评价' } },
       { path: 'favorites', name: 'favorites', component: () => import('@/views/consumer/Favorites.vue'), meta: { title: '我的收藏' } },
+      { path: 'after-sales', name: 'afterSales', component: () => import('@/views/consumer/AfterSales.vue'), meta: { title: '退款售后' } },
       { path: 'profile', name: 'profile', component: () => import('@/views/consumer/Profile.vue'), meta: { title: '个人中心' } },
       { path: 'address', name: 'address', component: () => import('@/views/consumer/Address.vue'), meta: { title: '收货地址' } }
     ]
@@ -47,6 +48,7 @@ const routes = [
       { path: 'orders', name: 'merchantOrders', component: () => import('@/views/merchant/Orders.vue'), meta: { title: '订单管理' } },
       { path: 'dishes', name: 'merchantDishes', component: () => import('@/views/merchant/Dishes.vue'), meta: { title: '菜品管理' } },
       { path: 'shop', name: 'merchantShop', component: () => import('@/views/merchant/Shop.vue'), meta: { title: '店铺管理' } },
+      { path: 'after-sales', name: 'merchantAfterSales', component: () => import('@/views/merchant/AfterSales.vue'), meta: { title: '退款售后' } },
       { path: 'reviews', name: 'merchantReviews', component: () => import('@/views/merchant/Reviews.vue'), meta: { title: '评价管理' } }
     ]
   },
@@ -74,6 +76,7 @@ const routes = [
       { path: 'riders', name: 'adminRiders', component: () => import('@/views/admin/Riders.vue'), meta: { title: '骑手审核' } },
       { path: 'orders', name: 'adminOrders', component: () => import('@/views/admin/Orders.vue'), meta: { title: '订单监管' } },
       { path: 'dishes', name: 'adminDishes', component: () => import('@/views/admin/Dishes.vue'), meta: { title: '菜品监管' } },
+      { path: 'after-sales', name: 'adminAfterSales', component: () => import('@/views/admin/AfterSales.vue'), meta: { title: '售后仲裁' } },
       { path: 'logs', name: 'adminLogs', component: () => import('@/views/admin/OperationLogs.vue'), meta: { title: '操作日志' } }
     ]
   },

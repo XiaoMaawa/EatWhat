@@ -90,9 +90,51 @@
         <el-button v-if="order.status === 0" type="primary" @click="pay">去支付</el-button>
         <el-button v-if="order.status === 0 || order.status === 1" @click="cancel">取消订单</el-button>
         <el-button v-if="order.status === 4" type="success" @click="confirm">确认收货</el-button>
+        <el-button v-if="order.status === 1" type="warning" plain @click="openAfterSale(1)">申请退款</el-button>
+        <el-button v-if="order.status === 5" type="warning" plain @click="openAfterSale(2)">申请售后</el-button>
         <el-button @click="$router.back()">返回</el-button>
       </div>
     </div>
+
+    <el-dialog v-model="afterSaleVisible" :title="afterSaleForm.type === 1 ? '申请退款' : '申请售后'" width="480px">
+      <el-alert
+        :title="afterSaleForm.type === 1
+          ? '退款申请会通知商家，商家同意后原路退回支付金额'
+          : '餐品有撒漏、少送或质量问题可提交申诉，商家拒绝后可申请平台介入'"
+        type="info"
+        :closable="false"
+        show-icon
+        style="margin-bottom: 16px"
+      />
+      <el-form label-width="80px">
+        <el-form-item label="申请原因" required>
+          <el-input
+            v-model="afterSaleForm.reason"
+            type="textarea"
+            :rows="4"
+            maxlength="500"
+            show-word-limit
+            placeholder="请描述具体情况，至少 5 个字"
+          />
+        </el-form-item>
+        <el-form-item label="凭证图片">
+          <el-upload
+            v-model:file-list="afterSaleFiles"
+            :http-request="uploadImage"
+            :limit="3"
+            list-type="picture-card"
+            accept="image/*"
+          >
+            <el-icon><Plus /></el-icon>
+          </el-upload>
+          <div class="ew-muted">最多 3 张，选填</div>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="afterSaleVisible = false">取消</el-button>
+        <el-button type="primary" :loading="afterSaleSubmitting" @click="submitAfterSale">提交申请</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -100,13 +142,19 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { orderApi } from '@/api'
+import { Plus } from '@element-plus/icons-vue'
+import { afterSaleApi, fileApi, orderApi } from '@/api'
 import { orderStatusText, orderStatusType } from '@/utils/orderStatus'
 
 const route = useRoute()
 const orderId = Number(route.params.id)
 const loading = ref(false)
 const order = ref(null)
+
+const afterSaleVisible = ref(false)
+const afterSaleSubmitting = ref(false)
+const afterSaleFiles = ref([])
+const afterSaleForm = ref({ type: 1, reason: '', images: [] })
 
 const stepActive = computed(() => {
   const status = order.value?.status ?? 0
@@ -154,6 +202,40 @@ async function confirm() {
 function callRider() {
   if (!order.value?.rider?.phone) return
   window.location.href = `tel:${order.value.rider.phone}`
+}
+
+function openAfterSale(type) {
+  afterSaleForm.value = { type, reason: '', images: [] }
+  afterSaleFiles.value = []
+  afterSaleVisible.value = true
+}
+
+async function uploadImage(options) {
+  const data = await fileApi.upload(options.file)
+  afterSaleFiles.value = afterSaleFiles.value.filter((f) => f.uid !== options.file.uid)
+  afterSaleFiles.value.push({ name: data.originalName || '凭证', url: data.url, uid: options.file.uid })
+}
+
+async function submitAfterSale() {
+  const reason = afterSaleForm.value.reason.trim()
+  if (reason.length < 5) {
+    ElMessage.warning('请填写至少 5 个字的申请原因')
+    return
+  }
+  afterSaleSubmitting.value = true
+  try {
+    await afterSaleApi.apply({
+      orderId,
+      type: afterSaleForm.value.type,
+      reason,
+      images: afterSaleFiles.value.map((f) => f.url).filter(Boolean)
+    })
+    ElMessage.success('申请已提交，请等待商家处理')
+    afterSaleVisible.value = false
+    await load()
+  } finally {
+    afterSaleSubmitting.value = false
+  }
 }
 
 onMounted(load)

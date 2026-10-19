@@ -29,6 +29,9 @@
         <el-menu-item index="/admin/dishes">
           <el-icon><Dish /></el-icon>
           <span>菜品监管</span>
+        </el-menu-item>        <el-menu-item index="/admin/after-sales">
+          <el-icon><Wallet /></el-icon>
+          <span>售后仲裁</span>
         </el-menu-item>
         <el-menu-item index="/admin/logs">
           <el-icon><Document /></el-icon>
@@ -66,7 +69,7 @@ import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
-import { ArrowDown, Bicycle, DataBoard, Dish, Document, List, Shop, User } from '@element-plus/icons-vue'
+import { ArrowDown, Bicycle, DataBoard, Dish, Document, List, Shop, User, Wallet } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()

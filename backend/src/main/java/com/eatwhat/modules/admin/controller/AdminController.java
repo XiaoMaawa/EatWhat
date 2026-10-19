@@ -2,8 +2,11 @@ package com.eatwhat.modules.admin.controller;
 
 import com.eatwhat.common.result.PageResult;
 import com.eatwhat.common.result.R;
+import com.eatwhat.common.utils.UserContext;
 import com.eatwhat.modules.admin.entity.OperationLog;
 import com.eatwhat.modules.admin.service.AdminService;
+import com.eatwhat.modules.aftersale.entity.AfterSale;
+import com.eatwhat.modules.aftersale.service.AfterSaleService;
 import com.eatwhat.modules.auth.entity.SysUser;
 import com.eatwhat.modules.delivery.entity.Rider;
 import com.eatwhat.modules.dish.entity.Dish;
@@ -33,9 +36,11 @@ import java.util.Map;
 public class AdminController {
 
     private final AdminService adminService;
+    private final AfterSaleService afterSaleService;
 
-    public AdminController(AdminService adminService) {
+    public AdminController(AdminService adminService, AfterSaleService afterSaleService) {
         this.adminService = adminService;
+        this.afterSaleService = afterSaleService;
     }
 
     @Operation(summary = "用户列表")
@@ -179,5 +184,33 @@ public class AdminController {
                                                      @RequestParam(defaultValue = "1") int page,
                                                      @RequestParam(defaultValue = "20") int size) {
         return R.ok(adminService.pageOperationLogs(operatorRole, module, result, startDate, endDate, page, size));
+    }
+
+    @Operation(summary = "售后列表")
+    @GetMapping("/after-sales")
+    public R<PageResult<AfterSale>> afterSales(@RequestParam(required = false) Integer status,
+                                               @RequestParam(required = false) String keyword,
+                                               @RequestParam(defaultValue = "1") int page,
+                                               @RequestParam(defaultValue = "10") int size) {
+        return R.ok(afterSaleService.pageAdmin(status, keyword, page, size));
+    }
+
+    @Operation(summary = "售后详情")
+    @GetMapping("/after-sales/{id}")
+    public R<AfterSale> afterSale(@PathVariable Long id) {
+        return R.ok(afterSaleService.detail(UserContext.userId(), UserContext.role(), id));
+    }
+
+    @Operation(summary = "售后仲裁")
+    @PostMapping("/after-sales/{id}/arbitrate")
+    public R<Void> arbitrate(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+        Object support = body.get("supportCustomer");
+        boolean supportCustomer = support instanceof Boolean
+                ? (Boolean) support
+                : "true".equalsIgnoreCase(String.valueOf(support));
+        Object verdict = body.get("verdict");
+        afterSaleService.arbitrate(UserContext.userId(), id, supportCustomer,
+                verdict == null ? null : String.valueOf(verdict));
+        return R.ok();
     }
 }
