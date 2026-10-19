@@ -22,6 +22,7 @@ import com.eatwhat.modules.dish.entity.Dish;
 import com.eatwhat.modules.dish.mapper.DishMapper;
 import com.eatwhat.modules.merchant.entity.Merchant;
 import com.eatwhat.modules.merchant.mapper.MerchantMapper;
+import com.eatwhat.modules.message.service.MessageService;
 import com.eatwhat.modules.order.dto.CreateOrderRequest;
 import com.eatwhat.modules.order.entity.Order;
 import com.eatwhat.modules.order.entity.OrderItem;
@@ -70,6 +71,7 @@ public class OrderServiceImpl implements OrderService {
     private final RiderMapper riderMapper;
     private final MerchantMapper merchantMapper;
     private final DeliveryService deliveryService;
+    private final MessageService messageService;
 
     public OrderServiceImpl(OrderMapper orderMapper,
                             OrderItemMapper orderItemMapper,
@@ -81,7 +83,8 @@ public class OrderServiceImpl implements OrderService {
                             UserAddressMapper addressMapper,
                             RiderMapper riderMapper,
                             MerchantMapper merchantMapper,
-                            @Lazy DeliveryService deliveryService) {
+                            @Lazy DeliveryService deliveryService,
+                            @Lazy MessageService messageService) {
         this.orderMapper = orderMapper;
         this.orderItemMapper = orderItemMapper;
         this.statusLogMapper = statusLogMapper;
@@ -93,6 +96,7 @@ public class OrderServiceImpl implements OrderService {
         this.riderMapper = riderMapper;
         this.merchantMapper = merchantMapper;
         this.deliveryService = deliveryService;
+        this.messageService = messageService;
     }
 
     @Override
@@ -564,6 +568,52 @@ public class OrderServiceImpl implements OrderService {
         statusLog.setOperatorRole(operatorRole);
         statusLog.setRemark(remark);
         statusLogMapper.insert(statusLog);
+        notifyStatusChange(orderId, toStatus, remark);
+    }
+
+    /**
+     * 订单状态变更时给顾客推送一条站内消息。
+     * 消息属于旁路能力，内部已吞异常，不影响订单主流程。
+     */
+    private void notifyStatusChange(Long orderId, Integer toStatus, String remark) {
+        if (orderId == null || toStatus == null) {
+            return;
+        }
+        Order order = orderMapper.selectById(orderId);
+        if (order == null || order.getUserId() == null) {
+            return;
+        }
+        String title;
+        String content;
+        String no = order.getOrderNo() == null ? "" : order.getOrderNo();
+        if (toStatus == CommonConstants.ORDER_PENDING_PAYMENT) {
+            title = "订单创建成功";
+            content = "订单 " + no + " 已创建，请在 15 分钟内完成支付，超时自动取消。";
+        } else if (toStatus == CommonConstants.ORDER_PENDING_ACCEPT) {
+            title = "支付成功";
+            content = "订单 " + no + " 已支付成功，等待商家接单。";
+        } else if (toStatus == CommonConstants.ORDER_PREPARING) {
+            title = "商家已接单";
+            content = "商家已接下订单 " + no + "，正在为你准备餐品。";
+        } else if (toStatus == CommonConstants.ORDER_PENDING_DELIVERY) {
+            title = "餐品已出餐";
+            content = "订单 " + no + " 已出餐，正在等待骑手接单配送。";
+        } else if (toStatus == CommonConstants.ORDER_DELIVERING) {
+            title = "骑手已取餐";
+            content = "骑手已取走订单 " + no + " 的餐品，正在配送途中。";
+        } else if (toStatus == CommonConstants.ORDER_COMPLETED) {
+            title = "订单已完成";
+            content = "订单 " + no + " 已送达完成，别忘了给商家和骑手一个评价哦。";
+        } else if (toStatus == CommonConstants.ORDER_CANCELLED) {
+            title = "订单已取消";
+            content = "订单 " + no + " 已取消" + (remark == null || remark.isBlank() ? "。" : "：" + remark);
+        } else if (toStatus == CommonConstants.ORDER_REFUNDING) {
+            title = "订单退款中";
+            content = "订单 " + no + " 已发起退款" + (remark == null || remark.isBlank() ? "。" : "：" + remark);
+        } else {
+            return;
+        }
+        messageService.send(order.getUserId(), 1, title, content, order.getId(), order.getOrderNo(), null);
     }
 
     /**

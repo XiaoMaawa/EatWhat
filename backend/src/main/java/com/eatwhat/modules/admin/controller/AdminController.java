@@ -11,6 +11,7 @@ import com.eatwhat.modules.auth.entity.SysUser;
 import com.eatwhat.modules.delivery.entity.Rider;
 import com.eatwhat.modules.dish.entity.Dish;
 import com.eatwhat.modules.merchant.entity.Merchant;
+import com.eatwhat.modules.message.service.MessageService;
 import com.eatwhat.modules.order.entity.Order;
 import com.eatwhat.security.RequireRole;
 import io.swagger.v3.oas.annotations.Operation;
@@ -37,10 +38,13 @@ public class AdminController {
 
     private final AdminService adminService;
     private final AfterSaleService afterSaleService;
+    private final MessageService messageService;
 
-    public AdminController(AdminService adminService, AfterSaleService afterSaleService) {
+    public AdminController(AdminService adminService, AfterSaleService afterSaleService,
+                           MessageService messageService) {
         this.adminService = adminService;
         this.afterSaleService = afterSaleService;
+        this.messageService = messageService;
     }
 
     @Operation(summary = "用户列表")
@@ -212,5 +216,32 @@ public class AdminController {
         afterSaleService.arbitrate(UserContext.userId(), id, supportCustomer,
                 verdict == null ? null : String.valueOf(verdict));
         return R.ok();
+    }
+
+    @Operation(summary = "发布系统公告")
+    @PostMapping("/notices")
+    public R<Map<String, Object>> publishNotice(@RequestBody Map<String, Object> body) {
+        Object title = body.get("title");
+        Object content = body.get("content");
+        if (title == null || String.valueOf(title).isBlank()) {
+            throw com.eatwhat.common.exception.BizException.of(
+                    com.eatwhat.common.exception.ErrorCode.PARAM_MISSING, "公告标题不能为空");
+        }
+        if (content == null || String.valueOf(content).isBlank()) {
+            throw com.eatwhat.common.exception.BizException.of(
+                    com.eatwhat.common.exception.ErrorCode.PARAM_MISSING, "公告内容不能为空");
+        }
+        String t = String.valueOf(title).trim();
+        String ct = String.valueOf(content).trim();
+        if (t.length() > 100) {
+            throw com.eatwhat.common.exception.BizException.of(
+                    com.eatwhat.common.exception.ErrorCode.PARAM_INVALID, "公告标题不能超过 100 字");
+        }
+        if (ct.length() > 500) {
+            throw com.eatwhat.common.exception.BizException.of(
+                    com.eatwhat.common.exception.ErrorCode.PARAM_INVALID, "公告内容不能超过 500 字");
+        }
+        messageService.broadcast(UserContext.userId(), t, ct);
+        return R.ok(Map.of("published", true));
     }
 }

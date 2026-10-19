@@ -33,6 +33,7 @@ const routes = [
       { path: 'reviews', name: 'myReviews', component: () => import('@/views/consumer/Reviews.vue'), meta: { title: '我的评价' } },
       { path: 'favorites', name: 'favorites', component: () => import('@/views/consumer/Favorites.vue'), meta: { title: '我的收藏' } },
       { path: 'after-sales', name: 'afterSales', component: () => import('@/views/consumer/AfterSales.vue'), meta: { title: '退款售后' } },
+      { path: 'messages', name: 'messages', component: () => import('@/views/consumer/Messages.vue'), meta: { title: '消息中心' } },
       { path: 'profile', name: 'profile', component: () => import('@/views/consumer/Profile.vue'), meta: { title: '个人中心' } },
       { path: 'address', name: 'address', component: () => import('@/views/consumer/Address.vue'), meta: { title: '收货地址' } }
     ]
@@ -77,7 +78,8 @@ const routes = [
       { path: 'orders', name: 'adminOrders', component: () => import('@/views/admin/Orders.vue'), meta: { title: '订单监管' } },
       { path: 'dishes', name: 'adminDishes', component: () => import('@/views/admin/Dishes.vue'), meta: { title: '菜品监管' } },
       { path: 'after-sales', name: 'adminAfterSales', component: () => import('@/views/admin/AfterSales.vue'), meta: { title: '售后仲裁' } },
-      { path: 'logs', name: 'adminLogs', component: () => import('@/views/admin/OperationLogs.vue'), meta: { title: '操作日志' } }
+      { path: 'logs', name: 'adminLogs', component: () => import('@/views/admin/OperationLogs.vue'), meta: { title: '操作日志' } },
+      { path: 'notices', name: 'adminNotices', component: () => import('@/views/admin/Notices.vue'), meta: { title: '发布公告' } }
     ]
   },
   { path: '/:pathMatch(.*)*', redirect: '/' }

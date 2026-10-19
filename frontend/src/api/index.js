@@ -155,5 +155,16 @@ export const adminApi = {
   operationLogs: (params) => request.get('/admin/operation-logs', { params }),
   afterSales: (params) => request.get('/admin/after-sales', { params }),
   afterSaleDetail: (id) => request.get(`/admin/after-sales/${id}`),
-  arbitrate: (id, data) => request.post(`/admin/after-sales/${id}/arbitrate`, data)
+  arbitrate: (id, data) => request.post(`/admin/after-sales/${id}/arbitrate`, data),
+  publishNotice: (data) => request.post('/admin/notices', data)
 }
+
+// ===== 消息中心 =====
+export const messageApi = {
+  list: (params) => request.get('/messages', { params }),
+  unreadCount: () => request.get('/messages/unread-count'),
+  markRead: (id) => request.put(`/messages/${id}/read`),
+  readAll: () => request.post('/messages/read-all'),
+  remove: (id) => request.delete(`/messages/${id}`)
+}
+

@@ -37,6 +37,10 @@
           <el-icon><Document /></el-icon>
           <span>操作日志</span>
         </el-menu-item>
+        <el-menu-item index="/admin/notices">
+          <el-icon><Bell /></el-icon>
+          <span>发布公告</span>
+        </el-menu-item>
       </el-menu>
     </el-aside>
 
@@ -69,7 +73,7 @@ import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
-import { ArrowDown, Bicycle, DataBoard, Dish, Document, List, Shop, User, Wallet } from '@element-plus/icons-vue'
+import { ArrowDown, Bell, Bicycle, DataBoard, Dish, Document, List, Shop, User, Wallet } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()

@@ -397,6 +397,30 @@ CREATE TABLE `after_sale` (
   KEY `idx_after_sale_created` (`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='售后申请';
 
+-- ---------------------------------------------------------------------
+-- 17. 用户消息表
+-- ---------------------------------------------------------------------
+DROP TABLE IF EXISTS `user_message`;
+CREATE TABLE `user_message` (
+  `id`         BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `user_id`    BIGINT UNSIGNED NOT NULL                COMMENT '接收人ID',
+  `type`       TINYINT         NOT NULL DEFAULT 1      COMMENT '1订单消息 2系统公告 3售后消息',
+  `title`      VARCHAR(100)    NOT NULL                COMMENT '标题',
+  `content`    VARCHAR(500)    NOT NULL                COMMENT '内容',
+  `order_id`   BIGINT UNSIGNED DEFAULT NULL            COMMENT '关联订单ID',
+  `order_no`   VARCHAR(32)     DEFAULT NULL            COMMENT '关联订单号',
+  `biz_id`     BIGINT UNSIGNED DEFAULT NULL            COMMENT '关联业务ID(售后单等)',
+  `is_read`    TINYINT         NOT NULL DEFAULT 0      COMMENT '0未读 1已读',
+  `read_at`    DATETIME        DEFAULT NULL            COMMENT '阅读时间',
+  `created_at` DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted`    TINYINT         NOT NULL DEFAULT 0      COMMENT '逻辑删除 0未删 1已删',
+  PRIMARY KEY (`id`),
+  KEY `idx_msg_user_read` (`user_id`, `is_read`, `created_at`),
+  KEY `idx_msg_user_type` (`user_id`, `type`, `created_at`),
+  KEY `idx_msg_order` (`order_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='用户消息';
+
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- =====================================================================

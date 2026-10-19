@@ -16,6 +16,7 @@ import com.eatwhat.modules.auth.entity.SysUser;
 import com.eatwhat.modules.auth.mapper.SysUserMapper;
 import com.eatwhat.modules.merchant.entity.Merchant;
 import com.eatwhat.modules.merchant.mapper.MerchantMapper;
+import com.eatwhat.modules.message.service.MessageService;
 import com.eatwhat.modules.order.entity.Order;
 import com.eatwhat.modules.order.mapper.OrderMapper;
 import com.eatwhat.modules.order.service.OrderService;
@@ -60,16 +61,19 @@ public class AfterSaleServiceImpl implements AfterSaleService {
     private final ShopMapper shopMapper;
     private final MerchantMapper merchantMapper;
     private final SysUserMapper userMapper;
+    private final MessageService messageService;
 
     public AfterSaleServiceImpl(AfterSaleMapper afterSaleMapper, OrderMapper orderMapper,
                                OrderService orderService, ShopMapper shopMapper,
-                               MerchantMapper merchantMapper, SysUserMapper userMapper) {
+                               MerchantMapper merchantMapper, SysUserMapper userMapper,
+                               MessageService messageService) {
         this.afterSaleMapper = afterSaleMapper;
         this.orderMapper = orderMapper;
         this.orderService = orderService;
         this.shopMapper = shopMapper;
         this.merchantMapper = merchantMapper;
         this.userMapper = userMapper;
+        this.messageService = messageService;
     }
 
     @Override
@@ -235,6 +239,13 @@ public class AfterSaleServiceImpl implements AfterSaleService {
         afterSale.setMerchantReply(reply);
         afterSale.setMerchantHandledAt(LocalDateTime.now());
         afterSaleMapper.updateById(afterSale);
+        boolean approved = STATUS_APPROVED == afterSale.getStatus();
+        notifyCustomer(afterSale, approved ? "商家已同意售后申请" : "商家已拒绝售后申请",
+                approved
+                        ? "你对订单 " + afterSale.getOrderNo() + " 的售后申请已被商家同意"
+                          + (reply == null || reply.isBlank() ? "。" : "：" + reply)
+                        : "你对订单 " + afterSale.getOrderNo() + " 的售后申请被商家拒绝："
+                          + (reply == null ? "" : reply) + "。如不认可，可申请平台介入。");
     }
 
     @Override
@@ -272,6 +283,12 @@ public class AfterSaleServiceImpl implements AfterSaleService {
         afterSale.setAdminVerdict(verdict);
         afterSale.setAdminVerdictAt(LocalDateTime.now());
         afterSaleMapper.updateById(afterSale);
+        notifyCustomer(afterSale, supportCustomer ? "平台裁定支持你" : "平台裁定支持商家",
+                supportCustomer
+                        ? "你对订单 " + afterSale.getOrderNo() + " 的售后申请平台已裁定支持，将为你安排退款"
+                          + (verdict == null || verdict.isBlank() ? "。" : "：" + verdict)
+                        : "你对订单 " + afterSale.getOrderNo() + " 的售后申请平台裁定支持商家"
+                          + (verdict == null || verdict.isBlank() ? "。" : "：" + verdict));
         log.info("售后 {} 裁定完成，支持顾客={}", afterSale.getId(), supportCustomer);
     }
 
@@ -284,6 +301,17 @@ public class AfterSaleServiceImpl implements AfterSaleService {
         }
         afterSale.setStatus(STATUS_ARBITRATING);
         afterSaleMapper.updateById(afterSale);
+    }
+
+    /**
+     * 给售后申请人推送一条站内消息（售后消息）。
+     */
+    private void notifyCustomer(AfterSale afterSale, String title, String content) {
+        if (afterSale == null || afterSale.getUserId() == null) {
+            return;
+        }
+        messageService.send(afterSale.getUserId(), 3, title, content,
+                afterSale.getOrderId(), afterSale.getOrderNo(), afterSale.getId());
     }
 
     private AfterSale requireOwned(Long userId, Long afterSaleId) {
