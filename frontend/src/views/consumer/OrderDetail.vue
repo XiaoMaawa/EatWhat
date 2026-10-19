@@ -164,7 +164,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
@@ -199,6 +199,38 @@ async function load() {
   } finally {
     loading.value = false
   }
+}
+
+// 顾客-60：进行中的订单每 30 秒自动刷新一次状态，结束态自动停止轮询。
+const POLL_INTERVAL = 30000
+let pollTimer = null
+
+function isActiveStatus(status) {
+  return status != null && status >= 0 && status <= 4
+}
+
+function stopPolling() {
+  if (pollTimer) {
+    clearInterval(pollTimer)
+    pollTimer = null
+  }
+}
+
+function startPolling() {
+  stopPolling()
+  if (!isActiveStatus(order.value?.status)) return
+  pollTimer = setInterval(async () => {
+    if (!isActiveStatus(order.value?.status)) {
+      stopPolling()
+      return
+    }
+    try {
+      order.value = await orderApi.detail(orderId)
+    } catch {
+      // 轮询失败静默处理，等待下一轮
+    }
+    if (!isActiveStatus(order.value?.status)) stopPolling()
+  }, POLL_INTERVAL)
 }
 
 async function pay() {
@@ -275,7 +307,12 @@ async function submitAfterSale() {
   }
 }
 
-onMounted(load)
+onMounted(async () => {
+  await load()
+  startPolling()
+})
+
+onUnmounted(stopPolling)
 </script>
 
 <style scoped>
