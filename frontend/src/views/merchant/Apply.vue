@@ -188,6 +188,7 @@ async function load() {
     profile.value = await merchantApi.profile()
     if (profile.value?.applied) {
       form.realName = profile.value.realName || ''
+      form.idCard = profile.value.idCard || ''
       form.contactPhone = profile.value.contactPhone || ''
       form.licenseImg = profile.value.licenseImg || ''
     }

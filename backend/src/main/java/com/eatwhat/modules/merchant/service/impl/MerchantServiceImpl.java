@@ -49,6 +49,7 @@ public class MerchantServiceImpl implements MerchantService {
         Merchant merchant = merchantMapper.selectOne(new LambdaQueryWrapper<Merchant>()
                 .eq(Merchant::getUserId, userId)
                 .last("LIMIT 1"));
+        boolean resubmit = false;
         if (merchant == null) {
             merchant = new Merchant();
             merchant.setUserId(userId);
@@ -56,9 +57,9 @@ public class MerchantServiceImpl implements MerchantService {
         } else if (Integer.valueOf(CommonConstants.AUDIT_PASSED).equals(merchant.getAuditStatus())) {
             throw BizException.of(ErrorCode.AUDIT_ALREADY_DONE, "商家资质已通过审核，无需重复提交");
         } else {
+            // 商家-04：驳回后重新提交，重置为待审核并清空上一轮的驳回意见与审核时间
             merchant.setAuditStatus(CommonConstants.AUDIT_PENDING);
-            merchant.setAuditRemark(null);
-            merchant.setAuditedAt(null);
+            resubmit = true;
         }
         merchant.setRealName(request.getRealName().trim());
         merchant.setIdCard(request.getIdCard().toUpperCase());
@@ -68,6 +69,15 @@ public class MerchantServiceImpl implements MerchantService {
             merchantMapper.insert(merchant);
         } else {
             merchantMapper.updateById(merchant);
+            if (resubmit) {
+                // update-strategy 为 not_null，置空字段必须走显式 UpdateWrapper
+                merchantMapper.update(null, new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<Merchant>()
+                        .eq(Merchant::getId, merchant.getId())
+                        .set(Merchant::getAuditRemark, null)
+                        .set(Merchant::getAuditedAt, null));
+                merchant.setAuditRemark(null);
+                merchant.setAuditedAt(null);
+            }
         }
         return merchant;
     }
@@ -94,6 +104,13 @@ public class MerchantServiceImpl implements MerchantService {
         result.put("auditRemark", merchant.getAuditRemark());
         result.put("contactPhone", merchant.getContactPhone());
         result.put("licenseImg", merchant.getLicenseImg());
+        // 商家-04：回填身份证号，便于驳回后按原资料修改再提交
+        result.put("idCard", merchant.getIdCard());
+        // 商家-04：驳回后允许重新提交，前端据此提示「按驳回意见修改后重新提交」
+        result.put("canResubmit",
+                Integer.valueOf(CommonConstants.AUDIT_REJECTED).equals(merchant.getAuditStatus()));
+        result.put("submittedAt", merchant.getCreatedAt());
+        result.put("auditedAt", merchant.getAuditedAt());
 
         Shop shop = shopMapper.selectOne(new LambdaQueryWrapper<Shop>()
                 .eq(Shop::getMerchantId, merchant.getId())
