@@ -17,6 +17,7 @@ export const userApi = {
   changePassword: (data) => request.put('/users/me/password', data),
   deactivate: () => request.post('/users/me/deactivate'),
   addresses: () => request.get('/users/me/addresses'),
+  searchAddresses: (kw) => request.get('/users/me/addresses/search', { params: { kw } }),
   addAddress: (data) => request.post('/users/me/addresses', data),
   updateAddress: (id, data) => request.put(`/users/me/addresses/${id}`, data),
   deleteAddress: (id) => request.delete(`/users/me/addresses/${id}`)

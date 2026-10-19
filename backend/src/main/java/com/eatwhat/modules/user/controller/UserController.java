@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -61,6 +62,13 @@ public class UserController {
     @GetMapping("/me/addresses")
     public R<List<UserAddress>> addresses() {
         return R.ok(userService.listAddresses());
+    }
+
+    @Operation(summary = "地址搜索（顾客-16：关键词匹配本人历史地址）")
+    @RequireRole("CONSUMER")
+    @GetMapping("/me/addresses/search")
+    public R<List<UserAddress>> searchAddresses(@RequestParam("kw") String keyword) {
+        return R.ok(userService.searchAddresses(keyword));
     }
 
     @Operation(summary = "新增收货地址")

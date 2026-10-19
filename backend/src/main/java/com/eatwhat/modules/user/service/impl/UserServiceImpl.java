@@ -103,6 +103,28 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public List<UserAddress> searchAddresses(String keyword) {
+        Long userId = UserContext.userId();
+        String kw = keyword == null ? "" : keyword.trim();
+        if (kw.isEmpty()) {
+            return listAddresses();
+        }
+        // 顾客-16：联系人 / 手机号 / 省市区 / 详细地址 / 标签 任一命中即返回
+        return addressMapper.selectList(new LambdaQueryWrapper<UserAddress>()
+                .eq(UserAddress::getUserId, userId)
+                .and(w -> w
+                        .like(UserAddress::getContactName, kw)
+                        .or().like(UserAddress::getPhone, kw)
+                        .or().like(UserAddress::getProvince, kw)
+                        .or().like(UserAddress::getCity, kw)
+                        .or().like(UserAddress::getDistrict, kw)
+                        .or().like(UserAddress::getDetail, kw)
+                        .or().like(UserAddress::getTag, kw))
+                .orderByDesc(UserAddress::getIsDefault)
+                .orderByDesc(UserAddress::getId));
+    }
+
+    @Override
     @Transactional(rollbackFor = Exception.class)
     public Long addAddress(AddressRequest request) {
         Long userId = UserContext.userId();

@@ -24,6 +24,9 @@ public interface UserService {
     /** 地址列表 */
     List<UserAddress> listAddresses();
 
+    /** 顾客-16：按关键词搜索本人历史地址 */
+    List<UserAddress> searchAddresses(String keyword);
+
     /** 新增地址，返回地址 ID */
     Long addAddress(AddressRequest request);
 

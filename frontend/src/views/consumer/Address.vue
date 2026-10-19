@@ -3,7 +3,17 @@
     <div class="ew-card">
       <div class="ew-flex-between">
         <h3 class="ew-title">收货地址</h3>
-        <el-button type="primary" @click="openDialog()">新增地址</el-button>
+        <div class="ew-flex ew-gap8">
+          <el-input
+            v-model="keyword"
+            placeholder="搜索联系人/手机号/地址/标签"
+            clearable
+            style="width: 260px"
+            :prefix-icon="Search"
+            @input="onSearch"
+          />
+          <el-button type="primary" @click="openDialog()">新增地址</el-button>
+        </div>
       </div>
 
       <div class="addresses">
@@ -25,7 +35,7 @@
             <el-button link type="danger" @click="remove(addr)">删除</el-button>
           </div>
         </div>
-        <el-empty v-if="!loading && list.length === 0" description="还没有收货地址，先加一个吧" />
+        <el-empty v-if="!loading && list.length === 0" :description="keyword ? '没有匹配的地址' : '还没有收货地址，先加一个吧'" />
       </div>
     </div>
 
@@ -76,12 +86,28 @@
 import { onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { userApi } from '@/api'
+import { Search } from '@element-plus/icons-vue'
 
 const loading = ref(false)
 const submitting = ref(false)
 const visible = ref(false)
 const list = ref([])
 const formRef = ref()
+
+// 顾客-16：地址搜索定位（300ms 防抖，走后端 /users/me/addresses/search）
+const keyword = ref('')
+let searchTimer = null
+function onSearch() {
+  clearTimeout(searchTimer)
+  searchTimer = setTimeout(async () => {
+    const kw = keyword.value.trim()
+    if (!kw) {
+      await load()
+      return
+    }
+    list.value = (await userApi.searchAddresses(kw)) || []
+  }, 300)
+}
 
 const form = reactive({
   id: null,
