@@ -49,7 +49,7 @@
 | 配送骑手 | 资质认证、抢单大厅（排序与距离/收益筛选）、接单取餐送达、接单设置（开关/半径/上限）、转单与异常上报、收入统计与逐单明细、健康证到期提醒、订单消息 |
 | 平台管理员 | 管理员账号管理、用户管理、商家与骑手资质审核、订单监管与强制干预、异常订单筛查、菜品违规下架（含原因）、售后仲裁、配送异常处理、公告/敏感词/平台参数/数据字典、操作审计日志、平台统计与每日汇总 |
 
-功能项的完整清单见 [项目功能清单](docs/09-项目功能清单.md)（221 条，已全部实现）。
+功能项的完整清单见 [项目功能清单](docs/09-项目功能清单.md)（224 条：P0 92 / P1 100 / P2 32，已全部实现）。
 
 ### 订单状态机
 
@@ -346,6 +346,18 @@ EatWhat/
 git commit -m "feat(order): 实现订单创建与库存原子扣减"
 git commit -m "fix(auth): 修复令牌过期后未清除本地缓存"
 git commit -m "docs(api): 补充订单状态迁移矩阵"
+```
+
+### 版本发布
+
+当前版本 **v1.1.0**（功能完整版），版本历史见 [CHANGELOG.md](CHANGELOG.md)。
+
+```bash
+# 发布流程：develop 合入 main（--no-ff）后打附注标签
+git checkout main && git pull --rebase origin main
+git merge --no-ff develop
+git tag -a v1.1.0 -m "release: v1.1.0 ..."
+git push origin main --follow-tags
 ```
 
 ---
