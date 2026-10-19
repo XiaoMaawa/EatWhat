@@ -159,7 +159,31 @@ export const adminApi = {
   afterSales: (params) => request.get('/admin/after-sales', { params }),
   afterSaleDetail: (id) => request.get(`/admin/after-sales/${id}`),
   arbitrate: (id, data) => request.post(`/admin/after-sales/${id}/arbitrate`, data),
-  publishNotice: (data) => request.post('/admin/notices', data)
+  publishNotice: (data) => request.post('/admin/notices', data),
+
+  announcements: (params) => request.get('/admin/announcements', { params }),
+  createAnnouncement: (data) => request.post('/admin/announcements', data),
+  updateAnnouncement: (id, data) => request.put(`/admin/announcements/${id}`, data),
+  changeAnnouncementStatus: (id, status) => request.patch(`/admin/announcements/${id}/status`, { status }),
+  deleteAnnouncement: (id) => request.delete(`/admin/announcements/${id}`),
+
+  sensitiveWords: (params) => request.get('/admin/sensitive-words', { params }),
+  createSensitiveWord: (data) => request.post('/admin/sensitive-words', data),
+  updateSensitiveWord: (id, data) => request.put(`/admin/sensitive-words/${id}`, data),
+  deleteSensitiveWord: (id) => request.delete(`/admin/sensitive-words/${id}`),
+  importSensitiveWords: (data) => request.post('/admin/sensitive-words/import', data),
+  checkSensitiveWords: (data) => request.post('/admin/sensitive-words/check', data),
+
+  configs: (params) => request.get('/admin/configs', { params }),
+  createConfig: (data) => request.post('/admin/configs', data),
+  updateConfig: (id, data) => request.put(`/admin/configs/${id}`, data),
+  deleteConfig: (id) => request.delete(`/admin/configs/${id}`)
+}
+
+// ===== 公共内容（免登录）=====
+export const commonApi = {
+  announcements: (params) => request.get('/announcements', { params }),
+  configs: (params) => request.get('/common/configs', { params })
 }
 
 // ===== 消息中心 =====

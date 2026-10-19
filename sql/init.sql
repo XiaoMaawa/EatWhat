@@ -421,6 +421,64 @@ CREATE TABLE `user_message` (
   KEY `idx_msg_order` (`order_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='用户消息';
 
+-- ---------------------------------------------------------------------
+-- 18. 平台公告表
+-- ---------------------------------------------------------------------
+DROP TABLE IF EXISTS `announcement`;
+CREATE TABLE `announcement` (
+  `id`            BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `title`         VARCHAR(100)    NOT NULL                COMMENT '公告标题',
+  `content`       TEXT            NOT NULL                COMMENT '公告正文',
+  `type`          TINYINT         NOT NULL DEFAULT 1      COMMENT '1系统公告 2平台活动 3维护通知',
+  `target_role`   VARCHAR(20)     NOT NULL DEFAULT 'ALL'  COMMENT '可见范围 ALL/CONSUMER/MERCHANT/RIDER',
+  `start_time`    DATETIME        NOT NULL                COMMENT '生效时间',
+  `end_time`      DATETIME        DEFAULT NULL            COMMENT '失效时间,为空表示长期有效',
+  `status`        TINYINT         NOT NULL DEFAULT 1      COMMENT '0已下线 1已发布',
+  `publisher_id`  BIGINT UNSIGNED NOT NULL                COMMENT '发布管理员ID',
+  `created_at`    DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at`    DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted`       TINYINT         NOT NULL DEFAULT 0      COMMENT '逻辑删除 0未删 1已删',
+  PRIMARY KEY (`id`),
+  KEY `idx_announcement_status` (`status`, `start_time`),
+  KEY `idx_announcement_role` (`target_role`, `status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='平台公告';
+
+-- ---------------------------------------------------------------------
+-- 19. 敏感词库表
+-- ---------------------------------------------------------------------
+DROP TABLE IF EXISTS `sensitive_word`;
+CREATE TABLE `sensitive_word` (
+  `id`         BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `word`       VARCHAR(50)     NOT NULL                COMMENT '敏感词',
+  `category`   VARCHAR(20)     NOT NULL DEFAULT 'ALL'  COMMENT '适用范围 ALL/REVIEW/REMARK/NICKNAME',
+  `status`     TINYINT         NOT NULL DEFAULT 1      COMMENT '0已停用 1已启用',
+  `created_at` DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted`    TINYINT         NOT NULL DEFAULT 0      COMMENT '逻辑删除 0未删 1已删',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_sensitive_word` (`word`),
+  KEY `idx_sensitive_status` (`status`, `category`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='敏感词库';
+
+-- ---------------------------------------------------------------------
+-- 20. 平台参数表
+-- ---------------------------------------------------------------------
+DROP TABLE IF EXISTS `sys_config`;
+CREATE TABLE `sys_config` (
+  `id`           BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `config_key`   VARCHAR(64)     NOT NULL                COMMENT '参数键',
+  `config_value` VARCHAR(500)    NOT NULL                COMMENT '参数值',
+  `config_name`  VARCHAR(100)    NOT NULL                COMMENT '参数名称',
+  `config_group` VARCHAR(50)     NOT NULL DEFAULT 'PLATFORM' COMMENT '参数分组 ORDER/DELIVERY/PLATFORM',
+  `remark`       VARCHAR(255)    DEFAULT NULL            COMMENT '说明',
+  `created_at`   DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at`   DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted`      TINYINT         NOT NULL DEFAULT 0      COMMENT '逻辑删除 0未删 1已删',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_sys_config_key` (`config_key`),
+  KEY `idx_sys_config_group` (`config_group`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='平台参数';
+
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- =====================================================================
@@ -498,6 +556,25 @@ INSERT INTO `shop_favorite` (`id`, `user_id`, `shop_id`) VALUES
 (1, 2, 1),
 (2, 2, 2),
 (3, 3, 3);
+
+INSERT INTO `announcement` (`id`, `title`, `content`, `type`, `target_role`, `start_time`, `end_time`, `status`, `publisher_id`) VALUES
+(1, '欢迎使用 EatWhat 外卖平台', 'EatWhat 外卖平台正式上线啦！下单即享新用户立减优惠，米饭管够～', 1, 'ALL', '2026-10-01 00:00:00', NULL, 1, 1),
+(2, '双十一米饭节活动', '11 月 11 日当天，全平台米饭类菜品 5 折，米饭自由就在今天！', 2, 'CONSUMER', '2026-11-01 00:00:00', '2026-11-12 00:00:00', 1, 1),
+(3, '系统维护通知', '平台将于每周一凌晨 02:00-03:00 进行例行维护，期间下单功能可能短暂不可用。', 3, 'ALL', '2026-10-01 00:00:00', NULL, 1, 1);
+
+INSERT INTO `sensitive_word` (`id`, `word`, `category`, `status`) VALUES
+(1, '傻逼', 'ALL', 1),
+(2, '垃圾', 'REVIEW', 1),
+(3, '骗子', 'REVIEW', 1),
+(4, '刷单', 'REMARK', 1);
+
+INSERT INTO `sys_config` (`id`, `config_key`, `config_value`, `config_name`, `config_group`, `remark`) VALUES
+(1, 'order.pay.timeout.minutes', '15', '订单支付超时时间（分钟）', 'ORDER', '超过该时长未支付订单自动取消'),
+(2, 'order.review.valid.days', '7', '订单评价有效期（天）', 'ORDER', '订单完成后多少天内可评价'),
+(3, 'delivery.fee.base.km', '3', '阶梯配送费基础里程（公里）', 'DELIVERY', '该里程内按店铺基础配送费收取'),
+(4, 'delivery.fee.extra.per.km', '1', '阶梯配送费超出加价（元/公里）', 'DELIVERY', '超出基础里程后每公里加收金额'),
+(5, 'platform.service.phone', '400-800-8888', '平台客服电话', 'PLATFORM', '展示在顾客端与骑手端'),
+(6, 'platform.min.withdraw', '10', '骑手最低提现金额（元）', 'PLATFORM', '低于该金额不可提现');
 
 -- =====================================================================
 -- 说明：以上账号密码均以 BCrypt 密文入库，明文与哈希对应关系如下：

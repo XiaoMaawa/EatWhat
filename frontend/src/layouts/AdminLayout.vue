@@ -37,6 +37,18 @@
           <el-icon><Document /></el-icon>
           <span>操作日志</span>
         </el-menu-item>
+        <el-menu-item index="/admin/announcements">
+          <el-icon><ChatDotSquare /></el-icon>
+          <span>公告管理</span>
+        </el-menu-item>
+        <el-menu-item index="/admin/sensitive-words">
+          <el-icon><Warning /></el-icon>
+          <span>敏感词管理</span>
+        </el-menu-item>
+        <el-menu-item index="/admin/configs">
+          <el-icon><Setting /></el-icon>
+          <span>平台参数</span>
+        </el-menu-item>
         <el-menu-item index="/admin/notices">
           <el-icon><Bell /></el-icon>
           <span>发布公告</span>
@@ -73,7 +85,7 @@ import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
-import { ArrowDown, Bell, Bicycle, DataBoard, Dish, Document, List, Shop, User, Wallet } from '@element-plus/icons-vue'
+import { ArrowDown, Bell, Bicycle, ChatDotSquare, DataBoard, Dish, Document, List, Setting, Shop, User, Wallet, Warning } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()

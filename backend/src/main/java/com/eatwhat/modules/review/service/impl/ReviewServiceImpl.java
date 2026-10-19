@@ -7,6 +7,7 @@ import com.eatwhat.common.constant.OrderStatus;
 import com.eatwhat.common.exception.BizException;
 import com.eatwhat.common.exception.ErrorCode;
 import com.eatwhat.common.result.PageResult;
+import com.eatwhat.modules.content.service.SensitiveWordService;
 import com.eatwhat.modules.auth.entity.SysUser;
 import com.eatwhat.modules.auth.mapper.SysUserMapper;
 import com.eatwhat.modules.order.entity.Order;
@@ -21,6 +22,7 @@ import com.eatwhat.modules.shop.mapper.ShopMapper;
 import com.eatwhat.modules.shop.service.ShopService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,6 +46,10 @@ public class ReviewServiceImpl implements ReviewService {
     private final ShopMapper shopMapper;
     private final SysUserMapper userMapper;
     private final ShopService shopService;
+
+    /** 敏感词服务；单元测试环境下为空，调用前须判空 */
+    @Autowired(required = false)
+    private SensitiveWordService sensitiveWordService;
 
     public ReviewServiceImpl(ReviewMapper reviewMapper,
                              OrderMapper orderMapper,
@@ -79,6 +85,8 @@ public class ReviewServiceImpl implements ReviewService {
         if (exists != null && exists > 0) {
             throw BizException.of(ErrorCode.REVIEW_ALREADY_EXISTS);
         }
+
+        checkContent(request.getContent());
 
         Review review = new Review();
         review.setOrderId(order.getId());
@@ -155,6 +163,7 @@ public class ReviewServiceImpl implements ReviewService {
     @Transactional(rollbackFor = Exception.class)
     public Review update(Long userId, Long reviewId, UpdateReviewRequest request) {
         Review review = requireEditable(userId, reviewId);
+        checkContent(request.getContent());
         review.setShopScore(request.getShopScore());
         review.setDeliveryScore(request.getDeliveryScore());
         review.setContent(request.getContent().trim());
@@ -192,6 +201,20 @@ public class ReviewServiceImpl implements ReviewService {
         }
         fillShop(review, false);
         return review;
+    }
+
+    /**
+     * 敏感词检测：命中平台词库时拒绝提交。
+     */
+    private void checkContent(String text) {
+        if (sensitiveWordService == null || text == null || text.isBlank()) {
+            return;
+        }
+        List<String> hits = sensitiveWordService.hits(text, "REVIEW");
+        if (hits != null && !hits.isEmpty()) {
+            throw BizException.of(ErrorCode.PARAM_INVALID,
+                    "评价内容包含敏感词：" + String.join("、", hits) + "，请修改后再提交");
+        }
     }
 
     /**

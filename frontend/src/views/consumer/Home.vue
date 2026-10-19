@@ -8,6 +8,23 @@
       <span class="banner-icon">🍚</span>
     </div>
 
+    <div v-if="announcements.length" class="notice-bar">
+      <span class="notice-icon">📢</span>
+      <el-carousel
+        :autoplay="true"
+        :interval="5000"
+        direction="vertical"
+        height="22px"
+        indicator-position="none"
+        class="notice-carousel"
+      >
+        <el-carousel-item v-for="item in announcements" :key="item.id">
+          <span class="notice-text" :title="item.title">{{ item.title }}</span>
+        </el-carousel-item>
+      </el-carousel>
+      <el-tag size="small" effect="plain" type="warning">平台公告</el-tag>
+    </div>
+
     <div class="toolbar">
       <el-input
         v-model="query.keyword"
@@ -84,13 +101,14 @@
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { shopApi } from '@/api'
+import { shopApi, commonApi } from '@/api'
 import { Search } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const loading = ref(false)
 const shops = ref([])
 const total = ref(0)
+const announcements = ref([])
 
 const query = reactive({
   page: 1,
@@ -114,10 +132,51 @@ function goShop(id) {
   router.push(`/shop/${id}`)
 }
 
-onMounted(load)
+async function loadAnnouncements() {
+  try {
+    const data = await commonApi.announcements({ role: 'CONSUMER', limit: 5 })
+    announcements.value = data || []
+  } catch {
+    announcements.value = []
+  }
+}
+
+onMounted(() => {
+  load()
+  loadAnnouncements()
+})
 </script>
 
 <style scoped>
+.notice-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #fff8e6;
+  border: 1px solid #fbe6b5;
+  border-radius: 10px;
+  padding: 8px 14px;
+  margin-bottom: 14px;
+}
+
+.notice-icon {
+  font-size: 16px;
+}
+
+.notice-carousel {
+  flex: 1;
+  min-width: 0;
+}
+
+.notice-text {
+  font-size: 13px;
+  color: #8a5a00;
+  line-height: 22px;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .banner {
   background: linear-gradient(135deg, #ff9a5c, #ff7a45);
   border-radius: 14px;

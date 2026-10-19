@@ -79,7 +79,10 @@ const routes = [
       { path: 'dishes', name: 'adminDishes', component: () => import('@/views/admin/Dishes.vue'), meta: { title: '菜品监管' } },
       { path: 'after-sales', name: 'adminAfterSales', component: () => import('@/views/admin/AfterSales.vue'), meta: { title: '售后仲裁' } },
       { path: 'logs', name: 'adminLogs', component: () => import('@/views/admin/OperationLogs.vue'), meta: { title: '操作日志' } },
-      { path: 'notices', name: 'adminNotices', component: () => import('@/views/admin/Notices.vue'), meta: { title: '发布公告' } }
+      { path: 'notices', name: 'adminNotices', component: () => import('@/views/admin/Notices.vue'), meta: { title: '发布公告' } },
+    { path: 'announcements', name: 'adminAnnouncements', component: () => import('@/views/admin/Announcements.vue'), meta: { title: '公告管理' } },
+    { path: 'sensitive-words', name: 'adminSensitiveWords', component: () => import('@/views/admin/SensitiveWords.vue'), meta: { title: '敏感词管理' } },
+    { path: 'configs', name: 'adminConfigs', component: () => import('@/views/admin/Configs.vue'), meta: { title: '平台参数' } }
     ]
   },
   { path: '/:pathMatch(.*)*', redirect: '/' }

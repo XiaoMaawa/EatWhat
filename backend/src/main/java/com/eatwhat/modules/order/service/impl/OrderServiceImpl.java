@@ -11,6 +11,7 @@ import com.eatwhat.common.utils.BizNoGenerator;
 import com.eatwhat.common.utils.DeliveryFeeUtils;
 import com.eatwhat.common.utils.GeoUtils;
 import com.eatwhat.common.utils.UserContext;
+import com.eatwhat.modules.content.service.SensitiveWordService;
 import com.eatwhat.modules.cart.entity.CartItem;
 import com.eatwhat.modules.cart.mapper.CartItemMapper;
 import com.eatwhat.modules.cart.service.CartService;
@@ -38,6 +39,7 @@ import com.eatwhat.modules.user.entity.UserAddress;
 import com.eatwhat.modules.user.mapper.UserAddressMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -72,6 +74,10 @@ public class OrderServiceImpl implements OrderService {
     private final MerchantMapper merchantMapper;
     private final DeliveryService deliveryService;
     private final MessageService messageService;
+
+    /** 敏感词服务；单元测试环境下为空，调用前须判空 */
+    @Autowired(required = false)
+    private SensitiveWordService sensitiveWordService;
 
     public OrderServiceImpl(OrderMapper orderMapper,
                             OrderItemMapper orderItemMapper,
@@ -199,6 +205,7 @@ public class OrderServiceImpl implements OrderService {
         order.setReceiverName(address.getContactName());
         order.setReceiverPhone(address.getPhone());
         order.setReceiverAddress(fullAddress(address));
+        checkRemark(request.getRemark());
         order.setRemark(request.getRemark());
         order.setTablewareCount(request.getTablewareCount() == null ? 0 : request.getTablewareCount());
         orderMapper.insert(order);
@@ -548,6 +555,20 @@ public class OrderServiceImpl implements OrderService {
     /**
      * 按登录用户 ID 查询其商家主键；非商家账号返回 null。
      */
+    /**
+     * 订单备注敏感词检测。
+     */
+    private void checkRemark(String remark) {
+        if (sensitiveWordService == null || remark == null || remark.isBlank()) {
+            return;
+        }
+        List<String> hits = sensitiveWordService.hits(remark, "REMARK");
+        if (hits != null && !hits.isEmpty()) {
+            throw BizException.of(ErrorCode.PARAM_INVALID,
+                    "订单备注包含敏感词：" + String.join("、", hits) + "，请修改后再提交");
+        }
+    }
+
     private Long currentMerchantId(Long userId) {
         if (userId == null) {
             return null;
