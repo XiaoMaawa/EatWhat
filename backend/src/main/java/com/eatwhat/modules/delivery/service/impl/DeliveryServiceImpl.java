@@ -8,6 +8,7 @@ import com.eatwhat.common.exception.BizException;
 import com.eatwhat.common.exception.ErrorCode;
 import com.eatwhat.common.result.PageResult;
 import com.eatwhat.modules.delivery.dto.RiderApplyRequest;
+import com.eatwhat.modules.delivery.dto.RiderProfileRequest;
 import com.eatwhat.modules.delivery.entity.DeliveryTask;
 import com.eatwhat.modules.delivery.entity.Rider;
 import com.eatwhat.modules.delivery.mapper.DeliveryTaskMapper;
@@ -112,6 +113,48 @@ public class DeliveryServiceImpl implements DeliveryService {
         return rider;
     }
 
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Rider updateProfile(Long userId, RiderProfileRequest request) {
+        Rider rider = requireApprovedRider(userId);
+        if (request.getContactPhone() != null && !request.getContactPhone().isBlank()) {
+            rider.setContactPhone(request.getContactPhone().trim());
+        }
+        if (request.getServiceArea() != null) {
+            String area = request.getServiceArea().trim();
+            rider.setServiceArea(area.isEmpty() ? null : area);
+        }
+        if (request.getHealthExpire() != null && !request.getHealthExpire().isBlank()) {
+            try {
+                rider.setHealthExpire(LocalDate.parse(request.getHealthExpire().trim()));
+            } catch (Exception e) {
+                throw BizException.of(ErrorCode.PARAM_INVALID, "鍋ュ悍璇佹湁鏁堟湡鏍煎紡搴斾负 yyyy-MM-dd");
+            }
+        }
+        riderMapper.updateById(rider);
+        return rider;
+    }
+
+    @Override
+    public Map<String, Object> healthReminder(Long userId) {
+        Rider rider = profile(userId);
+        if (rider == null || rider.getHealthExpire() == null) {
+            return null;
+        }
+        LocalDate expire = rider.getHealthExpire();
+        long days = java.time.temporal.ChronoUnit.DAYS.between(LocalDate.now(), expire);
+        if (days > 30) {
+            return null;
+        }
+        Map<String, Object> reminder = new HashMap<>();
+        reminder.put("healthExpire", expire.toString());
+        reminder.put("daysLeft", days);
+        reminder.put("expired", days < 0);
+        reminder.put("message", days < 0
+                ? "鍋ュ悍璇佸凡杩囨湡 " + (-days) + " 澶╋紝璇峰敖蹇笂浼犳柊鐨勫仴搴疯瘉"
+                : "鍋ュ悍璇佸皢浜?" + days + " 澶╁悗鍒版湡锛岃鍙婃椂鏇存柊");
+        return reminder;
+    }
     @Override
     public Rider requireApprovedRider(Long userId) {
         Rider rider = riderMapper.selectOne(new LambdaQueryWrapper<Rider>()

@@ -5,6 +5,7 @@ import com.eatwhat.common.result.R;
 import com.eatwhat.common.utils.UserContext;
 import com.eatwhat.modules.delivery.dto.DeliveryExceptionRequest;
 import com.eatwhat.modules.delivery.dto.RiderApplyRequest;
+import com.eatwhat.modules.delivery.dto.RiderProfileRequest;
 import com.eatwhat.modules.delivery.entity.DeliveryException;
 import com.eatwhat.modules.delivery.entity.DeliveryTask;
 import com.eatwhat.modules.delivery.entity.Rider;
@@ -54,6 +55,18 @@ public class RiderController {
     @GetMapping("/profile")
     public R<Rider> profile() {
         return R.ok(deliveryService.profile(UserContext.userId()));
+    }
+
+    @Operation(summary = "修改骑手资料（联系电话 / 常用配送区域 / 健康证有效期，骑手-28、骑手-05）")
+    @PatchMapping("/profile")
+    public R<Rider> updateProfile(@Valid @RequestBody RiderProfileRequest request) {
+        return R.ok(deliveryService.updateProfile(UserContext.userId(), request));
+    }
+
+    @Operation(summary = "健康证到期提醒（骑手-05）")
+    @GetMapping("/health-reminder")
+    public R<Map<String, Object>> healthReminder() {
+        return R.ok(deliveryService.healthReminder(UserContext.userId()));
     }
 
     @Operation(summary = "可抢任务列表")

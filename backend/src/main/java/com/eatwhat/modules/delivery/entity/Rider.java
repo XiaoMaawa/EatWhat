@@ -10,6 +10,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
@@ -32,7 +33,17 @@ public class Rider extends BaseEntity {
 
     private String healthImg;
 
+    /**
+     * 健康证有效期至（骑手-05，到期前 30 天首页提醒）。
+     */
+    private LocalDate healthExpire;
+
     private String contactPhone;
+
+    /**
+     * 常用配送区域（骑手-28）。
+     */
+    private String serviceArea;
 
     /**
      * 1 接单中 / 0 已暂停接单。
@@ -115,12 +126,28 @@ public class Rider extends BaseEntity {
         this.healthImg = healthImg;
     }
 
+    public LocalDate getHealthExpire() {
+        return healthExpire;
+    }
+
+    public void setHealthExpire(LocalDate healthExpire) {
+        this.healthExpire = healthExpire;
+    }
+
     public String getContactPhone() {
         return contactPhone;
     }
 
     public void setContactPhone(String contactPhone) {
         this.contactPhone = contactPhone;
+    }
+
+    public String getServiceArea() {
+        return serviceArea;
+    }
+
+    public void setServiceArea(String serviceArea) {
+        this.serviceArea = serviceArea;
     }
 
     public Integer getAccepting() {

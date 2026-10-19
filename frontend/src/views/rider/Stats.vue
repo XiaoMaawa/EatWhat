@@ -120,10 +120,23 @@
     </div>
 
     <div class="ew-card">
-      <h3 class="ew-title">骑手资料</h3>
+      <div class="ew-flex-between">
+        <h3 class="ew-title">骑手资料</h3>
+        <el-button v-if="profile" size="small" type="primary" @click="openEdit">编辑资料</el-button>
+      </div>
+      <el-alert
+        v-if="healthTip"
+        class="health-tip"
+        :type="healthTip.expired ? 'error' : 'warning'"
+        :title="healthTip.message"
+        :closable="false"
+        show-icon
+      />
       <el-descriptions v-if="profile" :column="2" border>
         <el-descriptions-item label="姓名">{{ profile.realName }}</el-descriptions-item>
         <el-descriptions-item label="联系电话">{{ profile.contactPhone }}</el-descriptions-item>
+        <el-descriptions-item label="常用配送区域">{{ profile.serviceArea || '未设置' }}</el-descriptions-item>
+        <el-descriptions-item label="健康证有效期">{{ profile.healthExpire || '未设置' }}</el-descriptions-item>
         <el-descriptions-item label="审核状态">
           <el-tag :type="AUDIT_STATUS[profile.auditStatus]?.type">
             {{ AUDIT_STATUS[profile.auditStatus]?.text || '未知' }}
@@ -134,11 +147,36 @@
       </el-descriptions>
       <el-empty v-else description="还没有提交骑手认证" :image-size="70" />
     </div>
+
+    <el-dialog v-model="editVisible" title="编辑骑手资料" width="480px">
+      <el-form ref="editRef" :model="editForm" :rules="editRules" label-width="110px">
+        <el-form-item label="联系电话" prop="contactPhone">
+          <el-input v-model="editForm.contactPhone" maxlength="11" placeholder="11 位手机号" />
+        </el-form-item>
+        <el-form-item label="常用配送区域" prop="serviceArea">
+          <el-input v-model="editForm.serviceArea" maxlength="200" placeholder="例如：滨江区、西湖区文三路一带" />
+        </el-form-item>
+        <el-form-item label="健康证有效期" prop="healthExpire">
+          <el-date-picker
+            v-model="editForm.healthExpire"
+            type="date"
+            value-format="YYYY-MM-DD"
+            placeholder="选择到期日期"
+            style="width: 100%"
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="editVisible = false">取消</el-button>
+        <el-button type="primary" :loading="saving" @click="saveProfile">保存</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
+import { ElMessage } from 'element-plus'
 import { riderApi } from '@/api'
 import { money } from '@/utils/format'
 import { AUDIT_STATUS } from '@/utils/orderStatus'
@@ -199,6 +237,43 @@ function changeSettlePage(page) {
   loadSettle()
 }
 
+// 骑手-28 资料编辑 / 骑手-05 健康证提醒
+const editVisible = ref(false)
+const saving = ref(false)
+const editRef = ref()
+const healthTip = ref(null)
+const editForm = reactive({ contactPhone: '', serviceArea: '', healthExpire: '' })
+const editRules = {
+  contactPhone: [
+    { required: true, message: '请填写联系电话', trigger: 'blur' },
+    { pattern: /^1[3-9]\d{9}$/, message: '手机号格式不正确', trigger: 'blur' }
+  ]
+}
+
+function openEdit() {
+  editForm.contactPhone = profile.value?.contactPhone || ''
+  editForm.serviceArea = profile.value?.serviceArea || ''
+  editForm.healthExpire = profile.value?.healthExpire || ''
+  editVisible.value = true
+}
+
+async function saveProfile() {
+  await editRef.value.validate()
+  saving.value = true
+  try {
+    profile.value = await riderApi.updateProfile({ ...editForm })
+    ElMessage.success('资料已保存')
+    editVisible.value = false
+    await loadHealthTip()
+  } finally {
+    saving.value = false
+  }
+}
+
+async function loadHealthTip() {
+  healthTip.value = await riderApi.healthReminder().catch(() => null)
+}
+
 onMounted(async () => {
   loading.value = true
   try {
@@ -208,10 +283,15 @@ onMounted(async () => {
     loading.value = false
   }
   loadSettle()
+  loadHealthTip()
 })
 </script>
 
 <style scoped>
+.health-tip {
+  margin-bottom: 12px;
+}
+
 .stats {
   display: grid;
   grid-template-columns: repeat(4, 1fr);

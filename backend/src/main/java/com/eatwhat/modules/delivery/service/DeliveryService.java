@@ -22,6 +22,13 @@ public interface DeliveryService {
      * 骑手查看自己的认证信息（含审核状态）。
      */
     Rider profile(Long userId);
+    /**
+     * 楠戞墜鏇存柊璧勬枡锛氳仈绯荤數璇濄€佸父鐢ㄩ厤閫佸尯鍩熴€佸仴搴疯瘉鏈夋晥鏈燂紙楠戞墜-28 / 楠戞墜-05锛夈€?     */
+    Rider updateProfile(Long userId, com.eatwhat.modules.delivery.dto.RiderProfileRequest request);
+
+    /**
+     * 鍋ュ悍璇佸埌鏈熸彁閱掞紙楠戞墜-05锛夛細璺濆埌鏈?<= 30 澶╂垨宸茶繃鏈熸椂杩斿洖鎻愰啋锛屽惁鍒欒繑鍥?null銆?     */
+    java.util.Map<String, Object> healthReminder(Long userId);
 
     /**
      * 获取当前已通过审核的骑手档案，未通过则抛 RIDER_NOT_APPROVED。
