@@ -50,7 +50,8 @@ export default {
         'test',
         'plan',
         'git',
-        'readme'
+        'readme',
+        'scope'
       ]
     ],
     'subject-case': [0],
