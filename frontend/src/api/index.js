@@ -139,6 +139,7 @@ export const fileApi = {
 export const adminApi = {
   users: (params) => request.get('/admin/users', { params }),
   userDetail: (id) => request.get(`/admin/users/${id}`),
+  userOrders: (id, params) => request.get(`/admin/users/${id}/orders`, { params }),
   updateUserStatus: (id, status) => request.patch(`/admin/users/${id}/status`, { status }),
 
   merchants: (params) => request.get('/admin/merchants', { params }),
@@ -149,17 +150,21 @@ export const adminApi = {
   riders: (params) => request.get('/admin/riders', { params }),
   riderDetail: (id) => request.get(`/admin/riders/${id}`),
   auditRider: (id, data) => request.patch(`/admin/riders/${id}/audit`, data),
+  updateRiderAccepting: (id, accepting) => request.patch(`/admin/riders/${id}/accepting`, { accepting }),
 
+  abnormalOrders: (params) => request.get('/admin/orders/abnormal', { params }),
   orders: (params) => request.get('/admin/orders', { params }),
   orderDetail: (id) => request.get(`/admin/orders/${id}`),
   intervene: (id, data) => request.post(`/admin/orders/${id}/intervene`, data),
 
   dishes: (params) => request.get('/admin/dishes', { params }),
   offlineDish: (id) => request.patch(`/admin/dishes/${id}/offline`),
+  onlineDish: (id) => request.patch(`/admin/dishes/${id}/online`),
   deliveryExceptions: (params) => request.get('/admin/delivery-exceptions', { params }),
   handleDeliveryException: (id, data) => request.post(`/admin/delivery-exceptions/${id}/handle`, data),
 
   dashboard: () => request.get('/admin/dashboard'),
+  statistics: (params) => request.get('/admin/statistics', { params }),
   operationLogs: (params) => request.get('/admin/operation-logs', { params }),
   afterSales: (params) => request.get('/admin/after-sales', { params }),
   afterSaleDetail: (id) => request.get(`/admin/after-sales/${id}`),

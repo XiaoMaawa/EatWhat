@@ -505,6 +505,25 @@ CREATE TABLE `delivery_exception` (
   KEY `idx_exception_status` (`status`, `created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='配送异常与转单申请';
 
+-- ---------------------------------------------------------------------
+-- 22. 数据字典表
+-- ---------------------------------------------------------------------
+DROP TABLE IF EXISTS `sys_dict`;
+CREATE TABLE `sys_dict` (
+  `id`         BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `dict_type`  VARCHAR(64)     NOT NULL                COMMENT '字典类型',
+  `dict_label` VARCHAR(100)    NOT NULL                COMMENT '字典标签（展示文案）',
+  `dict_value` VARCHAR(64)     NOT NULL                COMMENT '字典值',
+  `sort`       INT             NOT NULL DEFAULT 0      COMMENT '排序，越小越前',
+  `status`     TINYINT         NOT NULL DEFAULT 1      COMMENT '0停用 1启用',
+  `remark`     VARCHAR(255)    DEFAULT NULL            COMMENT '备注',
+  `created_at` DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted`    TINYINT         NOT NULL DEFAULT 0      COMMENT '逻辑删除 0未删 1已删',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_sys_dict_type_value` (`dict_type`, `dict_value`),
+  KEY `idx_sys_dict_type` (`dict_type`, `status`, `sort`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='数据字典';
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- =====================================================================
@@ -594,6 +613,36 @@ INSERT INTO `sensitive_word` (`id`, `word`, `category`, `status`) VALUES
 (3, '骗子', 'REVIEW', 1),
 (4, '刷单', 'REMARK', 1);
 
+INSERT INTO `sys_dict` (`id`, `dict_type`, `dict_label`, `dict_value`, `sort`, `status`, `remark`) VALUES
+(1,  'order_status',         '待支付',     '0', 1, 1, '订单状态字典'),
+(2,  'order_status',         '待接单',     '1', 2, 1, NULL),
+(3,  'order_status',         '备餐中',     '2', 3, 1, NULL),
+(4,  'order_status',         '待配送',     '3', 4, 1, NULL),
+(5,  'order_status',         '配送中',     '4', 5, 1, NULL),
+(6,  'order_status',         '已完成',     '5', 6, 1, NULL),
+(7,  'order_status',         '已取消',     '6', 7, 1, NULL),
+(8,  'order_status',         '退款中',     '7', 8, 1, NULL),
+(9,  'dish_status',          '已下架',     '0', 1, 1, '菜品状态字典'),
+(10, 'dish_status',          '在售',       '1', 2, 1, NULL),
+(11, 'dish_status',          '售罄',       '2', 3, 1, NULL),
+(12, 'audit_status',         '待审核',     '0', 1, 1, '审核状态字典'),
+(13, 'audit_status',         '已通过',     '1', 2, 1, NULL),
+(14, 'audit_status',         '已驳回',     '2', 3, 1, NULL),
+(15, 'delivery_task_status', '待抢单',     '0', 1, 1, '配送任务状态字典'),
+(16, 'delivery_task_status', '已接单',     '1', 2, 1, NULL),
+(17, 'delivery_task_status', '已取餐',     '2', 3, 1, NULL),
+(18, 'delivery_task_status', '已送达',     '3', 4, 1, NULL),
+(19, 'after_sale_status',    '待商家处理', '0', 1, 1, '售后状态字典'),
+(20, 'after_sale_status',    '商家已同意', '1', 2, 1, NULL),
+(21, 'after_sale_status',    '商家已拒绝', '2', 3, 1, NULL),
+(22, 'after_sale_status',    '已撤销',     '3', 4, 1, NULL),
+(23, 'after_sale_status',    '待平台仲裁', '4', 5, 1, NULL),
+(24, 'after_sale_status',    '支持顾客',   '5', 6, 1, NULL),
+(25, 'after_sale_status',    '支持商家',   '6', 7, 1, NULL),
+(26, 'user_role',            '消费者',     'CONSUMER', 1, 1, '用户角色字典'),
+(27, 'user_role',            '商家',       'MERCHANT', 2, 1, NULL),
+(28, 'user_role',            '骑手',       'RIDER',    3, 1, NULL),
+(29, 'user_role',            '管理员',     'ADMIN',    4, 1, NULL);
 INSERT INTO `sys_config` (`id`, `config_key`, `config_value`, `config_name`, `config_group`, `remark`) VALUES
 (1, 'order.pay.timeout.minutes', '15', '订单支付超时时间（分钟）', 'ORDER', '超过该时长未支付订单自动取消'),
 (2, 'order.review.valid.days', '7', '订单评价有效期（天）', 'ORDER', '订单完成后多少天内可评价'),

@@ -26,6 +26,11 @@ public interface AdminService {
     SysUser userDetail(Long userId);
 
     /**
+     * 指定用户的历史订单。
+     */
+    PageResult<Order> pageUserOrders(Long userId, Integer status, int page, int size);
+
+    /**
      * 启用 / 禁用用户。
      */
     void updateUserStatus(Long userId, Integer status);
@@ -66,6 +71,21 @@ public interface AdminService {
     void auditRider(Long riderId, Integer auditStatus, String auditRemark);
 
     /**
+     * 开启 / 关闭骑手接单权限（不影响进行中订单）。
+     */
+    void updateRiderAccepting(Long riderId, Integer accepting);
+
+    /**
+     * 恢复被下架菜品。
+     */
+    void onlineDish(Long dishId);
+
+    /**
+     * 异常订单筛选：timeoutAccept / timeoutDeliver / refunding。
+     */
+    PageResult<Order> pageAbnormalOrders(String type, int page, int size);
+
+    /**
      * 平台订单列表。
      */
     PageResult<Order> pageOrders(Integer status, String keyword, int page, int size);
@@ -94,6 +114,13 @@ public interface AdminService {
      * 首页看板。
      */
     Map<String, Object> dashboard();
+
+    /**
+     * 统计看板：交易额、订单量、完成率、用户增长与商家排行。
+     *
+     * @param period day / week / month，默认 day
+     */
+    Map<String, Object> statistics(String period);
 
     /**
      * 操作日志分页查询。

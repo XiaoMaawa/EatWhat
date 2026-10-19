@@ -89,4 +89,9 @@ public interface OrderService {
      * 平台订单列表（管理员）。
      */
     PageResult<Order> pageAdminOrders(Integer status, String keyword, int page, int size);
+
+    /**
+     * 平台强制取消订单（含退款与库存回滚），供管理员干预使用。
+     */
+    void forceCancel(Long orderId, String reason);
 }

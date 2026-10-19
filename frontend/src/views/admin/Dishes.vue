@@ -33,7 +33,7 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="130" fixed="right">
+        <el-table-column label="操作" width="210" fixed="right">
           <template #default="{ row }">
             <el-button
               size="small"
@@ -42,6 +42,14 @@
               @click="offline(row)"
             >
               强制下架
+            </el-button>
+            <el-button
+              size="small"
+              type="success"
+              :disabled="row.status !== 0"
+              @click="online(row)"
+            >
+              恢复上架
             </el-button>
           </template>
         </el-table-column>
@@ -96,6 +104,17 @@ async function offline(row) {
   await ElMessageBox.confirm(`确定要强制下架菜品「${row.name}」吗？`, '强制下架', { type: 'warning' })
   await adminApi.offlineDish(row.id)
   ElMessage.success('已下架')
+  await load()
+}
+
+async function online(row) {
+  await ElMessageBox.confirm(
+    `确定要恢复菜品「${row.name}」吗？库存为 0 时将恢复为「售罄」状态。`,
+    '恢复上架',
+    { type: 'info' }
+  )
+  await adminApi.onlineDish(row.id)
+  ElMessage.success('已恢复上架')
   await load()
 }
 

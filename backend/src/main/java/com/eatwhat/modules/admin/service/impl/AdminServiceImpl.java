@@ -99,6 +99,18 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
+    public PageResult<Order> pageUserOrders(Long userId, Integer status, int page, int size) {
+        userDetail(userId);
+        LambdaQueryWrapper<Order> wrapper = new LambdaQueryWrapper<Order>()
+                .eq(Order::getUserId, userId)
+                .eq(status != null, Order::getStatus, status)
+                .orderByDesc(Order::getId);
+        Page<Order> result = orderMapper.selectPage(new Page<>(page, size), wrapper);
+        result.getRecords().forEach(this::fillOrderSummary);
+        return PageResult.of(result);
+    }
+
+    @Override
     @Transactional(rollbackFor = Exception.class)
     public void updateUserStatus(Long userId, Integer status) {
         if (status == null || (status != CommonConstants.USER_ENABLED && status != CommonConstants.USER_DISABLED)) {
@@ -239,6 +251,18 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateRiderAccepting(Long riderId, Integer accepting) {
+        if (accepting == null || (accepting != 0 && accepting != 1)) {
+            throw BizException.of(ErrorCode.PARAM_INVALID, "接单权限只能为 0（关闭）或 1（开启）");
+        }
+        Rider rider = riderDetail(riderId);
+        rider.setAccepting(accepting);
+        riderMapper.updateById(rider);
+        log.info("管理员变更骑手接单权限 riderId={} accepting={}", riderId, accepting);
+    }
+
+    @Override
     public PageResult<Order> pageOrders(Integer status, String keyword, int page, int size) {
         return orderService.pageAdminOrders(status, keyword, page, size);
     }
@@ -282,7 +306,9 @@ public class AdminServiceImpl implements AdminService {
             }
             case "FORCE_COMPLETE" -> orderService.transition(orderId, CommonConstants.ORDER_COMPLETED,
                     "SYSTEM", "平台介入完成：" + (reason == null ? "无" : reason));
-            default -> throw BizException.of(ErrorCode.PARAM_INVALID, "action 只能是 FORCE_REFUND 或 FORCE_COMPLETE");
+            case "FORCE_CANCEL" -> orderService.forceCancel(orderId, reason);
+            default -> throw BizException.of(ErrorCode.PARAM_INVALID,
+                    "action 只能是 FORCE_REFUND、FORCE_COMPLETE 或 FORCE_CANCEL");
         }
     }
 
@@ -306,6 +332,46 @@ public class AdminServiceImpl implements AdminService {
         dish.setStatus(CommonConstants.DISH_OFF);
         dishMapper.updateById(dish);
         log.info("管理员强制下架菜品 dishId={}", dishId);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void onlineDish(Long dishId) {
+        Dish dish = dishMapper.selectById(dishId);
+        if (dish == null) {
+            throw BizException.of(ErrorCode.DISH_NOT_FOUND);
+        }
+        // 库存为 0 时恢复成「售罄」而不是「在售」，避免上架即超卖
+        Integer stock = dish.getStock();
+        dish.setStatus(stock == null || stock <= 0 ? CommonConstants.DISH_SOLD_OUT : CommonConstants.DISH_ON);
+        dishMapper.updateById(dish);
+        log.info("管理员恢复菜品 dishId={} status={}", dishId, dish.getStatus());
+    }
+
+    @Override
+    public PageResult<Order> pageAbnormalOrders(String type, int page, int size) {
+        LocalDateTime now = LocalDateTime.now();
+        LambdaQueryWrapper<Order> wrapper = new LambdaQueryWrapper<>();
+        String normalized = type == null ? "" : type.trim().toLowerCase();
+        switch (normalized) {
+            // 超时未接单：支付后停留待接单超过 15 分钟
+            case "timeout_accept" -> wrapper.eq(Order::getStatus, CommonConstants.ORDER_PENDING_ACCEPT)
+                    .lt(Order::getPayTime, now.minusMinutes(CommonConstants.ORDER_PAY_TIMEOUT_MINUTES));
+            // 超时未送达：配送中超过 60 分钟仍未完成
+            case "timeout_deliver" -> wrapper.eq(Order::getStatus, CommonConstants.ORDER_DELIVERING)
+                    .lt(Order::getCreatedAt, now.minusMinutes(60));
+            // 退款中：商家拒单或用户申诉后停留在退款中
+            case "refunding" -> wrapper.eq(Order::getStatus, CommonConstants.ORDER_REFUNDING);
+            // 待配送超时：备餐完成但长时间没人抢单
+            case "timeout_take" -> wrapper.eq(Order::getStatus, CommonConstants.ORDER_PENDING_DELIVERY)
+                    .lt(Order::getCreatedAt, now.minusMinutes(30));
+            default -> throw BizException.of(ErrorCode.PARAM_INVALID,
+                    "筛选类型只能是 timeout_accept、timeout_take、timeout_deliver 或 refunding");
+        }
+        wrapper.orderByAsc(Order::getCreatedAt);
+        Page<Order> result = orderMapper.selectPage(new Page<>(page, size), wrapper);
+        result.getRecords().forEach(this::fillOrderSummary);
+        return PageResult.of(result);
     }
 
     @Override
@@ -343,6 +409,125 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
+    public Map<String, Object> statistics(String period) {
+        LocalDate today = LocalDate.now();
+        String p = period == null ? "day" : period.trim().toLowerCase();
+        LocalDateTime start;
+        LocalDateTime prevStart;
+        LocalDateTime prevEnd;
+        switch (p) {
+            case "week" -> {
+                start = today.minusDays(6).atStartOfDay();
+                prevStart = today.minusDays(13).atStartOfDay();
+                prevEnd = today.minusDays(6).atStartOfDay();
+            }
+            case "month" -> {
+                start = today.minusDays(29).atStartOfDay();
+                prevStart = today.minusDays(59).atStartOfDay();
+                prevEnd = today.minusDays(29).atStartOfDay();
+            }
+            case "day" -> {
+                start = today.atStartOfDay();
+                prevStart = today.minusDays(1).atStartOfDay();
+                prevEnd = today.atStartOfDay();
+            }
+            default -> throw BizException.of(ErrorCode.PARAM_INVALID, "统计周期只能是 day、week 或 month");
+        }
+        LocalDateTime end = today.plusDays(1).atStartOfDay();
+
+        Map<String, Object> current = orderMapper.statsByRange(start, end);
+        Map<String, Object> previous = orderMapper.statsByRange(prevStart, prevEnd);
+
+        BigDecimal amount = readAmount(current, "totalAmount");
+        BigDecimal prevAmount = readAmount(previous, "totalAmount");
+        long orderCount = readLong(current, "orderCount");
+        long prevCount = readLong(previous, "orderCount");
+        long completed = readLong(current, "completedCount");
+        long prevCompleted = readLong(previous, "completedCount");
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("period", p);
+        result.put("startDate", start.toLocalDate().toString());
+        result.put("endDate", today.toString());
+        result.put("totalAmount", amount.setScale(2, RoundingMode.HALF_UP));
+        result.put("prevAmount", prevAmount.setScale(2, RoundingMode.HALF_UP));
+        result.put("amountGrowth", growthRate(amount, prevAmount));
+        result.put("orderCount", orderCount);
+        result.put("prevOrderCount", prevCount);
+        result.put("orderGrowth", growthRate(BigDecimal.valueOf(orderCount), BigDecimal.valueOf(prevCount)));
+        result.put("completedCount", completed);
+        result.put("completeRate", orderCount == 0 ? 0.0
+                : BigDecimal.valueOf(completed * 100.0 / orderCount).setScale(2, RoundingMode.HALF_UP).doubleValue());
+        result.put("prevCompleteRate", prevCount == 0 ? 0.0
+                : BigDecimal.valueOf(prevCompleted * 100.0 / prevCount).setScale(2, RoundingMode.HALF_UP).doubleValue());
+
+        Map<String, Long> newUserMap = new LinkedHashMap<>();
+        for (Map<String, Object> row : orderMapper.dailyNewUsers("CONSUMER", start)) {
+            newUserMap.put(String.valueOf(row.get("date")), readLong(row, "count"));
+        }
+        Map<String, Object> orderTrendMap = new LinkedHashMap<>();
+        for (Map<String, Object> row : orderMapper.dailyTrend(start)) {
+            orderTrendMap.put(String.valueOf(row.get("date")), row);
+        }
+        List<Map<String, Object>> trend = new ArrayList<>();
+        long newUserTotal = 0;
+        int days = p.equals("day") ? 1 : (p.equals("week") ? 7 : 30);
+        for (int i = days - 1; i >= 0; i--) {
+            String date = today.minusDays(i).toString();
+            Map<String, Object> point = new LinkedHashMap<>();
+            point.put("date", date);
+            Map<String, Object> orderRow = orderTrendMap.get(date) instanceof Map
+                    ? (Map<String, Object>) orderTrendMap.get(date) : null;
+            point.put("count", orderRow == null ? 0L : readLong(orderRow, "count"));
+            point.put("amount", orderRow == null ? BigDecimal.ZERO : readAmount(orderRow, "amount"));
+            long newUsers = newUserMap.getOrDefault(date, 0L);
+            point.put("newUsers", newUsers);
+            newUserTotal += newUsers;
+            trend.add(point);
+        }
+        result.put("trend", trend);
+        result.put("newUsers", newUserTotal);
+
+        List<Map<String, Object>> topList = new ArrayList<>();
+        for (Map<String, Object> row : orderMapper.topMerchants(start, end, 10)) {
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("merchantId", row.get("merchantId"));
+            item.put("shopName", row.get("shopName") == null ? "未知店铺" : row.get("shopName"));
+            item.put("orderCount", readLong(row, "orderCount"));
+            item.put("amount", readAmount(row, "amount").setScale(2, RoundingMode.HALF_UP));
+            topList.add(item);
+        }
+        result.put("topMerchants", topList);
+        return result;
+    }
+
+    /**
+     * 环比增长率（百分比，保留两位）。上期为 0 时：本期也为 0 记 0，否则记 100。
+     */
+    private double growthRate(BigDecimal current, BigDecimal previous) {
+        if (previous == null || previous.compareTo(BigDecimal.ZERO) == 0) {
+            return current == null || current.compareTo(BigDecimal.ZERO) == 0 ? 0.0 : 100.0;
+        }
+        return current.subtract(previous)
+                .multiply(BigDecimal.valueOf(100))
+                .divide(previous, 2, RoundingMode.HALF_UP)
+                .doubleValue();
+    }
+
+    private BigDecimal readAmount(Map<String, Object> row, String key) {
+        if (row == null || row.get(key) == null) {
+            return BigDecimal.ZERO;
+        }
+        return new BigDecimal(row.get(key).toString());
+    }
+
+    private long readLong(Map<String, Object> row, String key) {
+        if (row == null || row.get(key) == null) {
+            return 0L;
+        }
+        return ((Number) row.get(key)).longValue();
+    }
+    @Override
     public PageResult<OperationLog> pageOperationLogs(String operatorRole, String module, Integer result,
                                                       String startDate, String endDate, int page, int size) {
         LambdaQueryWrapper<OperationLog> wrapper = new LambdaQueryWrapper<OperationLog>()
@@ -357,12 +542,28 @@ public class AdminServiceImpl implements AdminService {
         return PageResult.of(operationLogMapper.selectPage(new Page<>(page, size), wrapper));
     }
 
-    private void fillShopInfo(Merchant merchant) {        Shop shop = shopMapper.selectOne(new LambdaQueryWrapper<Shop>()
+    private void fillShopInfo(Merchant merchant) {
+        Shop shop = shopMapper.selectOne(new LambdaQueryWrapper<Shop>()
                 .eq(Shop::getMerchantId, merchant.getId())
                 .last("LIMIT 1"));
         if (shop != null) {
             merchant.setShopId(shop.getId());
             merchant.setShopName(shop.getName());
+        }
+    }
+
+    /**
+     * 订单列表补充店铺名称与状态文案，避免管理端列表只看到一堆数字 ID。
+     */
+    private void fillOrderSummary(Order order) {
+        order.setStatusDesc(OrderStatus.descOf(order.getStatus()));
+        if (order.getShopId() == null) {
+            return;
+        }
+        Shop shop = shopMapper.selectById(order.getShopId());
+        if (shop != null) {
+            order.setShopName(shop.getName());
+            order.setShopLogo(shop.getLogo());
         }
     }
 

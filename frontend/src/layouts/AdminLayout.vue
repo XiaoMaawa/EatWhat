@@ -10,6 +10,10 @@
           <el-icon><DataBoard /></el-icon>
           <span>数据看板</span>
         </el-menu-item>
+        <el-menu-item index="/admin/statistics">
+          <el-icon><TrendCharts /></el-icon>
+          <span>平台统计</span>
+        </el-menu-item>
         <el-menu-item index="/admin/users">
           <el-icon><User /></el-icon>
           <span>用户管理</span>
@@ -89,7 +93,7 @@ import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
-import { ArrowDown, Bell, Bicycle, ChatDotSquare, DataBoard, Dish, Document, List, Setting, Shop, User, Wallet, Warning } from '@element-plus/icons-vue'
+import { ArrowDown, Bell, Bicycle, ChatDotSquare, DataBoard, Dish, Document, List, Setting, Shop, TrendCharts, User, Wallet, Warning } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()

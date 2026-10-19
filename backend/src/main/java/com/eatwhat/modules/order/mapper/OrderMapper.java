@@ -57,6 +57,36 @@ public interface OrderMapper extends BaseMapper<Order> {
     Map<String, Object> sumByRange(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 
     /**
+     * 平台区间统计：有效单量、成交额、完成单量，用于统计看板与环比。
+     */
+    @Select("SELECT COUNT(*) AS orderCount, IFNULL(SUM(total_amount), 0) AS totalAmount, "
+            + "IFNULL(SUM(CASE WHEN status = 5 THEN 1 ELSE 0 END), 0) AS completedCount "
+            + "FROM orders WHERE deleted = 0 AND status NOT IN (0, 6) "
+            + "AND created_at >= #{start} AND created_at < #{end}")
+    Map<String, Object> statsByRange(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+
+    /**
+     * 商家交易额排行 TOP N。
+     */
+    @Select("SELECT o.merchant_id AS merchantId, s.name AS shopName, COUNT(*) AS orderCount, "
+            + "IFNULL(SUM(o.total_amount), 0) AS amount "
+            + "FROM orders o LEFT JOIN shop s ON o.shop_id = s.id "
+            + "WHERE o.deleted = 0 AND o.status NOT IN (0, 6) "
+            + "AND o.created_at >= #{start} AND o.created_at < #{end} "
+            + "GROUP BY o.merchant_id, s.name ORDER BY amount DESC LIMIT #{limit}")
+    List<Map<String, Object>> topMerchants(@Param("start") LocalDateTime start,
+                                           @Param("end") LocalDateTime end,
+                                           @Param("limit") int limit);
+
+    /**
+     * 新增用户统计：按注册日期聚合。
+     */
+    @Select("SELECT DATE(created_at) AS date, COUNT(*) AS count FROM sys_user "
+            + "WHERE deleted = 0 AND role = #{role} AND created_at >= #{start} "
+            + "GROUP BY DATE(created_at) ORDER BY DATE(created_at)")
+    List<Map<String, Object>> dailyNewUsers(@Param("role") String role, @Param("start") LocalDateTime start);
+
+    /**
      * 超时未支付的订单（定时任务自动取消）。expire_at 为业务计算值：created_at + 15 分钟。
      */
     @Select("SELECT * FROM orders WHERE deleted = 0 AND status = 0 "

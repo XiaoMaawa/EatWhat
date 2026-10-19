@@ -508,6 +508,31 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void forceCancel(Long orderId, String reason) {
+        Order order = orderMapper.selectById(orderId);
+        if (order == null) {
+            throw BizException.of(ErrorCode.ORDER_NOT_FOUND);
+        }
+        int from = order.getStatus();
+        if (from == CommonConstants.ORDER_CANCELLED) {
+            throw BizException.of(ErrorCode.ORDER_STATUS_ILLEGAL, "订单已取消，无需重复操作");
+        }
+        if (from == CommonConstants.ORDER_COMPLETED) {
+            throw BizException.of(ErrorCode.ORDER_STATUS_ILLEGAL, "订单已完成，请走售后流程退款");
+        }
+        // 未支付订单没有实际扣款，其他状态都视为已支付，需要退回库存
+        restoreStock(orderId);
+        String cancelReason = reason == null || reason.isBlank() ? "平台强制取消" : reason.trim();
+        order.setStatus(CommonConstants.ORDER_CANCELLED);
+        order.setCancelReason(cancelReason);
+        orderMapper.updateById(order);
+        writeLog(orderId, from, CommonConstants.ORDER_CANCELLED,
+                UserContext.userId() == null ? CommonConstants.SYSTEM_OPERATOR_ID : UserContext.userId(),
+                "SYSTEM", "平台强制取消：" + cancelReason);
+    }
+
+    @Override
     public PageResult<Order> pageAdminOrders(Integer status, String keyword, int page, int size) {
         LambdaQueryWrapper<Order> wrapper = new LambdaQueryWrapper<Order>()
                 .eq(status != null, Order::getStatus, status)

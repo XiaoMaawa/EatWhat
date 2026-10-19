@@ -10,6 +10,19 @@
           </el-select>
           <el-button type="primary" @click="search">查询</el-button>
         </div>
+        <div class="abnormal-bar">
+          <span class="abnormal-label">异常订单</span>
+          <el-radio-group v-model="abnormalType" size="small" @change="loadAbnormal">
+            <el-radio-button :value="''">全部</el-radio-button>
+            <el-radio-button value="timeout_accept">超时未接单</el-radio-button>
+            <el-radio-button value="timeout_take">待配送超时</el-radio-button>
+            <el-radio-button value="timeout_deliver">超时未送达</el-radio-button>
+            <el-radio-button value="refunding">退款中</el-radio-button>
+          </el-radio-group>
+          <el-tag v-if="abnormalType" type="warning" size="small" effect="plain">
+            共 {{ total }} 条异常订单
+          </el-tag>
+        </div>
       </div>
 
       <el-table v-loading="loading" :data="list" class="table">
@@ -77,6 +90,7 @@
           <el-radio-group v-model="interveneForm.action">
             <el-radio value="FORCE_REFUND">强制退款</el-radio>
             <el-radio value="FORCE_COMPLETE">强制完成</el-radio>
+            <el-radio value="FORCE_CANCEL">强制取消</el-radio>
           </el-radio-group>
         </el-form-item>
         <el-form-item label="原因说明">
@@ -115,10 +129,14 @@ const interveneVisible = ref(false)
 const current = ref(null)
 const interveneForm = reactive({ action: 'FORCE_REFUND', reason: '' })
 
+const abnormalType = ref('')
+
 async function load() {
   loading.value = true
   try {
-    const data = await adminApi.orders({ ...query })
+    const data = abnormalType.value
+      ? await adminApi.abnormalOrders({ type: abnormalType.value, page: query.page, size: query.size })
+      : await adminApi.orders({ ...query })
     list.value = data?.records || []
     total.value = data?.total || 0
   } finally {
@@ -127,6 +145,11 @@ async function load() {
 }
 
 function search() {
+  query.page = 1
+  load()
+}
+
+function loadAbnormal() {
   query.page = 1
   load()
 }
@@ -186,5 +209,19 @@ onMounted(load)
   display: flex;
   flex-direction: column;
   gap: 14px;
+}
+
+.abnormal-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed #ebeef5;
+}
+
+.abnormal-label {
+  font-size: 13px;
+  color: #606266;
 }
 </style>

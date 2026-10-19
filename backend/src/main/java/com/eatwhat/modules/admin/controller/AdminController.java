@@ -68,6 +68,15 @@ public class AdminController {
         return R.ok(adminService.userDetail(id));
     }
 
+    @Operation(summary = "用户历史订单")
+    @GetMapping("/users/{id}/orders")
+    public R<PageResult<Order>> userOrders(@PathVariable Long id,
+                                           @RequestParam(required = false) Integer status,
+                                           @RequestParam(defaultValue = "1") int page,
+                                           @RequestParam(defaultValue = "10") int size) {
+        return R.ok(adminService.pageUserOrders(id, status, page, size));
+    }
+
     @Operation(summary = "启用/禁用用户")
     @PatchMapping("/users/{id}/status")
     public R<Void> updateUserStatus(@PathVariable Long id, @RequestBody Map<String, Integer> body) {
@@ -138,6 +147,21 @@ public class AdminController {
         return R.ok();
     }
 
+    @Operation(summary = "开启/关闭骑手接单权限")
+    @PatchMapping("/riders/{id}/accepting")
+    public R<Void> updateRiderAccepting(@PathVariable Long id, @RequestBody Map<String, Integer> body) {
+        adminService.updateRiderAccepting(id, body == null ? null : body.get("accepting"));
+        return R.ok();
+    }
+
+    @Operation(summary = "异常订单筛选")
+    @GetMapping("/orders/abnormal")
+    public R<PageResult<Order>> abnormalOrders(@RequestParam String type,
+                                               @RequestParam(defaultValue = "1") int page,
+                                               @RequestParam(defaultValue = "10") int size) {
+        return R.ok(adminService.pageAbnormalOrders(type, page, size));
+    }
+
     @Operation(summary = "平台订单列表")
     @GetMapping("/orders")
     public R<PageResult<Order>> orders(@RequestParam(required = false) Integer status,
@@ -194,12 +218,24 @@ public class AdminController {
         return R.ok();
     }
 
+    @Operation(summary = "恢复菜品上架")
+    @PatchMapping("/dishes/{id}/online")
+    public R<Void> onlineDish(@PathVariable Long id) {
+        adminService.onlineDish(id);
+        return R.ok();
+    }
+
     @Operation(summary = "平台数据看板")
     @GetMapping("/dashboard")
     public R<Map<String, Object>> dashboard() {
         return R.ok(adminService.dashboard());
     }
 
+    @Operation(summary = "平台统计看板")
+    @GetMapping("/statistics")
+    public R<Map<String, Object>> statistics(@RequestParam(defaultValue = "day") String period) {
+        return R.ok(adminService.statistics(period));
+    }
     @Operation(summary = "操作日志")
     @GetMapping("/operation-logs")
     public R<PageResult<OperationLog>> operationLogs(@RequestParam(required = false) String operatorRole,

@@ -30,6 +30,18 @@
           </template>
         </el-table-column>
         <el-table-column prop="createdAt" label="申请时间" width="170" />
+        <el-table-column label="接单权限" width="120">
+          <template #default="{ row }">
+            <el-switch
+              :model-value="row.accepting ?? 1"
+              :active-value="1"
+              :inactive-value="0"
+              :disabled="row.auditStatus !== 1"
+              @change="(val) => toggleAccepting(row, val)"
+            />
+            <span class="switch-text">{{ (row.accepting ?? 1) === 1 ? '可接单' : '已关闭' }}</span>
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="150" fixed="right">
           <template #default="{ row }">
             <el-button size="small" type="primary" :disabled="row.auditStatus !== 0" @click="openAudit(row)">
@@ -132,6 +144,16 @@ async function openAudit(row) {
   auditVisible.value = true
 }
 
+async function toggleAccepting(row, value) {
+  try {
+    await adminApi.updateRiderAccepting(row.id, value)
+    row.accepting = value
+    ElMessage.success(value === 1 ? '已开启该骑手的接单权限' : '已关闭该骑手的接单权限')
+  } catch (e) {
+    await load()
+  }
+}
+
 async function submitAudit() {
   if (auditForm.auditStatus === 2 && !auditForm.auditRemark.trim()) {
     ElMessage.warning('驳回时请填写审核备注')
@@ -163,6 +185,12 @@ onMounted(load)
   display: flex;
   justify-content: flex-end;
   margin-top: 14px;
+}
+
+.switch-text {
+  margin-left: 6px;
+  font-size: 12px;
+  color: #909399;
 }
 
 .audit-form {

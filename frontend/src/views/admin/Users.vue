@@ -31,8 +31,9 @@
           </template>
         </el-table-column>
         <el-table-column prop="createdAt" label="注册时间" width="170" />
-        <el-table-column label="操作" width="120" fixed="right">
+        <el-table-column label="操作" width="190" fixed="right">
           <template #default="{ row }">
+            <el-button size="small" @click="openOrders(row)">订单</el-button>
             <el-button
               size="small"
               :type="row.status === 1 ? 'danger' : 'success'"
@@ -56,6 +57,32 @@
         />
       </div>
     </div>
+
+    <el-dialog v-model="ordersVisible" :title="'历史订单 - ' + (orderUser?.nickname || orderUser?.phone || '')" width="760px">
+      <el-table v-loading="ordersLoading" :data="orders" size="small">
+        <el-table-column prop="orderNo" label="订单号" width="180" />
+        <el-table-column label="金额" width="100">
+          <template #default="{ row }"><span class="ew-price">¥{{ money(row.totalAmount) }}</span></template>
+        </el-table-column>
+        <el-table-column label="状态" width="100">
+          <template #default="{ row }">
+            <el-tag size="small" :type="orderStatusType(row.status)">{{ orderStatusText(row.status) }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="itemSummary" label="菜品" min-width="160" show-overflow-tooltip />
+        <el-table-column prop="createdAt" label="下单时间" width="165" />
+      </el-table>
+      <div class="pager">
+        <el-pagination
+          v-model:current-page="orderQuery.page"
+          :page-size="orderQuery.size"
+          :total="orderTotal"
+          layout="total, prev, pager, next"
+          background
+          @current-change="loadOrders"
+        />
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -63,12 +90,19 @@
 import { onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { adminApi } from '@/api'
-import { ROLE_TEXT } from '@/utils/orderStatus'
+import { ROLE_TEXT, orderStatusText, orderStatusType } from '@/utils/orderStatus'
+import { money } from '@/utils/format'
 
 const loading = ref(false)
 const list = ref([])
 const total = ref(0)
 const query = reactive({ page: 1, size: 10, keyword: '', role: null, status: null })
+const ordersVisible = ref(false)
+const ordersLoading = ref(false)
+const orders = ref([])
+const orderTotal = ref(0)
+const orderUser = ref(null)
+const orderQuery = reactive({ page: 1, size: 10 })
 
 async function load() {
   loading.value = true
@@ -84,6 +118,27 @@ async function load() {
 function search() {
   query.page = 1
   load()
+}
+
+async function openOrders(row) {
+  orderUser.value = row
+  orderQuery.page = 1
+  orders.value = []
+  orderTotal.value = 0
+  ordersVisible.value = true
+  await loadOrders()
+}
+
+async function loadOrders() {
+  if (!orderUser.value) return
+  ordersLoading.value = true
+  try {
+    const data = await adminApi.userOrders(orderUser.value.id, { ...orderQuery })
+    orders.value = data?.records || []
+    orderTotal.value = data?.total || 0
+  } finally {
+    ordersLoading.value = false
+  }
 }
 
 async function toggle(row) {

@@ -7,9 +7,11 @@ import com.eatwhat.modules.content.dto.AnnouncementRequest;
 import com.eatwhat.modules.content.entity.Announcement;
 import com.eatwhat.modules.content.entity.SensitiveWord;
 import com.eatwhat.modules.content.entity.SysConfig;
+import com.eatwhat.modules.content.entity.SysDict;
 import com.eatwhat.modules.content.service.AnnouncementService;
 import com.eatwhat.modules.content.service.SensitiveWordService;
 import com.eatwhat.modules.content.service.SysConfigService;
+import com.eatwhat.modules.content.service.SysDictService;
 import com.eatwhat.security.RequireRole;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -40,13 +42,16 @@ public class ContentAdminController {
     private final AnnouncementService announcementService;
     private final SensitiveWordService sensitiveWordService;
     private final SysConfigService sysConfigService;
+    private final SysDictService sysDictService;
 
     public ContentAdminController(AnnouncementService announcementService,
                                   SensitiveWordService sensitiveWordService,
-                                  SysConfigService sysConfigService) {
+                                  SysConfigService sysConfigService,
+                                  SysDictService sysDictService) {
         this.announcementService = announcementService;
         this.sensitiveWordService = sensitiveWordService;
         this.sysConfigService = sysConfigService;
+        this.sysDictService = sysDictService;
     }
 
     // ==================== 公告 ====================
@@ -187,6 +192,43 @@ public class ContentAdminController {
     @DeleteMapping("/configs/{id}")
     public R<Void> deleteConfig(@PathVariable Long id) {
         sysConfigService.delete(id);
+        return R.ok();
+    }
+
+    // ==================== 数据字典 ====================
+
+    @Operation(summary = "字典项列表")
+    @GetMapping("/dicts")
+    public R<PageResult<SysDict>> dicts(@RequestParam(required = false) String dictType,
+                                        @RequestParam(required = false) String keyword,
+                                        @RequestParam(required = false) Integer status,
+                                        @RequestParam(defaultValue = "1") int page,
+                                        @RequestParam(defaultValue = "20") int size) {
+        return R.ok(sysDictService.pageAll(dictType, keyword, status, page, size));
+    }
+
+    @Operation(summary = "字典类型列表")
+    @GetMapping("/dicts/types")
+    public R<List<String>> dictTypes() {
+        return R.ok(sysDictService.listTypes());
+    }
+
+    @Operation(summary = "新增字典项")
+    @PostMapping("/dicts")
+    public R<SysDict> createDict(@RequestBody SysDict dict) {
+        return R.ok(sysDictService.create(dict));
+    }
+
+    @Operation(summary = "修改字典项")
+    @PutMapping("/dicts/{id}")
+    public R<SysDict> updateDict(@PathVariable Long id, @RequestBody SysDict dict) {
+        return R.ok(sysDictService.update(id, dict));
+    }
+
+    @Operation(summary = "删除字典项")
+    @DeleteMapping("/dicts/{id}")
+    public R<Void> deleteDict(@PathVariable Long id) {
+        sysDictService.delete(id);
         return R.ok();
     }
 }
