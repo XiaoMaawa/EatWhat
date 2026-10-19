@@ -180,7 +180,7 @@ export const adminApi = {
   intervene: (id, data) => request.post(`/admin/orders/${id}/intervene`, data),
 
   dishes: (params) => request.get('/admin/dishes', { params }),
-  offlineDish: (id) => request.patch(`/admin/dishes/${id}/offline`),
+  offlineDish: (id, reason) => request.patch(`/admin/dishes/${id}/offline`, { reason }),
   onlineDish: (id) => request.patch(`/admin/dishes/${id}/online`),
   deliveryExceptions: (params) => request.get('/admin/delivery-exceptions', { params }),
   handleDeliveryException: (id, data) => request.post(`/admin/delivery-exceptions/${id}/handle`, data),

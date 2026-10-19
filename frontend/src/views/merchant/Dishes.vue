@@ -75,6 +75,9 @@
             <el-tag size="small" :type="DISH_STATUS[row.status]?.type">
               {{ DISH_STATUS[row.status]?.text || '未知' }}
             </el-tag>
+            <el-tooltip v-if="row.offlineReason" :content="`平台违规下架：${row.offlineReason}`" placement="top">
+              <el-tag size="small" type="danger" effect="dark" class="violation-tip">违规</el-tag>
+            </el-tooltip>
           </template>
         </el-table-column>
         <el-table-column label="操作" width="430" fixed="right">
@@ -832,6 +835,10 @@ async function cancelCombo() {
 }
 
 .stock-tip {
+  margin-left: 4px;
+}
+
+.violation-tip {
   margin-left: 4px;
 }
 

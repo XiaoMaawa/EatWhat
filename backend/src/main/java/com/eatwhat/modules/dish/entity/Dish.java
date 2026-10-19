@@ -47,6 +47,12 @@ public class Dish extends BaseEntity {
     /** 商家-28：是否套餐 0 否 1 是 */
     private Integer isCombo;
 
+    /** 管理员-34：违规下架原因（非违规下架时为 null） */
+    private String offlineReason;
+
+    /** 管理员-34：违规下架操作的管理员 ID */
+    private Long offlineBy;
+
     @TableLogic
     @JsonIgnore
     private Integer deleted;
@@ -220,6 +226,22 @@ public class Dish extends BaseEntity {
 
     public void setIsCombo(Integer isCombo) {
         this.isCombo = isCombo;
+    }
+
+    public String getOfflineReason() {
+        return offlineReason;
+    }
+
+    public void setOfflineReason(String offlineReason) {
+        this.offlineReason = offlineReason;
+    }
+
+    public Long getOfflineBy() {
+        return offlineBy;
+    }
+
+    public void setOfflineBy(Long offlineBy) {
+        this.offlineBy = offlineBy;
     }
 
     public java.util.List<DishComboItem> getComboItems() {

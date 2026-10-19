@@ -33,6 +33,12 @@
             </el-tag>
           </template>
         </el-table-column>
+        <el-table-column label="违规下架原因" min-width="180">
+          <template #default="{ row }">
+            <span v-if="row.offlineReason" class="violation">{{ row.offlineReason }}</span>
+            <span v-else class="ew-muted">—</span>
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="210" fixed="right">
           <template #default="{ row }">
             <el-button
@@ -101,9 +107,29 @@ function search() {
 }
 
 async function offline(row) {
-  await ElMessageBox.confirm(`确定要强制下架菜品「${row.name}」吗？`, '强制下架', { type: 'warning' })
-  await adminApi.offlineDish(row.id)
-  ElMessage.success('已下架')
+  let reason
+  try {
+    const result = await ElMessageBox.prompt(
+      `请填写菜品「${row.name}」的违规原因（不少于 5 字），将同步给商家用于整改。`,
+      '违规下架',
+      {
+        type: 'warning',
+        inputType: 'textarea',
+        inputPlaceholder: '例如：使用过期食材，经抽检确认',
+        inputValidator: (value) => {
+          const text = (value || '').trim()
+          if (text.length < 5) return '违规原因不少于 5 字'
+          if (text.length > 200) return '违规原因不超过 200 字'
+          return true
+        }
+      }
+    )
+    reason = result.value.trim()
+  } catch {
+    return
+  }
+  await adminApi.offlineDish(row.id, reason)
+  ElMessage.success('已违规下架')
   await load()
 }
 
@@ -136,5 +162,9 @@ onMounted(load)
   display: flex;
   justify-content: flex-end;
   margin-top: 14px;
+}
+
+.violation {
+  color: var(--el-color-danger);
 }
 </style>

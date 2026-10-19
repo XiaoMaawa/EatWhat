@@ -363,14 +363,24 @@ public class AdminServiceImpl implements AdminService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void offlineDish(Long dishId) {
+    public void offlineDish(Long dishId, String reason) {
         Dish dish = dishMapper.selectById(dishId);
         if (dish == null) {
             throw BizException.of(ErrorCode.DISH_NOT_FOUND);
         }
+        String trimmed = reason == null ? "" : reason.trim();
+        // 管理员-34：违规下架必须填写原因，便于商家申诉与追溯
+        if (trimmed.length() < 5) {
+            throw BizException.of(ErrorCode.PARAM_INVALID, "违规下架原因不少于 5 字");
+        }
+        if (trimmed.length() > 200) {
+            throw BizException.of(ErrorCode.PARAM_INVALID, "违规下架原因不超过 200 字");
+        }
         dish.setStatus(CommonConstants.DISH_OFF);
+        dish.setOfflineReason(trimmed);
+        dish.setOfflineBy(com.eatwhat.common.utils.UserContext.userId());
         dishMapper.updateById(dish);
-        log.info("管理员强制下架菜品 dishId={}", dishId);
+        log.info("管理员违规下架菜品 dishId={} reason={}", dishId, trimmed);
     }
 
     @Override
@@ -383,7 +393,14 @@ public class AdminServiceImpl implements AdminService {
         // 库存为 0 时恢复成「售罄」而不是「在售」，避免上架即超卖
         Integer stock = dish.getStock();
         dish.setStatus(stock == null || stock <= 0 ? CommonConstants.DISH_SOLD_OUT : CommonConstants.DISH_ON);
-        dishMapper.updateById(dish);
+        // 管理员-35：恢复正常销售后清除违规下架标记
+        dish.setOfflineReason(null);
+        dish.setOfflineBy(null);
+        dishMapper.update(null, new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<Dish>()
+                .eq(Dish::getId, dishId)
+                .set(Dish::getStatus, dish.getStatus())
+                .set(Dish::getOfflineReason, null)
+                .set(Dish::getOfflineBy, null));
         log.info("管理员恢复菜品 dishId={} status={}", dishId, dish.getStatus());
     }
 

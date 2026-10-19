@@ -152,6 +152,8 @@ CREATE TABLE `dish` (
   `status`      TINYINT         NOT NULL DEFAULT 1      COMMENT '1在售 0下架 2售罄',
   `has_spec`    TINYINT         NOT NULL DEFAULT 0      COMMENT '是否有规格 0否 1是',
   `is_combo`    TINYINT         NOT NULL DEFAULT 0      COMMENT '是否套餐 0否 1是',
+  `offline_reason` VARCHAR(200) DEFAULT NULL            COMMENT '管理员违规下架原因',
+  `offline_by`  BIGINT          DEFAULT NULL            COMMENT '违规下架操作的管理员 ID',
   `sort`        INT             NOT NULL DEFAULT 0      COMMENT '排序值',
   `created_at`  DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updated_at`  DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',

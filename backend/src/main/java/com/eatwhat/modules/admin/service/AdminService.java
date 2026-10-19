@@ -116,9 +116,9 @@ public interface AdminService {
     PageResult<Dish> pageDishes(String keyword, Long shopId, int page, int size);
 
     /**
-     * 强制下架菜品。
+     * 违规下架菜品，需填写不少于 5 字的违规原因（管理员-34）。
      */
-    void offlineDish(Long dishId);
+    void offlineDish(Long dishId, String reason);
 
     /**
      * 首页看板。

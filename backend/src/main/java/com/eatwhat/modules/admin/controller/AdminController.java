@@ -235,10 +235,12 @@ public class AdminController {
         return R.ok(adminService.pageDishes(keyword, shopId, page, size));
     }
 
-    @Operation(summary = "强制下架菜品")
+    @Operation(summary = "强制下架菜品（需填写违规原因）")
     @PatchMapping("/dishes/{id}/offline")
-    public R<Void> offlineDish(@PathVariable Long id) {
-        adminService.offlineDish(id);
+    public R<Void> offlineDish(@PathVariable Long id,
+                               @RequestBody(required = false) Map<String, Object> body) {
+        String reason = body == null || body.get("reason") == null ? null : String.valueOf(body.get("reason"));
+        adminService.offlineDish(id, reason);
         return R.ok();
     }
 
