@@ -34,22 +34,78 @@
 
     <div class="body">
       <div class="categories">
-        <div
-          v-for="cat in categories"
-          :key="cat.id"
-          class="cat"
-          :class="{ active: activeCat === cat.id }"
-          @click="activeCat = cat.id"
-        >
-          {{ cat.name }}
+        <div class="search-box">
+          <el-input
+            v-model="searchKey"
+            placeholder="搜索本店菜品"
+            clearable
+            size="small"
+            :prefix-icon="Search"
+          />
         </div>
-        <div class="cat" :class="{ active: activeCat === 'review' }" @click="activeCat = 'review'">
-          评价
-        </div>
+        <template v-if="!searchKey">
+          <div
+            v-for="cat in categories"
+            :key="cat.id"
+            class="cat"
+            :class="{ active: activeCat === cat.id }"
+            @click="activeCat = cat.id"
+          >
+            {{ cat.name }}
+          </div>
+          <div class="cat" :class="{ active: activeCat === 'review' }" @click="activeCat = 'review'">
+            评价
+          </div>
+        </template>
+        <div v-else class="search-hint">搜索到 {{ searchHits.length }} 道相关菜品</div>
       </div>
 
       <div class="content">
-        <template v-if="activeCat === 'review'">
+        <template v-if="searchKey">
+          <div class="ew-card">
+            <template v-if="searchHits.length">
+              <div v-for="hit in searchHits" :key="hit.dish.id" class="dish-item">
+                <div class="dish-img">
+                  <img v-if="hit.dish.image" :src="hit.dish.image" alt="" />
+                  <span v-else>🍱</span>
+                </div>
+                <div class="dish-info">
+                  <div class="dish-name" v-html="highlight(hit.dish.name)"></div>
+                  <div class="ew-muted text-ellipsis">{{ hit.dish.description || '—' }}</div>
+                  <div class="ew-muted">
+                    {{ hit.catName }} · 月售 {{ hit.dish.monthSales }} · 库存 {{ hit.dish.stock }}
+                    <span v-if="hit.dish.goodRate != null" class="good-rate">好评率 {{ hit.dish.goodRate }}%</span>
+                  </div>
+                  <div class="ew-flex-between ew-mt12">
+                    <span class="ew-price">
+                      <template v-if="hit.dish.specs && hit.dish.specs.length">
+                        ¥{{ specMinPrice(hit.dish) }} 起
+                      </template>
+                      <template v-else>¥{{ hit.dish.price }}</template>
+                    </span>
+                    <div class="ew-flex ew-gap8">
+                      <el-tag v-if="hit.dish.status === 0" size="small" type="info">已下架</el-tag>
+                      <el-tag v-else-if="hit.dish.status === 2 || hit.dish.stock <= 0" size="small" type="warning">售罄</el-tag>
+                      <el-button
+                        v-else
+                        type="primary"
+                        size="small"
+                        :disabled="!shop?.isOpen"
+                        @click="openDish(hit.dish)"
+                      >
+                        加入购物车
+                      </el-button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </template>
+            <el-empty v-else description="没有找到相关菜品，换个关键词试试" :image-size="70" />
+          </div>
+        </template>
+
+        <template v-else-if="activeCat === 'review'">
+
           <div class="ew-card">
             <div class="ew-flex-between">
               <h3 class="ew-title">店铺评价</h3>
@@ -81,8 +137,7 @@
         </template>
 
         <template v-else>
-          <div v-for="cat in visibleCategories" :key="cat.id" class="ew-card cat-block">
-            <h3 class="ew-title">{{ cat.name }}</h3>
+          <div v-for="cat in visibleCategories" :key="cat.id" class="ew-card cat-block">            <h3 class="ew-title">{{ cat.name }}</h3>
             <div v-for="dish in cat.dishes" :key="dish.id" class="dish-item">
               <div class="dish-img">
                 <img v-if="dish.image" :src="dish.image" alt="" />
@@ -193,7 +248,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { cartApi, favoriteApi, shopApi } from '@/api'
-import { ShoppingCart } from '@element-plus/icons-vue'
+import { Search, ShoppingCart } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -215,6 +270,34 @@ const reviewScore = ref(null)
 const cartCount = ref(0)
 const cartTotal = ref('0.00')
 
+// 顾客-29：店内菜品搜索（跨分类匹配 + 关键词高亮）
+const searchKey = ref('')
+const searchHits = computed(() => {
+  const kw = searchKey.value.trim().toLowerCase()
+  if (!kw) return []
+  const hits = []
+  for (const cat of categories.value) {
+    for (const dish of cat.dishes || []) {
+      const inName = (dish.name || '').toLowerCase().includes(kw)
+      const inDesc = (dish.description || '').toLowerCase().includes(kw)
+      const inSpec = (dish.specs || []).some((s) => (s.name || '').toLowerCase().includes(kw))
+      if (inName || inDesc || inSpec) hits.push({ dish, catName: cat.name })
+    }
+  }
+  return hits
+})
+
+function escapeHtml(str) {
+  return String(str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
+
+function highlight(name) {
+  const kw = searchKey.value.trim()
+  if (!kw) return escapeHtml(name)
+  const safe = escapeHtml(name)
+  const safeKw = escapeHtml(kw).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  return safe.replace(new RegExp(safeKw, 'gi'), (m) => `<span class="kw-hit">${m}</span>`)
+}
 const visibleCategories = computed(() => {
   if (activeCat.value === null || activeCat.value === 'review') return categories.value
   return categories.value.filter((c) => c.id === activeCat.value)
@@ -422,6 +505,22 @@ onMounted(async () => {
   align-items: flex-start;
 }
 
+.search-box {
+  padding: 4px 10px 12px;
+  border-bottom: 1px solid #f0f0f0;
+  margin-bottom: 8px;
+}
+
+.search-hint {
+  padding: 10px 12px;
+  color: #909399;
+  font-size: 13px;
+}
+
+:deep(.kw-hit) {
+  color: var(--el-color-primary);
+  font-weight: 600;
+}
 .categories {
   width: 140px;
   background: #fff;

@@ -71,6 +71,10 @@
           <el-input-number v-model="form.deliveryFee" :min="0" :precision="2" :step="1" style="width: 180px" />
           <span class="unit">元</span>
         </el-form-item>
+        <el-form-item label="打包费" prop="packagingFee">
+          <el-input-number v-model="form.packagingFee" :min="0" :max="20" :precision="2" :step="0.5" style="width: 180px" />
+          <span class="unit">元（0-20，随订单收取）</span>
+        </el-form-item>
         <el-form-item label="计费方式">
           <el-radio-group v-model="form.deliveryFeeType">
             <el-radio :value="0">固定配送费</el-radio>
@@ -125,6 +129,7 @@ const form = reactive({
   latitude: null,
   minOrderAmount: 20,
   deliveryFee: 3,
+  packagingFee: 0,
   deliveryFeeType: 0,
   deliveryRange: 3000
 })
@@ -160,6 +165,7 @@ async function load() {
         latitude: Number(shop.value.latitude ?? 0),
         minOrderAmount: Number(shop.value.minOrderAmount ?? 0),
         deliveryFee: Number(shop.value.deliveryFee ?? 0),
+        packagingFee: Number(shop.value.packagingFee ?? 0),
         deliveryFeeType: Number(shop.value.deliveryFeeType ?? 0),
         deliveryRange: shop.value.deliveryRange ?? 3000
       })

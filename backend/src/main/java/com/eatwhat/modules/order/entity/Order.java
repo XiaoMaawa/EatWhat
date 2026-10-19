@@ -41,6 +41,9 @@ public class Order extends BaseEntity {
 
     private BigDecimal deliveryFee;
 
+    /** 打包费（商家-14） */
+    private BigDecimal packagingFee;
+
     private BigDecimal discountAmount;
 
     private BigDecimal totalAmount;
@@ -163,6 +166,14 @@ public class Order extends BaseEntity {
         this.goodsAmount = goodsAmount;
     }
 
+
+    public BigDecimal getPackagingFee() {
+        return packagingFee;
+    }
+
+    public void setPackagingFee(BigDecimal packagingFee) {
+        this.packagingFee = packagingFee;
+    }
     public BigDecimal getDeliveryFee() {
         return deliveryFee;
     }

@@ -20,6 +20,9 @@ public class OrderDetailVO {
     private String statusDesc;
     private BigDecimal goodsAmount;
     private BigDecimal deliveryFee;
+
+    /** 打包费（商家-14） */
+    private BigDecimal packagingFee;
     private BigDecimal discountAmount;
     private BigDecimal totalAmount;
     private Integer payType;
@@ -177,6 +180,14 @@ public class OrderDetailVO {
 
     public void setDeliveryFee(BigDecimal deliveryFee) {
         this.deliveryFee = deliveryFee;
+    }
+
+    public BigDecimal getPackagingFee() {
+        return packagingFee;
+    }
+
+    public void setPackagingFee(BigDecimal packagingFee) {
+        this.packagingFee = packagingFee;
     }
 
     public BigDecimal getDiscountAmount() {

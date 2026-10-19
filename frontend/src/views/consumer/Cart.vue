@@ -47,6 +47,10 @@
             <span class="ew-muted">配送费</span>
             <span>¥{{ cart.deliveryFee }}</span>
           </div>
+          <div v-if="Number(cart.packagingFee) > 0" class="summary-line">
+            <span class="ew-muted">打包费</span>
+            <span>¥{{ cart.packagingFee }}</span>
+          </div>
           <div class="summary-line total">
             <span>合计</span>
             <span class="ew-price">{{ cart.totalAmount }}</span>

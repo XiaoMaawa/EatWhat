@@ -109,6 +109,7 @@ public class ShopServiceImpl implements ShopService {
         vo.setMinOrderAmount(shop.getMinOrderAmount());
         vo.setDeliveryFee(shop.getDeliveryFee());
         vo.setDeliveryFeeType(shop.getDeliveryFeeType());
+        vo.setPackagingFee(shop.getPackagingFee());
         vo.setDeliveryRange(shop.getDeliveryRange());
         vo.setOpenTime(shop.getOpenTime());
         vo.setCloseTime(shop.getCloseTime());
@@ -204,6 +205,14 @@ public class ShopServiceImpl implements ShopService {
         shop.setPhone(request.getPhone());
         shop.setMinOrderAmount(request.getMinOrderAmount());
         shop.setDeliveryFee(request.getDeliveryFee());
+        // 商家-14：打包费 0-20 元
+        if (request.getPackagingFee() != null) {
+            if (request.getPackagingFee().compareTo(BigDecimal.ZERO) < 0
+                    || request.getPackagingFee().compareTo(BigDecimal.valueOf(20)) > 0) {
+                throw BizException.of(ErrorCode.PARAM_INVALID, "打包费需在 0 至 20 元之间");
+            }
+            shop.setPackagingFee(request.getPackagingFee().setScale(2, RoundingMode.HALF_UP));
+        }
         if (request.getDeliveryFeeType() != null) {
             if (!DeliveryFeeUtils.isValidType(request.getDeliveryFeeType())) {
                 throw BizException.of(ErrorCode.PARAM_INVALID, "配送费计费方式只能为 0（固定）或 1（按距离）");

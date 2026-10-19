@@ -47,6 +47,9 @@ public class ShopUpdateRequest {
     /** 配送费计费方式：0 固定 / 1 按距离阶梯，为空时保持原值 */
     private Integer deliveryFeeType;
 
+    /** 打包费 0-20 元（商家-14） */
+    private java.math.BigDecimal packagingFee;
+
     @NotNull(message = "配送范围不能为空")
     private Integer deliveryRange;
 
@@ -136,6 +139,14 @@ public class ShopUpdateRequest {
         this.deliveryFee = deliveryFee;
     }
 
+
+    public java.math.BigDecimal getPackagingFee() {
+        return packagingFee;
+    }
+
+    public void setPackagingFee(java.math.BigDecimal packagingFee) {
+        this.packagingFee = packagingFee;
+    }
     public Integer getDeliveryFeeType() {
         return deliveryFeeType;
     }

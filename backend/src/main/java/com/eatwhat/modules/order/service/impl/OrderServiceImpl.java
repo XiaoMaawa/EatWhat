@@ -215,7 +215,9 @@ public class OrderServiceImpl implements OrderService {
 
         BigDecimal baseFee = shop.getDeliveryFee() == null ? BigDecimal.ZERO : shop.getDeliveryFee();
         BigDecimal deliveryFee = DeliveryFeeUtils.calculate(baseFee, shop.getDeliveryFeeType(), distanceKm);
-        BigDecimal totalAmount = goodsAmount.add(deliveryFee).setScale(2, RoundingMode.HALF_UP);
+        // 商家-14：打包费随订单快照
+        BigDecimal packagingFee = shop.getPackagingFee() == null ? BigDecimal.ZERO : shop.getPackagingFee();
+        BigDecimal totalAmount = goodsAmount.add(deliveryFee).add(packagingFee).setScale(2, RoundingMode.HALF_UP);
 
         Order order = new Order();
         order.setOrderNo(BizNoGenerator.orderNo());
@@ -225,6 +227,7 @@ public class OrderServiceImpl implements OrderService {
         order.setStatus(CommonConstants.ORDER_PENDING_PAYMENT);
         order.setGoodsAmount(goodsAmount.setScale(2, RoundingMode.HALF_UP));
         order.setDeliveryFee(deliveryFee.setScale(2, RoundingMode.HALF_UP));
+        order.setPackagingFee(packagingFee.setScale(2, RoundingMode.HALF_UP));
         order.setDiscountAmount(BigDecimal.ZERO);
         order.setTotalAmount(totalAmount);
         order.setReceiverName(address.getContactName());
@@ -347,6 +350,7 @@ public class OrderServiceImpl implements OrderService {
         vo.setStatusDesc(OrderStatus.descOf(order.getStatus()));
         vo.setGoodsAmount(order.getGoodsAmount());
         vo.setDeliveryFee(order.getDeliveryFee());
+        vo.setPackagingFee(order.getPackagingFee());
         vo.setDiscountAmount(order.getDiscountAmount());
         vo.setTotalAmount(order.getTotalAmount());
         vo.setPayType(order.getPayType());

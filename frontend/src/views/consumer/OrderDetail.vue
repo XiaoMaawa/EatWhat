@@ -49,6 +49,9 @@
       <div class="amounts">
         <div class="row"><span class="ew-muted">商品金额</span><span>¥{{ order.goodsAmount }}</span></div>
         <div class="row"><span class="ew-muted">配送费</span><span>¥{{ order.deliveryFee }}</span></div>
+        <div v-if="Number(order.packagingFee) > 0" class="row">
+          <span class="ew-muted">打包费</span><span>¥{{ order.packagingFee }}</span>
+        </div>
         <div class="row total"><span>实付金额</span><span class="ew-price">{{ order.totalAmount }}</span></div>
       </div>
 

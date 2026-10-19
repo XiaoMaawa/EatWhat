@@ -84,6 +84,7 @@ public class CartServiceImpl implements CartService {
             vo.setShopName(shop.getName());
             vo.setMinOrderAmount(shop.getMinOrderAmount());
             vo.setDeliveryFee(shop.getDeliveryFee());
+            vo.setPackagingFee(shop.getPackagingFee() == null ? BigDecimal.ZERO : shop.getPackagingFee());
         }
 
         Map<Long, Dish> dishCache = new HashMap<>();
@@ -120,7 +121,8 @@ public class CartServiceImpl implements CartService {
         }
         BigDecimal deliveryFee = resolveDeliveryFee(userId, shop, addressId, vo.getDeliveryFee());
         vo.setDeliveryFee(deliveryFee);
-        vo.setTotalAmount(vo.getGoodsAmount().add(deliveryFee).setScale(2, RoundingMode.HALF_UP));
+        BigDecimal packagingFee = vo.getPackagingFee() == null ? BigDecimal.ZERO : vo.getPackagingFee();
+        vo.setTotalAmount(vo.getGoodsAmount().add(deliveryFee).add(packagingFee).setScale(2, RoundingMode.HALF_UP));
         return vo;
     }
 

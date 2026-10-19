@@ -13,6 +13,9 @@ public class CartVO {
     private String shopName;
     private BigDecimal minOrderAmount;
     private BigDecimal deliveryFee;
+
+    /** 打包费（商家-14，随店铺展示） */
+    private BigDecimal packagingFee;
     private List<Item> items = new ArrayList<>();
     private BigDecimal goodsAmount = BigDecimal.ZERO;
     private BigDecimal totalAmount = BigDecimal.ZERO;
@@ -173,6 +176,14 @@ public class CartVO {
 
     public void setDeliveryFee(BigDecimal deliveryFee) {
         this.deliveryFee = deliveryFee;
+    }
+
+    public BigDecimal getPackagingFee() {
+        return packagingFee;
+    }
+
+    public void setPackagingFee(BigDecimal packagingFee) {
+        this.packagingFee = packagingFee;
     }
 
     public List<Item> getItems() {

@@ -26,6 +26,9 @@ public class ShopDetailVO {
     private BigDecimal minOrderAmount;
     private BigDecimal deliveryFee;
     private Integer deliveryFeeType;
+
+    /** 打包费（商家-14） */
+    private java.math.BigDecimal packagingFee;
     private Integer deliveryRange;
 
     @JsonFormat(pattern = "HH:mm")
@@ -177,6 +180,14 @@ public class ShopDetailVO {
         this.deliveryFee = deliveryFee;
     }
 
+
+    public java.math.BigDecimal getPackagingFee() {
+        return packagingFee;
+    }
+
+    public void setPackagingFee(java.math.BigDecimal packagingFee) {
+        this.packagingFee = packagingFee;
+    }
     public Integer getDeliveryFeeType() {
         return deliveryFeeType;
     }

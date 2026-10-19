@@ -51,6 +51,9 @@ public class Shop extends BaseEntity {
     /** 配送费计费方式：0 固定 / 1 按距离阶梯 */
     private Integer deliveryFeeType;
 
+    /** 打包费（商家-14） */
+    private java.math.BigDecimal packagingFee;
+
     /** 配送范围（米） */
     private Integer deliveryRange;
 
@@ -180,6 +183,14 @@ public class Shop extends BaseEntity {
         this.deliveryFee = deliveryFee;
     }
 
+
+    public java.math.BigDecimal getPackagingFee() {
+        return packagingFee;
+    }
+
+    public void setPackagingFee(java.math.BigDecimal packagingFee) {
+        this.packagingFee = packagingFee;
+    }
     public Integer getDeliveryFeeType() {
         return deliveryFeeType;
     }
