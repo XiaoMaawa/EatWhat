@@ -31,6 +31,9 @@
         <el-button v-if="selection.length" plain type="warning" @click="batchOffline">
           批量下架（{{ selection.length }}）
         </el-button>
+        <el-button v-if="selection.length" plain type="success" @click="batchOnline">
+          批量上架（{{ selection.length }}）
+        </el-button>
       </div>
 
       <el-table v-loading="loading" :data="dishes" size="default" @selection-change="(rows) => (selection = rows)">
@@ -74,9 +77,11 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="360" fixed="right">
+        <el-table-column label="操作" width="430" fixed="right">
           <template #default="{ row }">
             <el-button size="small" link type="primary" @click="openDishDialog(row)">编辑</el-button>
+            <el-button size="small" link type="primary" @click="moveDish(row, -1)">上移</el-button>
+            <el-button size="small" link type="primary" @click="moveDish(row, 1)">下移</el-button>
             <el-button
               size="small"
               link
@@ -434,6 +439,10 @@ async function toggleStatus(row) {
 }
 
 async function batchOffline() {
+  if (selection.value.length > 50) {
+    ElMessage.warning('单次批量操作最多 50 个菜品')
+    return
+  }
   await ElMessageBox.confirm(`确定下架选中的 ${selection.value.length} 道菜品吗？`, '批量下架', {
     type: 'warning'
   })
@@ -442,6 +451,43 @@ async function batchOffline() {
     0
   )
   ElMessage.success('已批量下架')
+  await loadDishes()
+}
+
+// 商家-30：批量上架
+async function batchOnline() {
+  if (selection.value.length > 50) {
+    ElMessage.warning('单次批量操作最多 50 个菜品')
+    return
+  }
+  await ElMessageBox.confirm(`确定上架选中的 ${selection.value.length} 道菜品吗？`, '批量上架', {
+    type: 'warning'
+  })
+  await merchantApi.batchStatus(
+    selection.value.map((d) => d.id),
+    1
+  )
+  ElMessage.success('已批量上架')
+  await loadDishes()
+}
+
+// 商家-31：同一分类内菜品上移 / 下移
+async function moveDish(row, delta) {
+  const siblings = dishes.value
+    .filter((d) => d.categoryId === row.categoryId)
+    .sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0) || a.id - b.id)
+  const index = siblings.findIndex((d) => d.id === row.id)
+  const target = index + delta
+  if (index < 0 || target < 0 || target >= siblings.length) {
+    return
+  }
+  const tmp = siblings[index]
+  siblings[index] = siblings[target]
+  siblings[target] = tmp
+  await Promise.all(
+    siblings.map((d, i) => merchantApi.updateDish(d.id, { ...d, sort: i + 1 }))
+  )
+  ElMessage.success('排序已更新')
   await loadDishes()
 }
 

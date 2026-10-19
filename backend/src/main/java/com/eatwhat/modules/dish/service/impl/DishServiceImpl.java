@@ -146,6 +146,10 @@ public class DishServiceImpl implements DishService {
         if (ids == null || ids.isEmpty()) {
             throw BizException.of(ErrorCode.PARAM_MISSING, "请至少选择一个菜品");
         }
+        // 商家-30：单次最多 50 个
+        if (ids.size() > 50) {
+            throw BizException.of(ErrorCode.PARAM_INVALID, "单次批量操作最多 50 个菜品");
+        }
         if (status == null || status < 0 || status > 2) {
             throw BizException.of(ErrorCode.PARAM_INVALID, "菜品状态只能为 0/1/2");
         }
