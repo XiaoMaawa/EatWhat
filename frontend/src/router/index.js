@@ -1,0 +1,109 @@
+import { createRouter, createWebHistory } from 'vue-router'
+import { useUserStore } from '@/stores/user'
+
+const routes = [
+  {
+    path: '/login',
+    name: 'login',
+    component: () => import('@/views/Login.vue'),
+    meta: { title: '登录', public: true }
+  },
+  {
+    path: '/register',
+    name: 'register',
+    component: () => import('@/views/Register.vue'),
+    meta: { title: '注册', public: true }
+  },
+  {
+    path: '/',
+    component: () => import('@/layouts/ConsumerLayout.vue'),
+    meta: { roles: ['CONSUMER'] },
+    children: [
+      { path: '', name: 'home', component: () => import('@/views/consumer/Home.vue'), meta: { title: '首页' } },
+      { path: 'shop/:id', name: 'shopDetail', component: () => import('@/views/consumer/ShopDetail.vue'), meta: { title: '店铺详情' } },
+      { path: 'cart', name: 'cart', component: () => import('@/views/consumer/Cart.vue'), meta: { title: '购物车' } },
+      { path: 'orders', name: 'orders', component: () => import('@/views/consumer/Orders.vue'), meta: { title: '我的订单' } },
+      { path: 'orders/:id', name: 'orderDetail', component: () => import('@/views/consumer/OrderDetail.vue'), meta: { title: '订单详情' } },
+      { path: 'profile', name: 'profile', component: () => import('@/views/consumer/Profile.vue'), meta: { title: '个人中心' } },
+      { path: 'address', name: 'address', component: () => import('@/views/consumer/Address.vue'), meta: { title: '收货地址' } }
+    ]
+  },
+  {
+    path: '/merchant',
+    component: () => import('@/layouts/MerchantLayout.vue'),
+    meta: { roles: ['MERCHANT', 'ADMIN'] },
+    children: [
+      { path: '', redirect: '/merchant/dashboard' },
+      { path: 'apply', name: 'merchantApply', component: () => import('@/views/merchant/Apply.vue'), meta: { title: '商家入驻' } },
+      { path: 'dashboard', name: 'merchantDashboard', component: () => import('@/views/merchant/Dashboard.vue'), meta: { title: '经营概览' } },
+      { path: 'orders', name: 'merchantOrders', component: () => import('@/views/merchant/Orders.vue'), meta: { title: '订单管理' } },
+      { path: 'dishes', name: 'merchantDishes', component: () => import('@/views/merchant/Dishes.vue'), meta: { title: '菜品管理' } },
+      { path: 'shop', name: 'merchantShop', component: () => import('@/views/merchant/Shop.vue'), meta: { title: '店铺管理' } },
+      { path: 'reviews', name: 'merchantReviews', component: () => import('@/views/merchant/Reviews.vue'), meta: { title: '评价管理' } }
+    ]
+  },
+  {
+    path: '/rider',
+    component: () => import('@/layouts/RiderLayout.vue'),
+    meta: { roles: ['RIDER', 'ADMIN'] },
+    children: [
+      { path: '', redirect: '/rider/hall' },
+      { path: 'apply', name: 'riderApply', component: () => import('@/views/rider/Apply.vue'), meta: { title: '骑手认证' } },
+      { path: 'hall', name: 'riderHall', component: () => import('@/views/rider/Hall.vue'), meta: { title: '抢单大厅' } },
+      { path: 'tasks', name: 'riderTasks', component: () => import('@/views/rider/Tasks.vue'), meta: { title: '我的任务' } },
+      { path: 'stats', name: 'riderStats', component: () => import('@/views/rider/Stats.vue'), meta: { title: '收益统计' } }
+    ]
+  },
+  {
+    path: '/admin',
+    component: () => import('@/layouts/AdminLayout.vue'),
+    meta: { roles: ['ADMIN'] },
+    children: [
+      { path: '', redirect: '/admin/dashboard' },
+      { path: 'dashboard', name: 'adminDashboard', component: () => import('@/views/admin/Dashboard.vue'), meta: { title: '数据看板' } },
+      { path: 'users', name: 'adminUsers', component: () => import('@/views/admin/Users.vue'), meta: { title: '用户管理' } },
+      { path: 'merchants', name: 'adminMerchants', component: () => import('@/views/admin/Merchants.vue'), meta: { title: '商家审核' } },
+      { path: 'riders', name: 'adminRiders', component: () => import('@/views/admin/Riders.vue'), meta: { title: '骑手审核' } },
+      { path: 'orders', name: 'adminOrders', component: () => import('@/views/admin/Orders.vue'), meta: { title: '订单监管' } },
+      { path: 'dishes', name: 'adminDishes', component: () => import('@/views/admin/Dishes.vue'), meta: { title: '菜品监管' } }
+    ]
+  },
+  { path: '/:pathMatch(.*)*', redirect: '/' }
+]
+
+const router = createRouter({
+  history: createWebHistory(),
+  routes,
+  scrollBehavior: () => ({ top: 0 })
+})
+
+const HOME_BY_ROLE = {
+  CONSUMER: '/',
+  MERCHANT: '/merchant',
+  RIDER: '/rider',
+  ADMIN: '/admin'
+}
+
+router.beforeEach((to, from, next) => {
+  document.title = to.meta?.title ? `${to.meta.title} · EatWhat` : 'EatWhat · 今天吃啥'
+
+  const userStore = useUserStore()
+  const roles = to.meta?.roles
+
+  if (!roles) {
+    return next()
+  }
+
+  if (!userStore.isLogin) {
+    return next({ path: '/login', query: { redirect: to.fullPath } })
+  }
+
+  if (!roles.includes(userStore.role)) {
+    // 角色不匹配：引导到自身角色的首页
+    return next(HOME_BY_ROLE[userStore.role] || '/login')
+  }
+
+  return next()
+})
+
+export default router

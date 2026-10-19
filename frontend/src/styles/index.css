@@ -1,0 +1,109 @@
+:root {
+  --ew-primary: #ff7a45;
+  --ew-primary-dark: #e8590c;
+  --ew-bg: #f5f6f8;
+  --ew-text: #303133;
+  --ew-text-light: #909399;
+  --ew-border: #ebeef5;
+  --ew-radius: 10px;
+  --ew-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB',
+    'Microsoft YaHei', sans-serif;
+  background: var(--ew-bg);
+  color: var(--ew-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.ew-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.ew-card {
+  background: #fff;
+  border-radius: var(--ew-radius);
+  box-shadow: var(--ew-shadow);
+  padding: 16px;
+}
+
+.ew-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 12px;
+}
+
+.ew-price {
+  color: var(--ew-primary-dark);
+  font-weight: 600;
+}
+
+.ew-price::before {
+  content: '¥';
+  font-size: 0.8em;
+  margin-right: 1px;
+}
+
+.ew-muted {
+  color: var(--ew-text-light);
+  font-size: 13px;
+}
+
+.ew-empty {
+  padding: 48px 0;
+  text-align: center;
+  color: var(--ew-text-light);
+}
+
+.ew-flex {
+  display: flex;
+  align-items: center;
+}
+
+.ew-flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ew-gap8 {
+  gap: 8px;
+}
+
+.ew-gap12 {
+  gap: 12px;
+}
+
+.ew-mt12 {
+  margin-top: 12px;
+}
+
+.ew-mt16 {
+  margin-top: 16px;
+}
+
+.text-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
