@@ -180,6 +180,24 @@
 
 ## 快速开始
 
+### 一键启停（Windows）
+
+仓库根目录提供 `manage.ps1` 与 `manage.bat`，用于统一管理 MySQL、后端、前端三个服务：
+
+```bat
+manage.bat start            启动全部服务（自动等待就绪并做健康检查）
+manage.bat stop             关闭全部服务
+manage.bat restart          重启
+manage.bat status           查看各服务运行状态
+manage.bat start -Rebuild   强制重新构建后端 jar 后再启动
+```
+
+- 三个服务都以普通后台进程运行，日志写入 `logs/`（已 gitignore）。
+- 脚本**不会注册任何开机自启动**：不写注册表 `Run` 项、不写启动文件夹、不创建 Windows 服务或计划任务。电脑重启后服务不会自动拉起，需手动执行 `manage.bat start`。
+- 后端 jar 不存在时脚本会自动执行 `mvn package -DskipTests`。
+
+以下是手工启动各服务的说明（适用于 macOS / Linux 或需要自定义配置的场景）。
+
 ### 环境要求
 
 | 组件 | 版本 |
