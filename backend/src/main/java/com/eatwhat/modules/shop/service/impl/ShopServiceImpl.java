@@ -117,6 +117,11 @@ public class ShopServiceImpl implements ShopService {
         vo.setOpenTime(shop.getOpenTime());
         vo.setCloseTime(shop.getCloseTime());
         vo.setIsOpen(shop.getIsOpen());
+        // 商家-08：营业时段之外，顾客端按「休息中」处理
+        if (Integer.valueOf(1).equals(shop.getIsOpen())
+                && !TimeUtils.inBusinessHours(shop.getOpenTime(), shop.getCloseTime())) {
+            vo.setIsOpen(0);
+        }
         vo.setClosedTip(shop.getClosedTip());
         vo.setAvgScore(shop.getAvgScore());
         vo.setMonthSales(shop.getMonthSales());

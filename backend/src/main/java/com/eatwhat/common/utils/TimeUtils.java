@@ -35,4 +35,23 @@ public final class TimeUtils {
             throw BizException.of(ErrorCode.PARAM_INVALID, "时间格式应为 HH:mm 或 HH:mm:ss");
         }
     }
+
+    /**
+     * 商家-08：判断当前时刻是否落在营业时段内。
+     * 起止任一为空视为不限制；跨零点（如 22:00-02:00）按两段处理。
+     */
+    public static boolean inBusinessHours(LocalTime openTime, LocalTime closeTime) {
+        if (openTime == null || closeTime == null) {
+            return true;
+        }
+        LocalTime now = LocalTime.now();
+        if (openTime.equals(closeTime)) {
+            return true;
+        }
+        if (openTime.isBefore(closeTime)) {
+            return !now.isBefore(openTime) && now.isBefore(closeTime);
+        }
+        // 跨零点营业
+        return !now.isBefore(openTime) || now.isBefore(closeTime);
+    }
 }

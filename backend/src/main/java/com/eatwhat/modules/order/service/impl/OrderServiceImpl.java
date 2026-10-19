@@ -128,6 +128,10 @@ public class OrderServiceImpl implements OrderService {
                 || !Integer.valueOf(1).equals(shop.getStatus())) {
             throw BizException.of(ErrorCode.SHOP_CLOSED);
         }
+        // 商家-08：营业时段之外不可下单
+        if (!com.eatwhat.common.utils.TimeUtils.inBusinessHours(shop.getOpenTime(), shop.getCloseTime())) {
+            throw BizException.of(ErrorCode.SHOP_CLOSED, "商家当前不在营业时段内");
+        }
 
         UserAddress address = addressMapper.selectById(request.getAddressId());
         if (address == null || !address.getUserId().equals(userId)) {
