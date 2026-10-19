@@ -18,6 +18,9 @@
           <span class="ew-muted">起送 ¥{{ shop.minOrderAmount }} / 配送 ¥{{ shop.deliveryFee }}</span>
         </div>
         <p v-if="shop.notice" class="notice">📢 {{ shop.notice }}</p>
+        <p v-if="!shop.isOpen" class="closed-tip">
+          🌙 {{ shop.closedTip || '商家休息中，暂时无法下单，可先浏览菜品' }}
+        </p>
       </div>
       <div class="fav-box">
         <el-button
@@ -494,6 +497,14 @@ onMounted(async () => {
 .notice {
   color: #b88230;
   background: #fdf6ec;
+  padding: 6px 10px;
+  border-radius: 6px;
+  margin-top: 8px !important;
+}
+
+.closed-tip {
+  color: #909399;
+  background: #f4f4f5;
   padding: 6px 10px;
   border-radius: 6px;
   margin-top: 8px !important;

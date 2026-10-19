@@ -66,6 +66,9 @@ public class Shop extends BaseEntity {
     /** 1 营业 0 打烊 */
     private Integer isOpen;
 
+    /** 打烊时展示给顾客的提示语（商家-17） */
+    private String closedTip;
+
     /** 平均评分 */
     private BigDecimal avgScore;
 
@@ -229,6 +232,14 @@ public class Shop extends BaseEntity {
 
     public void setIsOpen(Integer isOpen) {
         this.isOpen = isOpen;
+    }
+
+    public String getClosedTip() {
+        return closedTip;
+    }
+
+    public void setClosedTip(String closedTip) {
+        this.closedTip = closedTip;
     }
 
     public BigDecimal getAvgScore() {

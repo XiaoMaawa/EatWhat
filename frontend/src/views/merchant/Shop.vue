@@ -95,6 +95,15 @@
             <el-time-picker v-model="closeTime" format="HH:mm" value-format="HH:mm" placeholder="结束" />
           </div>
         </el-form-item>
+        <el-form-item label="打烊提示语">
+          <el-input
+            v-model="form.closedTip"
+            maxlength="200"
+            show-word-limit
+            placeholder="打烊后顾客在店铺页看到的提示，如：今日已打烊，明早 9 点见"
+            style="width: 100%"
+          />
+        </el-form-item>
         <el-form-item>
           <el-button type="primary" :loading="saving" @click="save">保存店铺信息</el-button>
         </el-form-item>
@@ -131,7 +140,8 @@ const form = reactive({
   deliveryFee: 3,
   packagingFee: 0,
   deliveryFeeType: 0,
-  deliveryRange: 3000
+  deliveryRange: 3000,
+  closedTip: ''
 })
 
 const rules = {
@@ -167,7 +177,8 @@ async function load() {
         deliveryFee: Number(shop.value.deliveryFee ?? 0),
         packagingFee: Number(shop.value.packagingFee ?? 0),
         deliveryFeeType: Number(shop.value.deliveryFeeType ?? 0),
-        deliveryRange: shop.value.deliveryRange ?? 3000
+        deliveryRange: shop.value.deliveryRange ?? 3000,
+        closedTip: shop.value.closedTip || ''
       })
       openTime.value = trimClock(shop.value.openTime)
       closeTime.value = trimClock(shop.value.closeTime)

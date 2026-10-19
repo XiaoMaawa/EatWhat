@@ -29,9 +29,18 @@
         <el-menu-item index="/merchant/reviews" :disabled="menuDisabled('/merchant/reviews')">
           <el-icon><ChatDotSquare /></el-icon>
           <span>评价管理</span>
-        </el-menu-item>        <el-menu-item index="/merchant/after-sales" :disabled="menuDisabled('/merchant/after-sales')">
+        </el-menu-item>
+        <el-menu-item index="/merchant/after-sales" :disabled="menuDisabled('/merchant/after-sales')">
           <el-icon><Wallet /></el-icon>
           <span>退款售后</span>
+        </el-menu-item>
+        <el-menu-item index="/merchant/preview" :disabled="menuDisabled('/merchant/preview')">
+          <el-icon><View /></el-icon>
+          <span>顾客视角</span>
+        </el-menu-item>
+        <el-menu-item index="/merchant/qrcode" :disabled="menuDisabled('/merchant/qrcode')">
+          <el-icon><Iphone /></el-icon>
+          <span>店铺二维码</span>
         </el-menu-item>
       </el-menu>
     </el-aside>
@@ -66,7 +75,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { merchantApi } from '@/api'
-import { ArrowDown, ChatDotSquare, DataLine, Dish, List, Postcard, Shop, Wallet } from '@element-plus/icons-vue'
+import { ArrowDown, ChatDotSquare, DataLine, Dish, Iphone, List, Postcard, Shop, View, Wallet } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()

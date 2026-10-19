@@ -104,6 +104,7 @@ CREATE TABLE `shop` (
   `open_time`        TIME            DEFAULT NULL            COMMENT '开始营业时间',
   `close_time`       TIME            DEFAULT NULL            COMMENT '结束营业时间',
   `is_open`          TINYINT         NOT NULL DEFAULT 1      COMMENT '1营业 0打烊',
+  `closed_tip`       VARCHAR(200)    DEFAULT NULL            COMMENT '打烊时展示给顾客的提示语',
   `avg_score`        DECIMAL(3,2)    NOT NULL DEFAULT 5.00   COMMENT '平均评分',
   `month_sales`      INT             NOT NULL DEFAULT 0      COMMENT '月销量',
   `status`           TINYINT         NOT NULL DEFAULT 1      COMMENT '1正常 0冻结',

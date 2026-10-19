@@ -59,6 +59,10 @@ public class ShopUpdateRequest {
     /** HH:mm 或 HH:mm:ss */
     private String closeTime;
 
+    /** 打烊时展示给顾客的提示语（商家-17） */
+    @Size(max = 200, message = "休息中提示语不能超过 200 字")
+    private String closedTip;
+
     public String getName() {
         return name;
     }
@@ -177,5 +181,13 @@ public class ShopUpdateRequest {
 
     public void setCloseTime(String closeTime) {
         this.closeTime = closeTime;
+    }
+
+    public String getClosedTip() {
+        return closedTip;
+    }
+
+    public void setClosedTip(String closedTip) {
+        this.closedTip = closedTip;
     }
 }

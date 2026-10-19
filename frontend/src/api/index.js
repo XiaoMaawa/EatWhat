@@ -103,6 +103,8 @@ export const merchantApi = {
   accept: (id) => request.patch(`/merchant/orders/${id}/accept`),
   reject: (id, reason) => request.patch(`/merchant/orders/${id}/reject`, { reason }),
   ready: (id) => request.patch(`/merchant/orders/${id}/ready`),
+  receipt: (id) => request.get(`/merchant/orders/${id}/receipt`),
+  previewShop: (shopId) => request.get(`/shops/${shopId}`),
   stats: (type) => request.get('/merchant/stats', { params: { type } }),
 
   reviews: (params) => request.get('/merchant/reviews', { params }),

@@ -521,6 +521,45 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    public Map<String, Object> receipt(Long merchantId, Long orderId) {
+        Order order = requireMerchantOrder(merchantId, orderId);
+        Shop shop = shopMapper.selectById(order.getShopId());
+        List<OrderItem> items = orderItemMapper.selectList(
+                new LambdaQueryWrapper<OrderItem>().eq(OrderItem::getOrderId, orderId));
+        List<Map<String, Object>> lines = new ArrayList<>();
+        for (OrderItem item : items) {
+            Map<String, Object> line = new LinkedHashMap<>();
+            line.put("name", item.getDishName());
+            line.put("specName", item.getSpecName());
+            line.put("addonNames", item.getAddonNames());
+            line.put("quantity", item.getQuantity());
+            line.put("price", item.getPrice());
+            line.put("subtotal", item.getSubtotal());
+            lines.add(line);
+        }
+        Map<String, Object> receipt = new LinkedHashMap<>();
+        receipt.put("shopName", shop == null ? null : shop.getName());
+        receipt.put("shopPhone", shop == null ? null : shop.getPhone());
+        receipt.put("shopAddress", shop == null ? null : shop.getAddress());
+        receipt.put("orderNo", order.getOrderNo());
+        receipt.put("createdAt", order.getCreatedAt());
+        receipt.put("status", order.getStatus());
+        receipt.put("items", lines);
+        receipt.put("goodsAmount", order.getGoodsAmount());
+        receipt.put("deliveryFee", order.getDeliveryFee());
+        receipt.put("packagingFee", order.getPackagingFee());
+        receipt.put("discountAmount", order.getDiscountAmount());
+        receipt.put("totalAmount", order.getTotalAmount());
+        receipt.put("tablewareCount", order.getTablewareCount());
+        receipt.put("remark", order.getRemark());
+        receipt.put("receiverName", order.getReceiverName());
+        receipt.put("receiverPhone", order.getReceiverPhone());
+        receipt.put("receiverAddress", order.getReceiverAddress());
+        receipt.put("printTime", LocalDateTime.now());
+        return receipt;
+    }
+
+    @Override
     @Transactional(rollbackFor = Exception.class)
     public int closeTimeoutOrders() {
         LocalDateTime deadline = LocalDateTime.now().minusMinutes(CommonConstants.ORDER_PAY_TIMEOUT_MINUTES);

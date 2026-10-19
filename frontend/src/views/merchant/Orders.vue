@@ -47,12 +47,12 @@
           </template>
         </el-table-column>
         <el-table-column prop="createdAt" label="下单时间" width="170" />
-        <el-table-column label="操作" width="180" fixed="right">
+        <el-table-column label="操作" width="230" fixed="right">
           <template #default="{ row }">
             <el-button v-if="row.status === 1" size="small" type="success" @click="accept(row)">接单</el-button>
             <el-button v-if="row.status === 1" size="small" type="danger" @click="reject(row)">拒单</el-button>
             <el-button v-if="row.status === 2" size="small" type="primary" @click="ready(row)">出餐完成</el-button>
-            <span v-if="![1, 2].includes(row.status)" class="ew-muted">—</span>
+            <el-button size="small" text @click="showReceipt(row)">小票</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -68,6 +68,51 @@
         />
       </div>
     </div>
+
+    <el-dialog v-model="receiptVisible" title="订单小票" width="420px">
+      <div v-if="receiptData" id="receipt-print" class="receipt">
+        <div class="r-center r-shop">{{ receiptData.shopName }}</div>
+        <div class="r-center r-small">{{ receiptData.shopAddress }}</div>
+        <div class="r-center r-small">电话：{{ receiptData.shopPhone || '—' }}</div>
+        <div class="r-divider" />
+        <div class="r-line"><span>订单号</span><span>{{ receiptData.orderNo }}</span></div>
+        <div class="r-line"><span>下单时间</span><span>{{ receiptData.createdAt }}</span></div>
+        <div class="r-divider" />
+        <div class="r-line r-head"><span>菜品</span><span>数量 / 金额</span></div>
+        <div v-for="(item, idx) in receiptData.items" :key="idx" class="r-line">
+          <span class="r-item">
+            {{ item.name }}
+            <em v-if="item.specName" class="r-sub">{{ item.specName }}</em>
+            <em v-if="item.addonNames" class="r-sub">{{ item.addonNames }}</em>
+          </span>
+          <span>{{ item.quantity }} × ¥{{ money(item.price) }} = ¥{{ money(item.subtotal) }}</span>
+        </div>
+        <div class="r-divider" />
+        <div class="r-line"><span>商品金额</span><span>¥{{ money(receiptData.goodsAmount) }}</span></div>
+        <div class="r-line"><span>配送费</span><span>¥{{ money(receiptData.deliveryFee) }}</span></div>
+        <div v-if="Number(receiptData.packagingFee) > 0" class="r-line">
+          <span>打包费</span><span>¥{{ money(receiptData.packagingFee) }}</span>
+        </div>
+        <div v-if="Number(receiptData.discountAmount) > 0" class="r-line">
+          <span>优惠</span><span>-¥{{ money(receiptData.discountAmount) }}</span>
+        </div>
+        <div class="r-line r-total"><span>实付</span><span>¥{{ money(receiptData.totalAmount) }}</span></div>
+        <div class="r-divider" />
+        <div class="r-line"><span>收货人</span><span>{{ receiptData.receiverName }} {{ receiptData.receiverPhone }}</span></div>
+        <div class="r-small">{{ receiptData.receiverAddress }}</div>
+        <div v-if="Number(receiptData.tablewareCount) > 0" class="r-small">
+          餐具份数：{{ receiptData.tablewareCount }}
+        </div>
+        <div v-if="receiptData.remark" class="r-small">备注：{{ receiptData.remark }}</div>
+        <div class="r-divider" />
+        <div class="r-center r-small">打印时间 {{ receiptData.printTime }}</div>
+        <div class="r-center r-small">谢谢惠顾，欢迎再次光临</div>
+      </div>
+      <template #footer>
+        <el-button @click="receiptVisible = false">关闭</el-button>
+        <el-button type="primary" @click="printReceipt">打印</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -137,6 +182,40 @@ async function ready(row) {
   await load()
 }
 
+const receiptVisible = ref(false)
+const receiptData = ref(null)
+
+async function showReceipt(row) {
+  receiptData.value = await merchantApi.receipt(row.id)
+  receiptVisible.value = true
+}
+
+function printReceipt() {
+  const html = document.getElementById('receipt-print')?.outerHTML
+  if (!html) return
+  const win = window.open('', '_blank', 'width=420,height=640')
+  if (!win) {
+    ElMessage.warning('浏览器拦截了打印窗口，请允许弹窗后重试')
+    return
+  }
+  win.document.write(`<html><head><title>小票</title><style>
+    body { font-family: "Microsoft YaHei", sans-serif; padding: 12px; color: #222; }
+    .receipt { width: 360px; }
+    .r-center { text-align: center; }
+    .r-shop { font-size: 17px; font-weight: 700; margin-bottom: 4px; }
+    .r-small { font-size: 12px; color: #555; line-height: 1.6; }
+    .r-line { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; line-height: 1.8; }
+    .r-head { font-weight: 600; }
+    .r-total { font-size: 15px; font-weight: 700; margin-top: 2px; }
+    .r-divider { border-top: 1px dashed #999; margin: 8px 0; }
+    .r-sub { display: block; font-size: 11px; color: #666; font-style: normal; }
+    .r-item { flex: 1; }
+  </style></head><body>${html}</body></html>`)
+  win.document.close()
+  win.focus()
+  win.print()
+}
+
 onMounted(load)
 </script>
 
@@ -149,5 +228,59 @@ onMounted(load)
   display: flex;
   justify-content: flex-end;
   margin-top: 14px;
+}
+
+.receipt {
+  font-size: 13px;
+  color: #222;
+}
+
+.r-center {
+  text-align: center;
+}
+
+.r-shop {
+  font-size: 17px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.r-small {
+  font-size: 12px;
+  color: #555;
+  line-height: 1.6;
+}
+
+.r-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  line-height: 1.8;
+}
+
+.r-head {
+  font-weight: 600;
+}
+
+.r-total {
+  font-size: 15px;
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+.r-divider {
+  border-top: 1px dashed #999;
+  margin: 8px 0;
+}
+
+.r-sub {
+  display: block;
+  font-size: 11px;
+  color: #666;
+  font-style: normal;
+}
+
+.r-item {
+  flex: 1;
 }
 </style>

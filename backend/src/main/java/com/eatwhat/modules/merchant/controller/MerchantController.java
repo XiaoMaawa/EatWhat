@@ -223,6 +223,13 @@ public class MerchantController {
         return R.ok();
     }
 
+    @Operation(summary = "订单小票打印数据（商家-43）")
+    @GetMapping("/orders/{id}/receipt")
+    public R<Map<String, Object>> receipt(@PathVariable Long id) {
+        Merchant merchant = merchantService.requireApprovedMerchant(UserContext.userId());
+        return R.ok(orderService.receipt(merchant.getId(), id));
+    }
+
     // ------------------------------------------------------------------ 评价与统计
 
     @Operation(summary = "本店评价列表")

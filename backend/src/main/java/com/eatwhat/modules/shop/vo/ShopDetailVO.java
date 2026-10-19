@@ -38,6 +38,9 @@ public class ShopDetailVO {
     private LocalTime closeTime;
 
     private Integer isOpen;
+
+    /** 打烊提示语（商家-17） */
+    private String closedTip;
     private BigDecimal avgScore;
     private Integer monthSales;
     private BigDecimal distance;
@@ -226,6 +229,14 @@ public class ShopDetailVO {
 
     public void setIsOpen(Integer isOpen) {
         this.isOpen = isOpen;
+    }
+
+    public String getClosedTip() {
+        return closedTip;
+    }
+
+    public void setClosedTip(String closedTip) {
+        this.closedTip = closedTip;
     }
 
     public BigDecimal getAvgScore() {

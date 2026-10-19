@@ -79,6 +79,9 @@ public interface OrderService {
      * 商家备餐完成：2 -> 3，同时创建配送任务。
      */
     void merchantReady(Long merchantId, Long orderId);
+    /**
+     * 鍟嗗-43锛氱敓鎴愯鍗曞皬绁ㄦ墦鍗版暟鎹紙搴楅摵淇℃伅銆佽彍鍝併€佹暟閲忋€侀噾棰濄€佸娉級銆?     */
+    Map<String, Object> receipt(Long merchantId, Long orderId);
 
     /**
      * 定时任务：关闭超时未支付订单。

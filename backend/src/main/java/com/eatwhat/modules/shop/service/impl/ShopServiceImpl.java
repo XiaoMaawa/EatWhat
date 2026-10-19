@@ -114,6 +114,7 @@ public class ShopServiceImpl implements ShopService {
         vo.setOpenTime(shop.getOpenTime());
         vo.setCloseTime(shop.getCloseTime());
         vo.setIsOpen(shop.getIsOpen());
+        vo.setClosedTip(shop.getClosedTip());
         vo.setAvgScore(shop.getAvgScore());
         vo.setMonthSales(shop.getMonthSales());
         vo.setDistance(GeoUtils.distanceKm(latitude, longitude, shop.getLatitude(), shop.getLongitude()));
@@ -222,6 +223,11 @@ public class ShopServiceImpl implements ShopService {
         shop.setDeliveryRange(request.getDeliveryRange());
         shop.setOpenTime(TimeUtils.parseClock(request.getOpenTime()));
         shop.setCloseTime(TimeUtils.parseClock(request.getCloseTime()));
+        // 商家-17：打烊提示语，空字符串存为 null
+        if (request.getClosedTip() != null) {
+            String tip = request.getClosedTip().trim();
+            shop.setClosedTip(tip.isEmpty() ? null : tip);
+        }
         shopMapper.updateById(shop);
     }
 

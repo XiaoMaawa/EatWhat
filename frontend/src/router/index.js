@@ -50,7 +50,9 @@ const routes = [
       { path: 'dishes', name: 'merchantDishes', component: () => import('@/views/merchant/Dishes.vue'), meta: { title: '菜品管理' } },
       { path: 'shop', name: 'merchantShop', component: () => import('@/views/merchant/Shop.vue'), meta: { title: '店铺管理' } },
       { path: 'after-sales', name: 'merchantAfterSales', component: () => import('@/views/merchant/AfterSales.vue'), meta: { title: '退款售后' } },
-      { path: 'reviews', name: 'merchantReviews', component: () => import('@/views/merchant/Reviews.vue'), meta: { title: '评价管理' } }
+      { path: 'reviews', name: 'merchantReviews', component: () => import('@/views/merchant/Reviews.vue'), meta: { title: '评价管理' } },
+      { path: 'preview', name: 'merchantPreview', component: () => import('@/views/merchant/Preview.vue'), meta: { title: '顾客视角预览' } },
+      { path: 'qrcode', name: 'merchantQrCode', component: () => import('@/views/merchant/QrCode.vue'), meta: { title: '店铺二维码' } }
     ]
   },
   {
