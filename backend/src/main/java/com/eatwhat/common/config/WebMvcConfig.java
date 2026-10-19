@@ -44,5 +44,16 @@ public class WebMvcConfig implements WebMvcConfigurer {
         Path path = Paths.get(uploadPath).toAbsolutePath().normalize();
         registry.addResourceHandler(urlPrefix + "/**")
                 .addResourceLocations("file:" + path + "/");
+
+        // spring.web.resources.add-mappings=false 关闭了默认静态资源映射（用于让 404 走统一异常处理），
+        // 因此这里显式放行 Knife4j / Swagger 文档页及其 webjars 资源。
+        registry.addResourceHandler("/doc.html")
+                .addResourceLocations("classpath:/META-INF/resources/");
+        registry.addResourceHandler("/webjars/**")
+                .addResourceLocations("classpath:/META-INF/resources/webjars/");
+        registry.addResourceHandler("/img/**")
+                .addResourceLocations("classpath:/META-INF/resources/img/");
+        registry.addResourceHandler("/favicon.ico")
+                .addResourceLocations("classpath:/META-INF/resources/");
     }
 }
