@@ -1,0 +1,128 @@
+# ============================================================
+# “吃了么”外卖平台 - Git 忽略规则
+# 说明：任何密钥、证书、本地环境配置严禁提交到版本库
+# ============================================================
+
+# ---------- 操作系统 ----------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ---------- 编辑器与 IDE ----------
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.json.example
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+.factorypath
+.apt_generated
+.springBeans
+.sts4-cache
+nbproject/private/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+
+# ---------- Java / Maven ----------
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+hs_err_pid*
+replay_pid*
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+dependency-reduced-pom.xml
+buildNumber.properties
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+
+# ---------- Node / 前端 ----------
+node_modules/
+dist/
+dist-ssr/
+.vite/
+.cache/
+.parcel-cache/
+*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+.pnpm-store/
+.eslintcache
+.stylelintcache
+coverage/
+.nyc_output/
+stats.html
+*.tsbuildinfo
+
+# ---------- 环境与密钥（严禁提交） ----------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.jks
+*.keystore
+!.env.example
+application-local.yml
+application-local.properties
+application-dev-local.yml
+*.local.yml
+
+# ---------- 运行时数据 ----------
+logs/
+*.log
+log/
+data/
+!data/.gitkeep
+data/upload/
+uploads/
+temp/
+tmp/
+
+# ---------- 测试与构建产物 ----------
+*-reports/
+surefire-reports/
+failsafe-reports/
+jacoco.exec
+jacoco/
+.report/
+test-output/
+
+# ---------- 本地文档草稿与临时文件 ----------
+*.bak
+*.orig
+*.rej
+*.tmp
+_docx_dump.txt
+.acl-recovery/
+.docenv/
+
+# ---------- 毕业设计原始材料（按需保留，默认不忽略） ----------
+# 任务书、开题报告等学校下发文件如需纳入版本库可保留

@@ -1,0 +1,42 @@
+# EditorConfig 统一编辑器配置
+# 详见 https://editorconfig.org
+
+root = true
+
+# ---------- 通用 ----------
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+# ---------- Markdown：保留行尾空格（换行语义） ----------
+[*.md]
+trim_trailing_whitespace = false
+indent_size = 2
+
+# ---------- 前端：2 空格缩进 ----------
+[*.{js,mjs,cjs,ts,tsx,jsx,vue,json,css,scss,less,html}]
+indent_size = 2
+
+[{*.yml,*.yaml}]
+indent_size = 2
+
+# ---------- Java：4 空格缩进 ----------
+[*.java]
+indent_size = 4
+max_line_length = 120
+
+# ---------- SQL：4 空格缩进 ----------
+[*.sql]
+indent_size = 4
+
+# ---------- Windows 脚本 ----------
+[*.{bat,cmd,ps1}]
+end_of_line = crlf
+
+# ---------- Makefile 必须使用 Tab ----------
+[Makefile]
+indent_style = tab
