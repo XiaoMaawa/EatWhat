@@ -114,7 +114,10 @@ export const riderApi = {
 // ===== 评价 =====
 export const reviewApi = {
   create: (data) => request.post('/reviews', data),
-  mine: () => request.get('/reviews/mine'),
+  mine: (params) => request.get('/reviews/mine', { params }),
+  detail: (id) => request.get(`/reviews/${id}`),
+  update: (id, data) => request.put(`/reviews/${id}`, data),
+  remove: (id) => request.delete(`/reviews/${id}`),
   reply: (id, reply) => request.post(`/reviews/${id}/reply`, { reply })
 }
 

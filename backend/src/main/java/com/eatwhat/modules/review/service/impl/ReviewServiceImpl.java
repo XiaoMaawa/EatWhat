@@ -12,6 +12,7 @@ import com.eatwhat.modules.auth.mapper.SysUserMapper;
 import com.eatwhat.modules.order.entity.Order;
 import com.eatwhat.modules.order.mapper.OrderMapper;
 import com.eatwhat.modules.review.dto.CreateReviewRequest;
+import com.eatwhat.modules.review.dto.UpdateReviewRequest;
 import com.eatwhat.modules.review.entity.Review;
 import com.eatwhat.modules.review.mapper.ReviewMapper;
 import com.eatwhat.modules.review.service.ReviewService;
@@ -34,6 +35,9 @@ import java.util.List;
 public class ReviewServiceImpl implements ReviewService {
 
     private static final Logger log = LoggerFactory.getLogger(ReviewServiceImpl.class);
+
+    /** 评价可修改/删除的时间窗口（小时） */
+    private static final int REVIEW_EDIT_HOURS = 24;
 
     private final ReviewMapper reviewMapper;
     private final OrderMapper orderMapper;
@@ -145,6 +149,69 @@ public class ReviewServiceImpl implements ReviewService {
         return reviewMapper.selectOne(new LambdaQueryWrapper<Review>()
                 .eq(Review::getOrderId, orderId)
                 .last("LIMIT 1"));
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Review update(Long userId, Long reviewId, UpdateReviewRequest request) {
+        Review review = requireEditable(userId, reviewId);
+        review.setShopScore(request.getShopScore());
+        review.setDeliveryScore(request.getDeliveryScore());
+        review.setContent(request.getContent().trim());
+        review.setImages(joinImages(request.getImages()));
+        review.setIsAnonymous(Boolean.TRUE.equals(request.getIsAnonymous()) ? 1 : 0);
+        reviewMapper.updateById(review);
+        try {
+            shopService.refreshScoreAndSales(review.getShopId(), 0);
+        } catch (Exception e) {
+            log.warn("刷新店铺评分失败 shopId={}", review.getShopId(), e);
+        }
+        return review;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void delete(Long userId, Long reviewId) {
+        Review review = requireEditable(userId, reviewId);
+        reviewMapper.deleteById(review.getId());
+        try {
+            shopService.refreshScoreAndSales(review.getShopId(), 0);
+        } catch (Exception e) {
+            log.warn("刷新店铺评分失败 shopId={}", review.getShopId(), e);
+        }
+    }
+
+    @Override
+    public Review detailForOwner(Long userId, Long reviewId) {
+        Review review = reviewMapper.selectById(reviewId);
+        if (review == null) {
+            throw BizException.of(ErrorCode.PARAM_INVALID, "评价不存在");
+        }
+        if (!userId.equals(review.getUserId())) {
+            throw BizException.of(ErrorCode.DATA_NOT_OWNED);
+        }
+        fillShop(review, false);
+        return review;
+    }
+
+    /**
+     * 校验评价归属与 24 小时可编辑窗口。
+     */
+    private Review requireEditable(Long userId, Long reviewId) {
+        Review review = reviewMapper.selectById(reviewId);
+        if (review == null) {
+            throw BizException.of(ErrorCode.PARAM_INVALID, "评价不存在");
+        }
+        if (!userId.equals(review.getUserId())) {
+            throw BizException.of(ErrorCode.DATA_NOT_OWNED);
+        }
+        LocalDateTime createdAt = review.getCreatedAt();
+        if (createdAt != null
+                && createdAt.plusHours(REVIEW_EDIT_HOURS).isBefore(LocalDateTime.now())) {
+            throw BizException.of(ErrorCode.ORDER_STATUS_ILLEGAL,
+                    "评价提交超过 " + REVIEW_EDIT_HOURS + " 小时，无法再修改或删除");
+        }
+        return review;
     }
 
     /**

@@ -318,7 +318,7 @@ CREATE TABLE `review` (
   `created_at`     DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `deleted`        TINYINT         NOT NULL DEFAULT 0      COMMENT '逻辑删除',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_review_order_id` (`order_id`),
+  KEY `idx_review_order_id` (`order_id`),
   KEY `idx_review_shop` (`shop_id`, `created_at`),
   KEY `idx_review_user` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='评价表';
