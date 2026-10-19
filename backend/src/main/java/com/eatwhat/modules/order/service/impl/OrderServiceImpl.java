@@ -196,6 +196,7 @@ public class OrderServiceImpl implements OrderService {
         order.setReceiverPhone(address.getPhone());
         order.setReceiverAddress(fullAddress(address));
         order.setRemark(request.getRemark());
+        order.setTablewareCount(request.getTablewareCount() == null ? 0 : request.getTablewareCount());
         orderMapper.insert(order);
 
         for (OrderItem item : items) {
@@ -320,6 +321,7 @@ public class OrderServiceImpl implements OrderService {
         vo.setReceiverPhone(order.getReceiverPhone());
         vo.setReceiverAddress(order.getReceiverAddress());
         vo.setRemark(order.getRemark());
+        vo.setTablewareCount(order.getTablewareCount());
         vo.setCancelReason(order.getCancelReason());
 
         Shop shop = shopMapper.selectById(order.getShopId());

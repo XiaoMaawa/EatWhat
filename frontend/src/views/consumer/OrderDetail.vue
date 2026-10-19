@@ -52,6 +52,10 @@
         <span class="label">备注</span>
         <span>{{ order.remark }}</span>
       </div>
+      <div v-if="order.tablewareCount > 0" class="section ew-mt12">
+        <span class="label">餐具</span>
+        <span>{{ order.tablewareCount }} 份</span>
+      </div>
 
       <div v-if="order.rider" class="section">
         <span class="label">骑手</span>

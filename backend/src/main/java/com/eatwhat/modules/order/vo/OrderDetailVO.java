@@ -40,6 +40,7 @@ public class OrderDetailVO {
     private String receiverPhone;
     private String receiverAddress;
     private String remark;
+    private Integer tablewareCount;
     private String cancelReason;
 
     private ShopInfo shop;
@@ -250,6 +251,14 @@ public class OrderDetailVO {
 
     public void setRemark(String remark) {
         this.remark = remark;
+    }
+
+    public Integer getTablewareCount() {
+        return tablewareCount;
+    }
+
+    public void setTablewareCount(Integer tablewareCount) {
+        this.tablewareCount = tablewareCount;
     }
 
     public String getCancelReason() {

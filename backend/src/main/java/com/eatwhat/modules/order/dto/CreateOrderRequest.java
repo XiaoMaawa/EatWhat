@@ -25,6 +25,11 @@ public class CreateOrderRequest {
     @Size(max = 200, message = "备注不能超过 200 字")
     private String remark;
 
+    /** 餐具份数，0 表示不需要，最多 20 份 */
+    @Min(value = 0, message = "餐具份数不能为负")
+    @Max(value = 20, message = "餐具份数最多 20 份")
+    private Integer tablewareCount;
+
     public static class Item {
         @NotNull(message = "菜品不能为空")
         private Long dishId;
@@ -81,5 +86,13 @@ public class CreateOrderRequest {
 
     public void setRemark(String remark) {
         this.remark = remark;
+    }
+
+    public Integer getTablewareCount() {
+        return tablewareCount;
+    }
+
+    public void setTablewareCount(Integer tablewareCount) {
+        this.tablewareCount = tablewareCount;
     }
 }

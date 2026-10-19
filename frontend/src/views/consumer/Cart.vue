@@ -72,6 +72,11 @@
         <div class="remark">
           <span class="section-title">订单备注</span>
           <el-input v-model="remark" type="textarea" :rows="2" maxlength="200" show-word-limit placeholder="口味、偏好等要求（选填）" />
+          <div class="tableware">
+            <span class="section-title">餐具份数</span>
+            <el-input-number v-model="tablewareCount" :min="0" :max="20" size="small" />
+            <span class="ew-muted">0 表示不需要一次性餐具</span>
+          </div>
         </div>
 
         <div class="footer">
@@ -110,6 +115,7 @@ const cart = ref({ items: [] })
 const addresses = ref([])
 const addressId = ref(null)
 const remark = ref('')
+const tablewareCount = ref(0)
 
 const belowMin = computed(() => {
   const goods = Number(cart.value.goodsAmount || 0)
@@ -158,7 +164,8 @@ async function submit() {
     const data = await orderApi.create({
       shopId: cart.value.shopId,
       addressId: addressId.value,
-      remark: remark.value || undefined
+      remark: remark.value || undefined,
+      tablewareCount: tablewareCount.value
     })
     ElMessage.success('下单成功，请尽快支付')
     router.push(`/orders/${data.orderId}`)
@@ -315,5 +322,11 @@ onMounted(load)
 
 .total-price {
   font-size: 22px;
+}
+.tableware {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
 }
 </style>

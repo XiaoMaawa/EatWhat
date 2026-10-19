@@ -61,6 +61,9 @@ public class Order extends BaseEntity {
 
     private String remark;
 
+    /** 餐具份数，0 表示不需要 */
+    private Integer tablewareCount;
+
     private String cancelReason;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
@@ -236,6 +239,14 @@ public class Order extends BaseEntity {
 
     public void setRemark(String remark) {
         this.remark = remark;
+    }
+
+    public Integer getTablewareCount() {
+        return tablewareCount;
+    }
+
+    public void setTablewareCount(Integer tablewareCount) {
+        this.tablewareCount = tablewareCount;
     }
 
     public String getCancelReason() {
