@@ -43,7 +43,7 @@
           <el-input v-model="form.nickname" placeholder="不填自动生成" maxlength="50" />
         </el-form-item>
         <el-form-item label="初始密码" prop="password">
-          <el-input v-model="form.password" placeholder="6-20 位，需含字母和数字" show-password maxlength="20" />
+          <el-input v-model="form.password" placeholder="8-20 位，需含字母和数字" show-password maxlength="20" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -72,7 +72,7 @@ const rules = {
   phone: [{ required: true, message: '请输入手机号' }, { pattern: /^1[3-9]\d{9}$/, message: '手机号格式不正确' }],
   password: [
     { required: true, message: '请输入初始密码' },
-    { pattern: /^(?=.*[A-Za-z])(?=.*\d).{6,20}$/, message: '6-20 位，需同时包含字母和数字' }
+    { pattern: /^(?=.*[A-Za-z])(?=.*\d).{8,20}$/, message: '8-20 位，需同时包含字母和数字' }
   ]
 }
 

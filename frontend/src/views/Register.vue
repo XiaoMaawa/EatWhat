@@ -22,7 +22,7 @@
           <el-input v-model="form.nickname" placeholder="不填自动生成" clearable />
         </el-form-item>
         <el-form-item label="密码" prop="password">
-          <el-input v-model="form.password" type="password" placeholder="6-20 位，含字母与数字" show-password />
+          <el-input v-model="form.password" type="password" placeholder="8-20 位，含字母与数字" show-password />
         </el-form-item>
         <el-form-item label="确认密码" prop="confirmPassword">
           <el-input v-model="form.confirmPassword" type="password" placeholder="再输一次" show-password />
@@ -68,7 +68,7 @@ const rules = {
   ],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
-    { pattern: /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&._-]{6,20}$/, message: '6-20 位，需同时包含字母和数字', trigger: 'blur' }
+    { pattern: /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&._-]{8,20}$/, message: '8-20 位，需同时包含字母和数字', trigger: 'blur' }
   ],
   confirmPassword: [
     { required: true, message: '请再次输入密码', trigger: 'blur' },

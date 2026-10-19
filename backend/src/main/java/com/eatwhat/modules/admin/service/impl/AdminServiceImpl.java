@@ -99,8 +99,11 @@ public class AdminServiceImpl implements AdminService {
         if (phone == null || !phone.matches("1[3-9]\\d{9}")) {
             throw BizException.of(ErrorCode.PARAM_INVALID, "手机号格式不正确");
         }
-        if (password == null || password.length() < 6 || password.length() > 20) {
-            throw BizException.of(ErrorCode.PARAM_INVALID, "密码长度需在 6 至 20 位之间");
+        if (password == null || password.length() < 8 || password.length() > 20) {
+            throw BizException.of(ErrorCode.PARAM_INVALID, "密码长度需在 8 至 20 位之间");
+        }
+        if (!password.matches("^(?=.*[A-Za-z])(?=.*\\d).+$")) {
+            throw BizException.of(ErrorCode.PARAM_INVALID, "密码必须同时包含字母和数字");
         }
         Long count = userMapper.selectCount(new LambdaQueryWrapper<SysUser>().eq(SysUser::getPhone, phone));
         if (count != null && count > 0) {

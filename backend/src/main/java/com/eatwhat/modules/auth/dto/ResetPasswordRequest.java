@@ -20,7 +20,7 @@ public class ResetPasswordRequest {
     private String captchaCode;
 
     @NotBlank(message = "新密码不能为空")
-    @Size(min = 6, max = 20, message = "密码长度需在 6 至 20 位之间")
+    @Size(min = 8, max = 20, message = "密码长度需在 8 至 20 位之间")
     @Pattern(regexp = "^(?=.*[A-Za-z])(?=.*\\d).+$", message = "密码需同时包含字母与数字")
     private String newPassword;
 

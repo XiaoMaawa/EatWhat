@@ -30,7 +30,7 @@
           <el-input
             v-model="form.newPassword"
             type="password"
-            placeholder="新密码（6-20 位，含字母与数字）"
+            placeholder="新密码（8-20 位，含字母与数字）"
             prefix-icon="Lock"
             show-password
           />
@@ -86,7 +86,7 @@ const rules = {
   captchaCode: [{ required: true, message: '请输入图形验证码', trigger: 'blur' }],
   newPassword: [
     { required: true, message: '请输入新密码', trigger: 'blur' },
-    { min: 6, max: 20, message: '密码长度需在 6 至 20 位之间', trigger: 'blur' },
+    { min: 8, max: 20, message: '密码长度需在 8 至 20 位之间', trigger: 'blur' },
     {
       pattern: /^(?=.*[A-Za-z])(?=.*\d).+$/,
       message: '密码需同时包含字母与数字',

@@ -42,7 +42,7 @@
           <el-input v-model="pwdForm.oldPassword" type="password" show-password />
         </el-form-item>
         <el-form-item label="新密码" prop="newPassword">
-          <el-input v-model="pwdForm.newPassword" type="password" show-password placeholder="6-20 位，需同时包含字母和数字" />
+          <el-input v-model="pwdForm.newPassword" type="password" show-password placeholder="8-20 位，需同时包含字母和数字" />
         </el-form-item>
         <el-form-item label="确认新密码" prop="confirmPassword">
           <el-input v-model="pwdForm.confirmPassword" type="password" show-password />
@@ -93,8 +93,8 @@ const pwdRules = {
   newPassword: [
     { required: true, message: '请输入新密码', trigger: 'blur' },
     {
-      pattern: /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{6,20}$/,
-      message: '6-20 位，需同时包含字母和数字',
+      pattern: /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{8,20}$/,
+      message: '8-20 位，需同时包含字母和数字',
       trigger: 'blur'
     }
   ],
