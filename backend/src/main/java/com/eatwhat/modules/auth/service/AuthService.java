@@ -19,8 +19,8 @@ public interface AuthService {
     /** 刷新令牌 */
     LoginVO refresh(String refreshToken);
 
-    /** 退出登录 */
-    void logout(Long userId);
+    /** 退出登录，将当前访问令牌与刷新令牌加入失效列表 */
+    void logout(String accessToken, String refreshToken);
 
     /** 通过手机号 + 图形验证码重置密码 */
     void resetPassword(ResetPasswordRequest request);

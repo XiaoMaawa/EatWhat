@@ -56,6 +56,7 @@ public class JwtTokenProvider {
         Date now = new Date();
         return Jwts.builder()
                 .setSubject(String.valueOf(userId))
+                .setId(java.util.UUID.randomUUID().toString())
                 .claim(CLAIM_USER_ID, userId)
                 .claim(CLAIM_PHONE, phone)
                 .claim(CLAIM_ROLE, role)
@@ -71,6 +72,7 @@ public class JwtTokenProvider {
         Date now = new Date();
         return Jwts.builder()
                 .setSubject(String.valueOf(userId))
+                .setId(java.util.UUID.randomUUID().toString())
                 .claim(CLAIM_USER_ID, userId)
                 .claim(CLAIM_PHONE, phone)
                 .claim(CLAIM_ROLE, role)

@@ -71,7 +71,7 @@ export const useUserStore = defineStore('user', () => {
   async function logout() {
     try {
       if (token.value) {
-        await request.post('/auth/logout')
+        await request.post('/auth/logout', { refreshToken: refreshToken.value || null })
       }
     } catch {
       // 忽略退出请求异常，本地状态必须清理

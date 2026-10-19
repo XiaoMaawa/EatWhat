@@ -64,7 +64,7 @@ class AuthServiceImplTest {
         loginAttemptService = new LoginAttemptService();
         captchaService = mock(CaptchaService.class);
         service = new AuthServiceImpl(userMapper, passwordEncoder, tokenProvider,
-                loginAttemptService, captchaService);
+                loginAttemptService, captchaService, new com.eatwhat.security.TokenBlacklistService());
     }
 
     private SysUser existingUser(String rawPassword) {

@@ -60,7 +60,7 @@ class AuthInterceptorTest {
     @BeforeEach
     void setUp() {
         provider = new JwtTokenProvider(SECRET, EXPIRATION, 604_800_000L);
-        interceptor = new AuthInterceptor(provider);
+        interceptor = new AuthInterceptor(provider, new com.eatwhat.security.TokenBlacklistService());
         request = new MockHttpServletRequest();
         response = new MockHttpServletResponse();
     }

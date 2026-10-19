@@ -28,9 +28,11 @@ import java.util.Arrays;
 public class AuthInterceptor implements HandlerInterceptor {
 
     private final JwtTokenProvider tokenProvider;
+    private final TokenBlacklistService tokenBlacklistService;
 
-    public AuthInterceptor(JwtTokenProvider tokenProvider) {
+    public AuthInterceptor(JwtTokenProvider tokenProvider, TokenBlacklistService tokenBlacklistService) {
         this.tokenProvider = tokenProvider;
+        this.tokenBlacklistService = tokenBlacklistService;
     }
 
     @Override
@@ -64,6 +66,11 @@ public class AuthInterceptor implements HandlerInterceptor {
 
         if (tokenProvider.isRefreshToken(claims)) {
             throw BizException.of(ErrorCode.TOKEN_INVALID, "请使用访问令牌访问业务接口");
+        }
+
+        // 顾客-05：已退出登录的令牌进入失效列表，此后不再被接受
+        if (tokenBlacklistService.isRevoked(claims)) {
+            throw BizException.of(ErrorCode.TOKEN_INVALID, "登录状态已失效，请重新登录");
         }
 
         UserContext.LoginUser loginUser = new UserContext.LoginUser(

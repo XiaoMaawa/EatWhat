@@ -41,17 +41,20 @@ public class AuthServiceImpl implements AuthService {
     private final JwtTokenProvider tokenProvider;
     private final LoginAttemptService loginAttemptService;
     private final CaptchaService captchaService;
+    private final com.eatwhat.security.TokenBlacklistService tokenBlacklistService;
 
     public AuthServiceImpl(SysUserMapper userMapper,
                            PasswordEncoder passwordEncoder,
                            JwtTokenProvider tokenProvider,
                            LoginAttemptService loginAttemptService,
-                           CaptchaService captchaService) {
+                           CaptchaService captchaService,
+                           com.eatwhat.security.TokenBlacklistService tokenBlacklistService) {
         this.userMapper = userMapper;
         this.passwordEncoder = passwordEncoder;
         this.tokenProvider = tokenProvider;
         this.loginAttemptService = loginAttemptService;
         this.captchaService = captchaService;
+        this.tokenBlacklistService = tokenBlacklistService;
     }
 
     @Override
@@ -124,6 +127,10 @@ public class AuthServiceImpl implements AuthService {
         if (!tokenProvider.isRefreshToken(claims)) {
             throw BizException.of(ErrorCode.TOKEN_INVALID, "刷新令牌无效");
         }
+        // 顾客-05：退出登录时刷新令牌一并注销，之后不可再换取新令牌
+        if (tokenBlacklistService.isRevoked(claims)) {
+            throw BizException.of(ErrorCode.TOKEN_INVALID, "登录状态已失效，请重新登录");
+        }
         SysUser user = userMapper.selectById(tokenProvider.getUserId(claims));
         if (user == null) {
             throw BizException.of(ErrorCode.USER_NOT_FOUND);
@@ -135,9 +142,22 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public void logout(Long userId) {
-        // 无状态 JWT：由客户端清除令牌；此处仅记录日志，预留黑名单扩展点
-        log.info("用户 {} 退出登录", userId);
+    public void logout(String accessToken, String refreshToken) {
+        revokeQuietly(accessToken);
+        revokeQuietly(refreshToken);
+        log.info("令牌已加入失效列表");
+    }
+
+    private void revokeQuietly(String token) {
+        if (token == null || token.isBlank()) {
+            return;
+        }
+        try {
+            tokenBlacklistService.revoke(tokenProvider.parse(token));
+        } catch (Exception e) {
+            // 令牌本身已过期或非法，无需再注销
+            log.debug("注销令牌跳过：{}", e.getMessage());
+        }
     }
 
     @Override

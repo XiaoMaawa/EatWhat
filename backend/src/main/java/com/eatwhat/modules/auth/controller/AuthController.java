@@ -11,6 +11,7 @@ import com.eatwhat.modules.auth.vo.LoginVO;
 import com.eatwhat.security.PublicApi;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -65,8 +66,12 @@ public class AuthController {
 
     @Operation(summary = "退出登录")
     @PostMapping("/logout")
-    public R<Void> logout() {
-        authService.logout(UserContext.userId());
+    public R<Void> logout(HttpServletRequest request,
+                          @RequestBody(required = false) Map<String, String> body) {
+        String header = request.getHeader("Authorization");
+        String accessToken = header != null && header.startsWith("Bearer ") ? header.substring(7).trim() : null;
+        String refreshToken = body == null ? null : body.get("refreshToken");
+        authService.logout(accessToken, refreshToken);
         return R.ok();
     }
 }
