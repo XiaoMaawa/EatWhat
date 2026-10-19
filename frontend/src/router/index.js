@@ -66,7 +66,8 @@ const routes = [
       { path: 'hall', name: 'riderHall', component: () => import('@/views/rider/Hall.vue'), meta: { title: '抢单大厅' } },
       { path: 'tasks', name: 'riderTasks', component: () => import('@/views/rider/Tasks.vue'), meta: { title: '我的任务' } },
       { path: 'exceptions', name: 'riderExceptions', component: () => import('@/views/rider/Exceptions.vue'), meta: { title: '异常记录' } },
-      { path: 'stats', name: 'riderStats', component: () => import('@/views/rider/Stats.vue'), meta: { title: '收益统计' } }
+      { path: 'stats', name: 'riderStats', component: () => import('@/views/rider/Stats.vue'), meta: { title: '收益统计' } },
+      { path: 'notices', name: 'riderNotices', component: () => import('@/views/rider/Notices.vue'), meta: { title: '系统通知' } }
     ]
   },
   {
