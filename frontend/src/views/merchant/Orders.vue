@@ -3,6 +3,20 @@
     <div class="ew-card">
       <h3 class="ew-title">订单管理</h3>
 
+      <!-- 商家-37：新订单提醒 -->
+      <el-alert
+        v-if="pendingCount > 0"
+        type="warning"
+        show-icon
+        :closable="false"
+        class="new-order-alert"
+      >
+        <template #title>
+          有 {{ pendingCount }} 笔新订单等待接单，请及时处理（超时 10 分钟将自动取消）
+          <el-button size="small" type="warning" link @click="focusPending">查看</el-button>
+        </template>
+      </el-alert>
+
       <el-form :inline="true" class="filter">
         <el-form-item label="状态">
           <el-select v-model="query.status" placeholder="全部" clearable style="width: 130px">
@@ -117,8 +131,8 @@
 </template>
 
 <script setup>
-import { onMounted, reactive, ref } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+import { ElMessage, ElMessageBox, ElNotification } from 'element-plus'
 import { merchantApi } from '@/api'
 import { money } from '@/utils/format'
 import { ORDER_STATUS_OPTIONS, orderStatusText, orderStatusType } from '@/utils/orderStatus'
@@ -128,6 +142,94 @@ const list = ref([])
 const total = ref(0)
 const dateRange = ref([])
 const query = reactive({ status: null, orderNo: '', page: 1, size: 10 })
+
+/** 商家-37：待接单数量与轮询状态 */
+const pendingCount = computed(() => list.value.filter((row) => row.status === 1).length)
+const knownPendingIds = ref(new Set())
+let pollTimer = null
+let firstPoll = true
+let audioCtx = null
+
+/** 播放新订单提示音（Web Audio，无需外部音频文件） */
+function beep() {
+  try {
+    const Ctx = window.AudioContext || window.webkitAudioContext
+    if (!Ctx) return
+    if (!audioCtx) audioCtx = new Ctx()
+    const ctx = audioCtx
+    // 浏览器自动播放策略：未解锁时先静默，等用户首次交互后 resume 再响
+    if (ctx.state === 'suspended') {
+      ctx.resume().catch(() => {})
+    }
+    const now = ctx.currentTime
+    // 两声短促提示音
+    ;[0, 0.28].forEach((offset) => {
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.type = 'sine'
+      osc.frequency.setValueAtTime(880, now + offset)
+      gain.gain.setValueAtTime(0.001, now + offset)
+      gain.gain.exponentialRampToValueAtTime(0.25, now + offset + 0.02)
+      gain.gain.exponentialRampToValueAtTime(0.001, now + offset + 0.22)
+      osc.connect(gain).connect(ctx.destination)
+      osc.start(now + offset)
+      osc.stop(now + offset + 0.24)
+    })
+  } catch {
+    // 浏览器限制自动播放时静默降级，仅保留弹窗提醒
+  }
+}
+
+/** 用户首次交互时解锁音频上下文，之后新订单提示音才能正常播放 */
+function unlockAudio() {
+  try {
+    const Ctx = window.AudioContext || window.webkitAudioContext
+    if (!Ctx) return
+    if (!audioCtx) audioCtx = new Ctx()
+    if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {})
+  } catch {
+    // 忽略
+  }
+}
+
+/** 商家-37：轮询待接单订单，出现新订单时弹窗 + 提示音，30 秒未处理重复提醒 */
+async function pollNewOrders() {
+  try {
+    const data = await merchantApi.orders({ status: 1, page: 1, size: 50 })
+    const records = data?.records || []
+    const currentIds = new Set(records.map((row) => row.id))
+    const fresh = records.filter((row) => !knownPendingIds.value.has(row.id))
+    if (!firstPoll && fresh.length > 0) {
+      beep()
+      ElNotification({
+        title: '收到新订单',
+        message: `${fresh[0].orderNo}（${fresh.length} 笔待接单），请及时处理`,
+        type: 'warning',
+        duration: 8000
+      })
+    }
+    // 仍有未处理订单时每轮都提醒一次（约 30 秒），符合 30 秒重复提醒要求
+    if (!firstPoll && fresh.length === 0 && currentIds.size > 0) {
+      beep()
+      ElNotification({
+        title: '订单待处理',
+        message: `仍有 ${currentIds.size} 笔订单未接单，超时 10 分钟将自动取消`,
+        type: 'warning',
+        duration: 6000
+      })
+    }
+    knownPendingIds.value = currentIds
+    firstPoll = false
+  } catch {
+    // 轮询失败静默忽略，避免打断正常操作
+  }
+}
+
+function focusPending() {
+  query.status = 1
+  query.page = 1
+  load()
+}
 
 async function load() {
   loading.value = true
@@ -216,12 +318,34 @@ function printReceipt() {
   win.print()
 }
 
-onMounted(load)
+onMounted(() => {
+  load()
+  pollNewOrders()
+  // 商家-37：每 30 秒检查一次待接单订单
+  pollTimer = setInterval(pollNewOrders, 30000)
+  // 浏览器要求用户交互后才允许播放声音，首次点击/按键时解锁
+  window.addEventListener('pointerdown', unlockAudio, { once: true })
+  window.addEventListener('keydown', unlockAudio, { once: true })
+})
+
+onBeforeUnmount(() => {
+  if (pollTimer) clearInterval(pollTimer)
+  window.removeEventListener('pointerdown', unlockAudio)
+  window.removeEventListener('keydown', unlockAudio)
+  if (audioCtx) {
+    audioCtx.close().catch(() => {})
+    audioCtx = null
+  }
+})
 </script>
 
 <style scoped>
 .filter {
   margin-bottom: 6px;
+}
+
+.new-order-alert {
+  margin-bottom: 12px;
 }
 
 .pager {
