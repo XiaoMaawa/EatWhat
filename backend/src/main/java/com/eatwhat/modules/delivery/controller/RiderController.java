@@ -3,9 +3,12 @@ package com.eatwhat.modules.delivery.controller;
 import com.eatwhat.common.result.PageResult;
 import com.eatwhat.common.result.R;
 import com.eatwhat.common.utils.UserContext;
+import com.eatwhat.modules.delivery.dto.DeliveryExceptionRequest;
 import com.eatwhat.modules.delivery.dto.RiderApplyRequest;
+import com.eatwhat.modules.delivery.entity.DeliveryException;
 import com.eatwhat.modules.delivery.entity.DeliveryTask;
 import com.eatwhat.modules.delivery.entity.Rider;
+import com.eatwhat.modules.delivery.service.DeliveryExceptionService;
 import com.eatwhat.modules.delivery.service.DeliveryService;
 import com.eatwhat.security.RequireRole;
 import io.swagger.v3.oas.annotations.Operation;
@@ -33,9 +36,12 @@ import java.util.Map;
 public class RiderController {
 
     private final DeliveryService deliveryService;
+    private final DeliveryExceptionService deliveryExceptionService;
 
-    public RiderController(DeliveryService deliveryService) {
+    public RiderController(DeliveryService deliveryService,
+                           DeliveryExceptionService deliveryExceptionService) {
         this.deliveryService = deliveryService;
+        this.deliveryExceptionService = deliveryExceptionService;
     }
 
     @Operation(summary = "提交骑手认证")
@@ -102,5 +108,27 @@ public class RiderController {
     @GetMapping("/stats")
     public R<Map<String, Object>> stats() {
         return R.ok(deliveryService.stats(UserContext.userId()));
+    }
+
+    @Operation(summary = "转单申请")
+    @PostMapping("/tasks/{taskId}/transfer")
+    public R<DeliveryException> transfer(@PathVariable Long taskId,
+                                         @Valid @RequestBody DeliveryExceptionRequest request) {
+        return R.ok(deliveryExceptionService.transfer(UserContext.userId(), taskId, request));
+    }
+
+    @Operation(summary = "配送异常上报")
+    @PostMapping("/tasks/{taskId}/exception")
+    public R<DeliveryException> reportException(@PathVariable Long taskId,
+                                                @Valid @RequestBody DeliveryExceptionRequest request) {
+        return R.ok(deliveryExceptionService.report(UserContext.userId(), taskId, request));
+    }
+
+    @Operation(summary = "我提交的异常与转单记录")
+    @GetMapping("/exceptions")
+    public R<PageResult<DeliveryException>> exceptions(@RequestParam(required = false) Integer type,
+                                                       @RequestParam(defaultValue = "1") int page,
+                                                       @RequestParam(defaultValue = "10") int size) {
+        return R.ok(deliveryExceptionService.pageMine(UserContext.userId(), type, page, size));
     }
 }

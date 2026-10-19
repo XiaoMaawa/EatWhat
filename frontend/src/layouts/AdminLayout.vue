@@ -33,6 +33,10 @@
           <el-icon><Wallet /></el-icon>
           <span>售后仲裁</span>
         </el-menu-item>
+        <el-menu-item index="/admin/delivery-exceptions">
+          <el-icon><Warning /></el-icon>
+          <span>配送异常</span>
+        </el-menu-item>
         <el-menu-item index="/admin/logs">
           <el-icon><Document /></el-icon>
           <span>操作日志</span>

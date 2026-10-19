@@ -19,4 +19,12 @@ public interface DeliveryTaskMapper extends BaseMapper<DeliveryTask> {
             + "updated_at = NOW(), version = version + 1 "
             + "WHERE id = #{taskId} AND status = 0 AND rider_id IS NULL")
     int grab(@Param("taskId") Long taskId, @Param("riderId") Long riderId);
+
+    /**
+     * 原子转单：仅当任务仍归属该骑手且处于已接单或已取餐状态时退回订单池。
+     */
+    @Update("UPDATE delivery_task SET rider_id = NULL, status = 0, grabbed_at = NULL, picked_at = NULL, "
+            + "updated_at = NOW(), version = version + 1 "
+            + "WHERE id = #{taskId} AND rider_id = #{riderId} AND status IN (1, 2)")
+    int release(@Param("taskId") Long taskId, @Param("riderId") Long riderId);
 }

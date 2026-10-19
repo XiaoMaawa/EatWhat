@@ -18,6 +18,10 @@
           <el-icon><Tickets /></el-icon>
           <span>我的任务</span>
         </el-menu-item>
+        <el-menu-item index="/rider/exceptions" :disabled="menuDisabled('/rider/exceptions')">
+          <el-icon><Warning /></el-icon>
+          <span>异常记录</span>
+        </el-menu-item>
         <el-menu-item index="/rider/stats" :disabled="menuDisabled('/rider/stats')">
           <el-icon><TrendCharts /></el-icon>
           <span>收益统计</span>
@@ -55,7 +59,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { riderApi } from '@/api'
-import { ArrowDown, Postcard, Promotion, Tickets, TrendCharts } from '@element-plus/icons-vue'
+import { ArrowDown, Postcard, Promotion, Tickets, TrendCharts, Warning } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()

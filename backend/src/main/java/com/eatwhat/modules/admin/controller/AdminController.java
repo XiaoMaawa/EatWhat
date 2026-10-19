@@ -8,7 +8,9 @@ import com.eatwhat.modules.admin.service.AdminService;
 import com.eatwhat.modules.aftersale.entity.AfterSale;
 import com.eatwhat.modules.aftersale.service.AfterSaleService;
 import com.eatwhat.modules.auth.entity.SysUser;
+import com.eatwhat.modules.delivery.entity.DeliveryException;
 import com.eatwhat.modules.delivery.entity.Rider;
+import com.eatwhat.modules.delivery.service.DeliveryExceptionService;
 import com.eatwhat.modules.dish.entity.Dish;
 import com.eatwhat.modules.merchant.entity.Merchant;
 import com.eatwhat.modules.message.service.MessageService;
@@ -39,12 +41,15 @@ public class AdminController {
     private final AdminService adminService;
     private final AfterSaleService afterSaleService;
     private final MessageService messageService;
+    private final DeliveryExceptionService deliveryExceptionService;
 
     public AdminController(AdminService adminService, AfterSaleService afterSaleService,
-                           MessageService messageService) {
+                           MessageService messageService,
+                           DeliveryExceptionService deliveryExceptionService) {
         this.adminService = adminService;
         this.afterSaleService = afterSaleService;
         this.messageService = messageService;
+        this.deliveryExceptionService = deliveryExceptionService;
     }
 
     @Operation(summary = "用户列表")
@@ -153,6 +158,23 @@ public class AdminController {
     public R<Void> intervene(@PathVariable Long id, @RequestBody Map<String, String> body) {
         adminService.interveneOrder(id, body == null ? null : body.get("action"),
                 body == null ? null : body.get("reason"));
+        return R.ok();
+    }
+
+    @Operation(summary = "配送异常与转单记录")
+    @GetMapping("/delivery-exceptions")
+    public R<PageResult<DeliveryException>> deliveryExceptions(@RequestParam(required = false) Integer type,
+                                                               @RequestParam(required = false) Integer status,
+                                                               @RequestParam(required = false) String keyword,
+                                                               @RequestParam(defaultValue = "1") int page,
+                                                               @RequestParam(defaultValue = "10") int size) {
+        return R.ok(deliveryExceptionService.pageAll(type, status, keyword, page, size));
+    }
+
+    @Operation(summary = "处理配送异常")
+    @PostMapping("/delivery-exceptions/{id}/handle")
+    public R<Void> handleDeliveryException(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        deliveryExceptionService.handle(UserContext.userId(), id, body == null ? null : body.get("remark"));
         return R.ok();
     }
 

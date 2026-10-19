@@ -62,6 +62,7 @@ const routes = [
       { path: 'apply', name: 'riderApply', component: () => import('@/views/rider/Apply.vue'), meta: { title: '骑手认证' } },
       { path: 'hall', name: 'riderHall', component: () => import('@/views/rider/Hall.vue'), meta: { title: '抢单大厅' } },
       { path: 'tasks', name: 'riderTasks', component: () => import('@/views/rider/Tasks.vue'), meta: { title: '我的任务' } },
+      { path: 'exceptions', name: 'riderExceptions', component: () => import('@/views/rider/Exceptions.vue'), meta: { title: '异常记录' } },
       { path: 'stats', name: 'riderStats', component: () => import('@/views/rider/Stats.vue'), meta: { title: '收益统计' } }
     ]
   },
@@ -78,6 +79,7 @@ const routes = [
       { path: 'orders', name: 'adminOrders', component: () => import('@/views/admin/Orders.vue'), meta: { title: '订单监管' } },
       { path: 'dishes', name: 'adminDishes', component: () => import('@/views/admin/Dishes.vue'), meta: { title: '菜品监管' } },
       { path: 'after-sales', name: 'adminAfterSales', component: () => import('@/views/admin/AfterSales.vue'), meta: { title: '售后仲裁' } },
+      { path: 'delivery-exceptions', name: 'adminDeliveryExceptions', component: () => import('@/views/admin/DeliveryExceptions.vue'), meta: { title: '配送异常' } },
       { path: 'logs', name: 'adminLogs', component: () => import('@/views/admin/OperationLogs.vue'), meta: { title: '操作日志' } },
       { path: 'notices', name: 'adminNotices', component: () => import('@/views/admin/Notices.vue'), meta: { title: '发布公告' } },
     { path: 'announcements', name: 'adminAnnouncements', component: () => import('@/views/admin/Announcements.vue'), meta: { title: '公告管理' } },

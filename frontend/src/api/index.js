@@ -108,6 +108,9 @@ export const riderApi = {
   deliver: (taskId) => request.patch(`/rider/tasks/${taskId}/deliver`),
   tasks: (params) => request.get('/rider/tasks', { params }),
   updateSettings: (data) => request.patch('/rider/settings', data),
+  transfer: (taskId, data) => request.post(`/rider/tasks/${taskId}/transfer`, data),
+  reportException: (taskId, data) => request.post(`/rider/tasks/${taskId}/exception`, data),
+  exceptions: (params) => request.get('/rider/exceptions', { params }),
   stats: () => request.get('/rider/stats')
 }
 
@@ -153,6 +156,8 @@ export const adminApi = {
 
   dishes: (params) => request.get('/admin/dishes', { params }),
   offlineDish: (id) => request.patch(`/admin/dishes/${id}/offline`),
+  deliveryExceptions: (params) => request.get('/admin/delivery-exceptions', { params }),
+  handleDeliveryException: (id, data) => request.post(`/admin/delivery-exceptions/${id}/handle`, data),
 
   dashboard: () => request.get('/admin/dashboard'),
   operationLogs: (params) => request.get('/admin/operation-logs', { params }),

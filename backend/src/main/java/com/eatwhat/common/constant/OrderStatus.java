@@ -81,7 +81,9 @@ public enum OrderStatus {
                 legal = f == PENDING_ACCEPT && "MERCHANT".equals(role);
                 break;
             case PENDING_DELIVERY:
-                legal = f == PREPARING && "MERCHANT".equals(role);
+                // 备餐完成由商家推进；骑手转单时由系统把订单退回订单池
+                legal = (f == PREPARING && "MERCHANT".equals(role))
+                        || (f == DELIVERING && "SYSTEM".equals(role));
                 break;
             case DELIVERING:
                 legal = f == PENDING_DELIVERY && "RIDER".equals(role);

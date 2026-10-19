@@ -479,6 +479,32 @@ CREATE TABLE `sys_config` (
   KEY `idx_sys_config_group` (`config_group`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='平台参数';
 
+-- ---------------------------------------------------------------------
+-- 21. 配送异常与转单申请表
+-- ---------------------------------------------------------------------
+DROP TABLE IF EXISTS `delivery_exception`;
+CREATE TABLE `delivery_exception` (
+  `id`            BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `task_id`       BIGINT UNSIGNED NOT NULL                COMMENT '配送任务ID',
+  `order_id`      BIGINT UNSIGNED NOT NULL                COMMENT '订单ID',
+  `order_no`      VARCHAR(32)     DEFAULT NULL            COMMENT '订单号冗余',
+  `rider_id`      BIGINT UNSIGNED NOT NULL                COMMENT '骑手ID',
+  `type`          TINYINT         NOT NULL DEFAULT 2      COMMENT '1转单申请 2异常上报',
+  `reason_type`   TINYINT         NOT NULL DEFAULT 6      COMMENT '1联系不上顾客 2地址错误 3餐品破损 4车辆故障 5天气原因 6其他',
+  `description`   VARCHAR(500)    DEFAULT NULL            COMMENT '情况说明',
+  `images`        VARCHAR(1000)   DEFAULT NULL            COMMENT '凭证图片,逗号分隔',
+  `status`        TINYINT         NOT NULL DEFAULT 0      COMMENT '0待处理 1已处理',
+  `handle_remark` VARCHAR(500)    DEFAULT NULL            COMMENT '处理说明',
+  `handled_at`    DATETIME        DEFAULT NULL            COMMENT '处理时间',
+  `created_at`    DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at`    DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted`       TINYINT         NOT NULL DEFAULT 0      COMMENT '逻辑删除 0未删 1已删',
+  PRIMARY KEY (`id`),
+  KEY `idx_exception_task` (`task_id`),
+  KEY `idx_exception_rider` (`rider_id`, `type`),
+  KEY `idx_exception_status` (`status`, `created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='配送异常与转单申请';
+
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- =====================================================================
