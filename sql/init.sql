@@ -51,6 +51,7 @@ CREATE TABLE `user_address` (
   `longitude`    DECIMAL(10,7)   DEFAULT NULL            COMMENT '经度',
   `latitude`     DECIMAL(10,7)   DEFAULT NULL            COMMENT '纬度',
   `is_default`   TINYINT         NOT NULL DEFAULT 0      COMMENT '是否默认 1是 0否',
+  `tag`          VARCHAR(20)     DEFAULT NULL            COMMENT '地址标签 家/公司/学校',
   `created_at`   DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updated_at`   DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted`      TINYINT         NOT NULL DEFAULT 0      COMMENT '逻辑删除',
@@ -279,6 +280,9 @@ CREATE TABLE `rider` (
   `id_card`       VARCHAR(255)    DEFAULT NULL            COMMENT '身份证号(加密)',
   `health_img`    VARCHAR(255)    DEFAULT NULL            COMMENT '健康证图片',
   `contact_phone` VARCHAR(20)     NOT NULL                COMMENT '联系电话',
+  `accepting`     TINYINT         NOT NULL DEFAULT 1      COMMENT '1接单中 0已暂停',
+  `max_distance`  DECIMAL(4,1)    NOT NULL DEFAULT 5.0    COMMENT '接单半径(公里)',
+  `max_orders`    INT             NOT NULL DEFAULT 5      COMMENT '最大同时接单数',
   `audit_status`  TINYINT         NOT NULL DEFAULT 0      COMMENT '0待审核 1通过 2驳回',
   `audit_remark`  VARCHAR(255)    DEFAULT NULL            COMMENT '审核意见',
   `audited_at`    DATETIME        DEFAULT NULL            COMMENT '审核时间',
@@ -318,7 +322,21 @@ CREATE TABLE `review` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='评价表';
 
 -- ---------------------------------------------------------------------
--- 14. 操作日志表
+-- 14. 店铺收藏表
+-- ---------------------------------------------------------------------
+DROP TABLE IF EXISTS `shop_favorite`;
+CREATE TABLE `shop_favorite` (
+  `id`         BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `user_id`    BIGINT UNSIGNED NOT NULL                COMMENT '用户ID',
+  `shop_id`    BIGINT UNSIGNED NOT NULL                COMMENT '店铺ID',
+  `created_at` DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '收藏时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_favorite_user_shop` (`user_id`, `shop_id`),
+  KEY `idx_favorite_user` (`user_id`, `id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='店铺收藏表';
+
+-- ---------------------------------------------------------------------
+-- 15. 操作日志表
 -- ---------------------------------------------------------------------
 DROP TABLE IF EXISTS `operation_log`;
 CREATE TABLE `operation_log` (
@@ -414,6 +432,11 @@ INSERT INTO `dish` (`id`, `shop_id`, `category_id`, `name`, `image`, `descriptio
 INSERT INTO `rider` (`id`, `user_id`, `real_name`, `id_card`, `health_img`, `contact_phone`, `audit_status`, `audit_remark`, `audited_at`, `total_orders`, `total_income`) VALUES
 (1, 6, '王强', '330106199303031234', NULL, '13800000020', 1, '健康证有效，审核通过', NOW(), 0, 0.00),
 (2, 7, '赵敏', '330106199407075678', NULL, '13800000021', 1, '健康证有效，审核通过', NOW(), 0, 0.00);
+
+INSERT INTO `shop_favorite` (`id`, `user_id`, `shop_id`) VALUES
+(1, 2, 1),
+(2, 2, 2),
+(3, 3, 3);
 
 -- =====================================================================
 -- 说明：以上账号密码均以 BCrypt 密文入库，明文与哈希对应关系如下：
