@@ -36,7 +36,7 @@
 | 业务错误码 | 51 |
 | 数据库表 | 27 |
 | 前端页面组件 | 53 |
-| 单元测试 | 163 个用例 / 13 个测试类 |
+| 单元测试 | 179 个用例 / 14 个测试类 |
 
 ---
 
@@ -244,7 +244,7 @@ pnpm dev
 
 ```bash
 cd backend
-mvn test        # 163 个单元测试用例
+mvn test        # 179 个测试用例（含 16 个 MockMvc Web 层集成测试）
 ```
 
 前端构建校验：
@@ -288,7 +288,7 @@ EatWhat/
 │       │   ├── security/     # JWT、令牌黑名单、登录拦截器、权限注解
 │       │   └── modules/      # 15 个业务模块
 │       ├── main/resources/application.yml
-│       └── test/java/        # 13 个测试类，163 个用例
+│       └── test/java/        # 14 个测试类，179 个用例
 ├── frontend/             # Vue3 前端工程（53 个页面组件）
 │   ├── package.json
 │   ├── vite.config.js
