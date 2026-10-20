@@ -111,7 +111,7 @@
       </el-timeline>
 
       <div class="actions">
-        <el-button v-if="order.status === 0" type="primary" @click="pay">去支付</el-button>
+        <el-button v-if="order.status === 0" type="primary" :loading="paying" @click="pay">去支付</el-button>
         <el-button v-if="order.status === 0 || order.status === 1" @click="cancel">取消订单</el-button>
         <el-button v-if="order.status === 4" type="success" @click="confirm">确认收货</el-button>
         <el-button v-if="order.status === 1" type="warning" plain @click="openAfterSale(1)">申请退款</el-button>
@@ -168,13 +168,15 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
-import { afterSaleApi, cartApi, fileApi, orderApi } from '@/api'
+import { afterSaleApi, fileApi, orderApi } from '@/api'
 import { orderStatusText, orderStatusType } from '@/utils/orderStatus'
+import { mockPay } from '@/utils/pay'
 
 const route = useRoute()
 const router = useRouter()
 const orderId = Number(route.params.id)
 const loading = ref(false)
+const paying = ref(false)
 const order = ref(null)
 
 const afterSaleVisible = ref(false)
@@ -234,10 +236,20 @@ function startPolling() {
 }
 
 async function pay() {
-  await ElMessageBox.confirm(`本次需支付 ¥${order.value.totalAmount}，确认支付？`, '模拟支付', { type: 'info' })
-  await orderApi.pay(orderId, 1)
-  ElMessage.success('支付成功')
-  await load()
+  try {
+    await ElMessageBox.confirm(`本次需支付 ¥${order.value.totalAmount}，确认支付？`, '模拟支付', { type: 'info' })
+  } catch {
+    return
+  }
+  paying.value = true
+  try {
+    await mockPay(orderId, order.value.totalAmount)
+    ElMessage.success('支付成功，等待商家接单')
+    await load()
+    startPolling()
+  } finally {
+    paying.value = false
+  }
 }
 
 async function cancel() {
@@ -259,13 +271,13 @@ async function confirm() {
 
 async function reorder() {
   try {
-    await ElMessageBox.confirm('将按原订单菜品重新加入购物车，已下架或售罄的菜品会自动跳过。', '再来一单', { type: 'info', confirmButtonText: '加入购物车' })
+    await ElMessageBox.confirm('将按原订单菜品重新加入店铺购物车，已下架或售罄的菜品会自动跳过。', '再来一单', { type: 'info', confirmButtonText: '去店铺下单' })
   } catch {
     return
   }
-  const cart = await cartApi.reorder(orderId)
+  await cartApi.reorder(orderId)
   ElMessage.success('已将原订单菜品加入购物车')
-  router.push('/cart')
+  router.push(`/shop/${order.value.shop?.id}`)
 }
 
 function callRider() {

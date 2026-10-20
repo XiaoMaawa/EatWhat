@@ -41,6 +41,9 @@ public class ShopDetailVO {
 
     /** 打烊提示语（商家-17） */
     private String closedTip;
+
+    /** 商家-08：按星期的营业时段，未配置时为空列表 */
+    private List<com.eatwhat.modules.shop.entity.ShopBusinessHour> businessHours = new ArrayList<>();
     private BigDecimal avgScore;
     private Integer monthSales;
     private BigDecimal distance;
@@ -237,6 +240,14 @@ public class ShopDetailVO {
 
     public void setClosedTip(String closedTip) {
         this.closedTip = closedTip;
+    }
+
+    public List<com.eatwhat.modules.shop.entity.ShopBusinessHour> getBusinessHours() {
+        return businessHours;
+    }
+
+    public void setBusinessHours(List<com.eatwhat.modules.shop.entity.ShopBusinessHour> businessHours) {
+        this.businessHours = businessHours;
     }
 
     public BigDecimal getAvgScore() {

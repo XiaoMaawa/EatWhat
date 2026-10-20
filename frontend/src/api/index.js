@@ -53,6 +53,7 @@ export const cartApi = {
 export const orderApi = {
   create: (data) => request.post('/orders', data),
   pay: (id, payType = 1) => request.post(`/orders/${id}/pay`, { payType }),
+  payCallback: (data) => request.post('/orders/pay/callback', data),
   list: (params) => request.get('/orders', { params }),
   detail: (id) => request.get(`/orders/${id}`),
   updateStatus: (id, data) => request.patch(`/orders/${id}/status`, data),

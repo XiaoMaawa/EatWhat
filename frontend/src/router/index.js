@@ -27,7 +27,6 @@ const routes = [
     children: [
       { path: '', name: 'home', component: () => import('@/views/consumer/Home.vue'), meta: { title: '首页' } },
       { path: 'shop/:id', name: 'shopDetail', component: () => import('@/views/consumer/ShopDetail.vue'), meta: { title: '店铺详情' } },
-      { path: 'cart', name: 'cart', component: () => import('@/views/consumer/Cart.vue'), meta: { title: '购物车' } },
       { path: 'orders', name: 'orders', component: () => import('@/views/consumer/Orders.vue'), meta: { title: '我的订单' } },
       { path: 'orders/:id', name: 'orderDetail', component: () => import('@/views/consumer/OrderDetail.vue'), meta: { title: '订单详情' } },
       { path: 'reviews', name: 'myReviews', component: () => import('@/views/consumer/Reviews.vue'), meta: { title: '我的评价' } },

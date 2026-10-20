@@ -25,9 +25,7 @@
               <el-tag v-if="addr.isDefault === 1" size="small" type="success">默认</el-tag>
               <el-tag v-if="addr.tag" size="small" type="warning" effect="plain">{{ addr.tag }}</el-tag>
             </div>
-            <div class="address-detail">
-              {{ addr.province }}{{ addr.city }}{{ addr.district }}{{ addr.detail }}
-            </div>
+            <div class="address-detail">{{ formatAddress(addr) }}</div>
           </div>
           <div class="address-actions">
             <el-button v-if="addr.isDefault !== 1" link type="primary" @click="setDefault(addr)">设为默认</el-button>
@@ -47,18 +45,16 @@
         <el-form-item label="手机号" prop="phone">
           <el-input v-model="form.phone" maxlength="11" placeholder="11 位手机号" />
         </el-form-item>
-        <el-form-item label="省市区" required>
-          <div class="region-row">
-            <el-form-item prop="province" class="region-item">
-              <el-input v-model="form.province" placeholder="省" />
-            </el-form-item>
-            <el-form-item prop="city" class="region-item">
-              <el-input v-model="form.city" placeholder="市" />
-            </el-form-item>
-            <el-form-item prop="district" class="region-item">
-              <el-input v-model="form.district" placeholder="区/县" />
-            </el-form-item>
-          </div>
+        <el-form-item label="省市区" prop="regionCodes">
+          <el-cascader
+            v-model="form.regionCodes"
+            :options="regionTree"
+            :props="cascaderProps"
+            placeholder="请选择省 / 市 / 区县"
+            filterable
+            clearable
+            style="width: 100%"
+          />
         </el-form-item>
         <el-form-item label="详细地址" prop="detail">
           <el-input v-model="form.detail" type="textarea" :rows="2" maxlength="120" show-word-limit placeholder="街道、门牌号、楼栋等" />
@@ -87,6 +83,7 @@ import { onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { userApi } from '@/api'
 import { Search } from '@element-plus/icons-vue'
+import { regionTree, toRegionCodes, fromRegionCodes, formatAddress } from '@/utils/region'
 
 const loading = ref(false)
 const submitting = ref(false)
@@ -116,10 +113,18 @@ const form = reactive({
   province: '',
   city: '',
   district: '',
+  regionCodes: [],
   detail: '',
   isDefault: 0,
   tag: '家'
 })
+
+const cascaderProps = {
+  value: 'value',
+  label: 'label',
+  children: 'children',
+  expandTrigger: 'click'
+}
 
 const rules = {
   contactName: [{ required: true, message: '请填写联系人', trigger: 'blur' }],
@@ -127,9 +132,19 @@ const rules = {
     { required: true, message: '请填写手机号', trigger: 'blur' },
     { pattern: /^1[3-9]\d{9}$/, message: '手机号格式不正确', trigger: 'blur' }
   ],
-  province: [{ required: true, message: '请填写省份', trigger: 'blur' }],
-  city: [{ required: true, message: '请填写城市', trigger: 'blur' }],
-  district: [{ required: true, message: '请填写区县', trigger: 'blur' }],
+  regionCodes: [
+    {
+      required: true,
+      validator: (_rule, value, callback) => {
+        if (!value || value.length < 3) {
+          callback(new Error('请选择完整的省 / 市 / 区县'))
+          return
+        }
+        callback()
+      },
+      trigger: 'change'
+    }
+  ],
   detail: [
     { required: true, message: '请填写详细地址', trigger: 'blur' },
     { min: 5, message: '详细地址至少 5 个字', trigger: 'blur' }
@@ -153,25 +168,38 @@ function openDialog(addr) {
     province: '',
     city: '',
     district: '',
+    regionCodes: [],
     detail: '',
     isDefault: list.value.length === 0 ? 1 : 0,
     tag: '家'
   })
   if (addr) {
     Object.assign(form, addr)
+    // 老数据可能是手填的省市区，反查不到时下拉留空，让用户重新选一次
+    form.regionCodes = toRegionCodes(addr.province, addr.city, addr.district)
     if (!form.tag) {
       form.tag = '家'
     }
   }
   visible.value = true
+  formRef.value?.clearValidate()
 }
 
 async function submit() {
   await formRef.value.validate()
   submitting.value = true
   try {
-    const payload = { ...form }
-    delete payload.id
+    const region = fromRegionCodes(form.regionCodes)
+    const payload = {
+      contactName: form.contactName,
+      phone: form.phone,
+      province: region.province,
+      city: region.city,
+      district: region.district,
+      detail: form.detail,
+      isDefault: form.isDefault,
+      tag: form.tag
+    }
     if (form.id) {
       await userApi.updateAddress(form.id, payload)
     } else {
@@ -256,4 +284,10 @@ onMounted(load)
   flex: 1;
   margin-bottom: 0;
 }
+
+/* 地址详情行：长地址允许换行，不撑破卡片 */
+.address-detail {
+  word-break: break-all;
+}
+
 </style>

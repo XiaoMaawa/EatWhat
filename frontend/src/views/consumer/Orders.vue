@@ -44,6 +44,7 @@
                 v-if="order.status === 0"
                 size="small"
                 type="primary"
+                :loading="payingId === order.id"
                 @click="pay(order)"
               >
                 去支付
@@ -126,8 +127,10 @@ import { onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { orderApi, reviewApi } from '@/api'
 import { orderStatusText, orderStatusType } from '@/utils/orderStatus'
+import { mockPay } from '@/utils/pay'
 
 const loading = ref(false)
+const payingId = ref(null)
 const orders = ref([])
 const total = ref(0)
 const page = ref(1)
@@ -164,14 +167,19 @@ function onTabChange() {
 }
 
 async function pay(order) {
-  await ElMessageBox.confirm(
-    `本次需支付 ¥${order.totalAmount}，确认支付？`,
-    '模拟支付',
-    { type: 'info' }
-  )
-  await orderApi.pay(order.id, 1)
-  ElMessage.success('支付成功')
-  await load()
+  try {
+    await ElMessageBox.confirm(`本次需支付 ¥${order.totalAmount}，确认支付？`, '模拟支付', { type: 'info' })
+  } catch {
+    return
+  }
+  payingId.value = order.id
+  try {
+    await mockPay(order.id, order.totalAmount)
+    ElMessage.success('支付成功，等待商家接单')
+    await load()
+  } finally {
+    payingId.value = null
+  }
 }
 
 async function cancel(order) {

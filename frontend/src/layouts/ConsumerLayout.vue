@@ -17,10 +17,6 @@
             消息
             <el-badge v-if="unreadCount > 0" :value="unreadCount" :max="99" class="badge" />
           </router-link>
-          <router-link to="/cart" class="nav-item">
-            购物车
-            <el-badge v-if="cartCount > 0" :value="cartCount" class="badge" />
-          </router-link>
         </nav>
 
         <div class="right">
@@ -61,23 +57,16 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
-import { cartApi, messageApi } from '@/api'
+import { messageApi } from '@/api'
 import { ArrowDown } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const userStore = useUserStore()
-const cartCount = ref(0)
 const unreadCount = ref(0)
 
 const role = computed(() => userStore.role)
 
 onMounted(async () => {
-  try {
-    const cart = await cartApi.get()
-    cartCount.value = cart?.items?.reduce((sum, item) => sum + item.quantity, 0) || 0
-  } catch {
-    cartCount.value = 0
-  }
   try {
     const unreadData = await messageApi.unreadCount()
     unreadCount.value = unreadData?.total || 0

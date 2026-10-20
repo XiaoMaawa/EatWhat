@@ -174,6 +174,8 @@ public class ShopServiceImpl implements ShopService {
             }
         }
         vo.setClosedTip(shop.getClosedTip());
+        // 商家-08：把按星期的营业时段一并返回，顾客端可展示「今日营业时间」
+        vo.setBusinessHours(businessHourService.listByShop(shop.getId()));
         vo.setAvgScore(shop.getAvgScore());
         vo.setMonthSales(shop.getMonthSales());
         vo.setDistance(GeoUtils.distanceKm(latitude, longitude, shop.getLatitude(), shop.getLongitude()));

@@ -1,8 +1,9 @@
 <template>
-  <div class="reviews-page">
-    <div class="page-head">
+  <div class="ew-page">
+    <div class="ew-card">
+    <div class="ew-flex-between">
       <h3 class="ew-title">我的评价</h3>
-      <span class="ew-sub">共 {{ total }} 条评价</span>
+      <span class="ew-muted">共 {{ total }} 条评价</span>
     </div>
 
     <div v-loading="loading" class="review-list">
@@ -60,6 +61,18 @@
       <el-empty v-if="!loading && list.length === 0" description="还没有发表过评价，去订单里评价一下吧" />
     </div>
 
+    <div v-if="total > size" class="pager">
+      <el-pagination
+        v-model:current-page="page"
+        :page-size="size"
+        :total="total"
+        layout="prev, pager, next"
+        background
+        @current-change="load"
+      />
+    </div>
+    </div>
+
     <el-dialog v-model="dialogVisible" title="修改评价" width="520px">
       <el-form label-width="80px">
         <el-form-item label="餐品评分">
@@ -87,17 +100,6 @@
         <el-button type="primary" :loading="saving" @click="submitEdit">保存</el-button>
       </template>
     </el-dialog>
-
-    <div v-if="total > size" class="pager">
-      <el-pagination
-        v-model:current-page="page"
-        :page-size="size"
-        :total="total"
-        layout="prev, pager, next"
-        background
-        @current-change="load"
-      />
-    </div>
   </div>
 </template>
 
@@ -186,17 +188,6 @@ onMounted(load)
 </script>
 
 <style scoped>
-.reviews-page {
-  padding: 4px 0 40px;
-}
-
-.page-head {
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
-  margin-bottom: 16px;
-}
-
 .review-list {
   display: flex;
   flex-direction: column;
@@ -205,7 +196,10 @@ onMounted(load)
 }
 
 .review-item {
-  padding: 18px 20px;
+  padding: 16px;
+  border: 1px solid var(--ew-border);
+  box-shadow: none;
+  border-radius: 10px;
 }
 
 .review-head {
@@ -286,6 +280,6 @@ onMounted(load)
 .pager {
   display: flex;
   justify-content: center;
-  margin-top: 24px;
+  padding: 16px 0 0;
 }
 </style>
