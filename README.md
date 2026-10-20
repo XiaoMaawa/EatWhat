@@ -22,7 +22,7 @@
 | 层 | 技术 |
 | --- | --- |
 | 后端 | Spring Boot 3.2.5、MyBatis-Plus 3.5.5、MySQL 8.0、JWT（jjwt 0.11.5）、Knife4j 4.5、spring-security-crypto（BCrypt） |
-| 前端 | Vue 3、Element Plus、Pinia、Vue Router、Vite |
+| 前端 | Vue 3、Element Plus、Pinia、Vue Router、Vite、Leaflet（地图选点） |
 | 构建 | Maven、pnpm |
 | 测试 | JUnit 5、Mockito、MockMvc |
 
@@ -32,10 +32,10 @@
 | --- | --- |
 | 后端 Java 源文件 | 189 |
 | 后端业务模块 | 15 |
-| REST 端点 | 169（22 个 Controller） |
+| REST 端点 | 170（22 个 Controller） |
 | 业务错误码 | 51 |
 | 数据库表 | 27 |
-| 前端页面组件 | 53 |
+| 前端页面组件 | 55 |
 | 单元测试 | 179 个用例 / 14 个测试类 |
 
 ---
