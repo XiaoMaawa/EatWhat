@@ -131,6 +131,7 @@ export const riderApi = {
   pickup: (taskId) => request.patch(`/rider/tasks/${taskId}/pickup`),
   deliver: (taskId) => request.patch(`/rider/tasks/${taskId}/deliver`),
   tasks: (params) => request.get('/rider/tasks', { params }),
+  abandon: (taskId) => request.post(`/rider/tasks/${taskId}/abandon`),
   updateSettings: (data) => request.patch('/rider/settings', data),
   transfer: (taskId, data) => request.post(`/rider/tasks/${taskId}/transfer`, data),
   reportException: (taskId, data) => request.post(`/rider/tasks/${taskId}/exception`, data),

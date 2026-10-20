@@ -22,12 +22,15 @@ public interface DeliveryService {
      * 骑手查看自己的认证信息（含审核状态）。
      */
     Rider profile(Long userId);
+
     /**
-     * 楠戞墜鏇存柊璧勬枡锛氳仈绯荤數璇濄€佸父鐢ㄩ厤閫佸尯鍩熴€佸仴搴疯瘉鏈夋晥鏈燂紙楠戞墜-28 / 楠戞墜-05锛夈€?     */
+     * 骑手更新资料：联系电话、常用配送区域、健康证有效期（骑手-28 / 骑手-05）。
+     */
     Rider updateProfile(Long userId, com.eatwhat.modules.delivery.dto.RiderProfileRequest request);
 
     /**
-     * 鍋ュ悍璇佸埌鏈熸彁閱掞紙楠戞墜-05锛夛細璺濆埌鏈?<= 30 澶╂垨宸茶繃鏈熸椂杩斿洖鎻愰啋锛屽惁鍒欒繑鍥?null銆?     */
+     * 健康证到期提醒（骑手-05）：距到期 <= 30 天或已过期时返回提醒，否则返回 null。
+     */
     java.util.Map<String, Object> healthReminder(Long userId);
 
     /**
@@ -69,6 +72,11 @@ public interface DeliveryService {
     void deliver(Long userId, Long taskId);
 
     /**
+     * 骑手放弃任务：把已接单/已取餐的任务退回抢单大厅，订单回到待配送。
+     */
+    void abandon(Long userId, Long taskId);
+
+    /**
      * 骑手任务列表。
      */
     PageResult<DeliveryTask> listTasks(Long userId, String scope, int page, int size);
@@ -88,4 +96,10 @@ public interface DeliveryService {
      * 商家备餐完成后创建配送任务。
      */
     DeliveryTask createTask(Long orderId, Long shopId, String pickupAddress, String deliveryAddress, Double distance);
+
+    /**
+     * 订单被取消/关闭时作废对应的配送任务，避免已取消订单的任务继续出现在抢单大厅。
+     * 任务不存在时静默返回。
+     */
+    void cancelTaskByOrder(Long orderId, String reason);
 }

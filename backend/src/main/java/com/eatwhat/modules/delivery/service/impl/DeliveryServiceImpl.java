@@ -191,6 +191,11 @@ public class DeliveryServiceImpl implements DeliveryService {
                 .isNull(DeliveryTask::getRiderId)
                 .orderByAsc(DeliveryTask::getId));
 
+        // 过滤掉所属订单已经结束（已取消/已完成/退款中）的僵尸任务，避免骑手抢单后报「订单已结束」
+        tasks = tasks.stream()
+                .filter(this::isTaskOrderAlive)
+                .collect(java.util.stream.Collectors.toList());
+
         // 按接单半径过滤，超距订单不展示
         tasks = tasks.stream()
                 .filter(task -> task.getDistance() == null
@@ -264,6 +269,11 @@ public class DeliveryServiceImpl implements DeliveryService {
         if (task == null) {
             throw BizException.of(ErrorCode.DELIVERY_NOT_FOUND);
         }
+        // 订单已取消/已完成时不再允许抢单，给出比「订单已结束，无法变更状态」更明确的原因
+        Order taskOrder = orderMapper.selectById(task.getOrderId());
+        if (taskOrder == null || !Integer.valueOf(CommonConstants.ORDER_PENDING_DELIVERY).equals(taskOrder.getStatus())) {
+            throw BizException.of(ErrorCode.ORDER_STATUS_ILLEGAL, "该订单已结束，无法接单");
+        }
         int rows = taskMapper.grab(taskId, rider.getId());
         if (rows == 0) {
             throw BizException.of(ErrorCode.TASK_ALREADY_TAKEN);
@@ -330,6 +340,22 @@ public class DeliveryServiceImpl implements DeliveryService {
                 shopMapper.updateById(shop);
             }
         }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void abandon(Long userId, Long taskId) {
+        Rider rider = requireApprovedRider(userId);
+        DeliveryTask task = requireOwnedTask(rider.getId(), taskId);
+        if (!Integer.valueOf(CommonConstants.TASK_GRABBED).equals(task.getStatus())
+                && !Integer.valueOf(CommonConstants.TASK_PICKED).equals(task.getStatus())) {
+            throw BizException.of(ErrorCode.ORDER_STATUS_ILLEGAL, "当前任务状态不允许放弃");
+        }
+        int rows = taskMapper.release(taskId, rider.getId());
+        if (rows == 0) {
+            throw BizException.of(ErrorCode.ORDER_STATUS_ILLEGAL, "任务状态已变化，请刷新后重试");
+        }
+        orderService.transition(task.getOrderId(), CommonConstants.ORDER_PENDING_DELIVERY, "SYSTEM", "骑手放弃接单，订单重新派单");
     }
 
     @Override
@@ -489,6 +515,41 @@ public class DeliveryServiceImpl implements DeliveryService {
         taskMapper.insert(task);
         log.info("生成配送任务 taskId={} orderId={} fee={}", task.getId(), orderId, task.getFee());
         return task;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void cancelTaskByOrder(Long orderId, String reason) {
+        if (orderId == null) {
+            return;
+        }
+        DeliveryTask task = taskMapper.selectOne(new LambdaQueryWrapper<DeliveryTask>()
+                .eq(DeliveryTask::getOrderId, orderId)
+                .orderByDesc(DeliveryTask::getId)
+                .last("LIMIT 1"));
+        if (task == null) {
+            return;
+        }
+        // 已送达的任务保留历史，只作废还没走完的任务
+        if (Integer.valueOf(CommonConstants.TASK_DELIVERED).equals(task.getStatus())) {
+            return;
+        }
+        task.setStatus(CommonConstants.TASK_DELIVERED);
+        task.setDeliveredAt(java.time.LocalDateTime.now());
+        taskMapper.updateById(task);
+        log.info("订单 {} 已取消，作废配送任务 taskId={} reason={}", orderId, task.getId(), reason);
+    }
+
+    /**
+     * 任务对应的订单是否仍可被配送。
+     * 抢单大厅只应展示「待配送」的订单，已取消/已完成/退款中的订单任务属于僵尸数据。
+     */
+    private boolean isTaskOrderAlive(DeliveryTask task) {
+        if (task.getOrderId() == null) {
+            return false;
+        }
+        Order order = orderMapper.selectById(task.getOrderId());
+        return order != null && Integer.valueOf(CommonConstants.ORDER_PENDING_DELIVERY).equals(order.getStatus());
     }
 
     private DeliveryTask requireOwnedTask(Long riderId, Long taskId) {

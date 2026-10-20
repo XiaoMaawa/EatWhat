@@ -30,6 +30,15 @@
             <el-icon class="fact-icon"><Location /></el-icon>
             <span class="fact-label">地址</span>
             <span class="fact-value">{{ shop.address || '商家暂未填写地址' }}</span>
+            <el-button
+              v-if="shop.longitude != null && shop.latitude != null"
+              link
+              type="primary"
+              size="small"
+              @click="openShopMap"
+            >
+              查看地图
+            </el-button>
           </div>
           <div class="fact">
             <el-icon class="fact-icon"><Clock /></el-icon>
@@ -382,6 +391,21 @@
       </template>
     </el-dialog>
 
+    <!-- 店铺位置地图 -->
+    <el-dialog v-model="shopMapVisible" title="店铺位置" width="720px" destroy-on-close>
+      <div v-if="shop" class="shop-map-wrap">
+        <div class="shop-map-addr">
+          <el-icon><Location /></el-icon>
+          <span>{{ shop.address }}</span>
+        </div>
+        <div ref="shopMapEl" class="shop-map"></div>
+        <div class="shop-map-foot">
+          <span class="ew-muted">坐标 {{ shop.longitude }}, {{ shop.latitude }}</span>
+          <el-button size="small" @click="openAmapNav">高德导航</el-button>
+        </div>
+      </div>
+    </el-dialog>
+
     <!-- 底部购物车栏 -->
     <div class="cart-bar" v-if="cartCount > 0">
       <span class="ew-flex ew-gap12">
@@ -402,6 +426,9 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Clock, Location, Phone, Search, ShoppingCart } from '@element-plus/icons-vue'
 import { cartApi, favoriteApi, orderApi, shopApi, userApi } from '@/api'
 import { formatAddress } from '@/utils/region'
+import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
+import { AMAP_MAX_ZOOM, AMAP_TILE_SUBDOMAINS, AMAP_TILE_URL } from '@/utils/map'
 
 const route = useRoute()
 const router = useRouter()
@@ -444,8 +471,45 @@ const belowMin = computed(() => {
 
 // 营业时间
 const hoursVisible = ref(false)
+const shopMapVisible = ref(false)
+const shopMapEl = ref()
+let shopMap = null
+let shopMarker = null
 const WEEK_TEXT = { 1: '周一', 2: '周二', 3: '周三', 4: '周四', 5: '周五', 6: '周六', 7: '周日' }
 const weeklyHours = computed(() => shop.value?.businessHours || [])
+
+/** 打开店铺位置地图（高德瓦片，免 Key） */
+async function openShopMap() {
+  if (!shop.value || shop.value.longitude == null || shop.value.latitude == null) {
+    return
+  }
+  shopMapVisible.value = true
+  await nextTick()
+  if (!shopMapEl.value) return
+  if (!shopMap) {
+    shopMap = L.map(shopMapEl.value, { center: [0, 0], zoom: 16, attributionControl: false })
+    L.tileLayer(AMAP_TILE_URL, {
+      subdomains: AMAP_TILE_SUBDOMAINS,
+      maxZoom: AMAP_MAX_ZOOM
+    }).addTo(shopMap)
+  }
+  const lat = Number(shop.value.latitude)
+  const lng = Number(shop.value.longitude)
+  shopMap.setView([lat, lng], 16)
+  if (!shopMarker) {
+    shopMarker = L.marker([lat, lng]).addTo(shopMap)
+  } else {
+    shopMarker.setLatLng([lat, lng])
+  }
+  // 弹窗动画结束后尺寸才正确，需要重新计算容器大小
+  setTimeout(() => shopMap && shopMap.invalidateSize(), 200)
+}
+
+function openAmapNav() {
+  if (!shop.value) return
+  const to = `${shop.value.longitude},${shop.value.latitude}`
+  window.open(`https://amap.com/dir?to=${to}`, '_blank')
+}
 
 function hhmm(value) {
   if (!value) return ''
@@ -1284,5 +1348,41 @@ onUnmounted(() => {
 .clear-btn {
   color: #c0c4cc;
   font-size: 13px;
+}
+
+.shop-map-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.shop-map-addr {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: #303133;
+}
+
+.shop-map {
+  width: 100%;
+  height: 320px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f5f7fa;
+  z-index: 0;
+}
+
+.shop-map-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+:deep(.leaflet-marker-icon) {
+  background: var(--el-color-primary, #409eff);
+  border: 3px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px var(--el-color-primary, #409eff);
 }
 </style>

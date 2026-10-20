@@ -158,4 +158,11 @@ public class RiderController {
                                                        @RequestParam(defaultValue = "10") int size) {
         return R.ok(deliveryExceptionService.pageMine(UserContext.userId(), type, page, size));
     }
+
+    @Operation(summary = "放弃任务（把已接的单退回抢单大厅）")
+    @PostMapping("/tasks/{taskId}/abandon")
+    public R<Void> abandon(@PathVariable Long taskId) {
+        deliveryService.abandon(UserContext.userId(), taskId);
+        return R.ok();
+    }
 }

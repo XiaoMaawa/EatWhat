@@ -52,16 +52,26 @@
           <el-input v-model="form.notice" type="textarea" :rows="2" maxlength="255" show-word-limit />
         </el-form-item>
         <el-form-item label="店铺地址" prop="address">
-          <el-input v-model="form.address" maxlength="255" />
+          <div class="addr-row">
+            <el-input v-model="form.address" maxlength="255" placeholder="先填详细地址，再点右侧在地图上选点" />
+            <el-button :icon="Location" @click="openMap">地图选点</el-button>
+          </div>
         </el-form-item>
         <el-form-item label="联系电话" prop="phone">
           <el-input v-model="form.phone" maxlength="20" />
         </el-form-item>
-        <el-form-item label="经度">
-          <el-input-number v-model="form.longitude" :precision="6" :step="0.000001" :controls="false" style="width: 200px" />
-        </el-form-item>
-        <el-form-item label="纬度">
-          <el-input-number v-model="form.latitude" :precision="6" :step="0.000001" :controls="false" style="width: 200px" />
+        <el-form-item label="坐标">
+          <div class="coord-row">
+            <span class="coord-item">
+              经度 <b>{{ form.longitude ?? '未设置' }}</b>
+            </span>
+            <span class="coord-item">
+              纬度 <b>{{ form.latitude ?? '未设置' }}</b>
+            </span>
+            <el-tag v-if="hasCoord" size="small" type="success" effect="plain">已定位</el-tag>
+            <el-tag v-else size="small" type="warning" effect="plain">未定位</el-tag>
+            <span class="ew-muted coord-tip">用于计算配送距离与配送范围</span>
+          </div>
         </el-form-item>
         <el-form-item label="起送价" prop="minOrderAmount">
           <el-input-number v-model="form.minOrderAmount" :min="0" :precision="2" :step="1" style="width: 180px" />
@@ -131,24 +141,50 @@
         </el-form-item>
       </el-form>
     </div>
+
+    <el-dialog v-model="mapVisible" title="在地图上选择店铺位置" width="720px" destroy-on-close>
+      <MapPicker
+        :longitude="form.longitude"
+        :latitude="form.latitude"
+        :address="form.address"
+        @confirm="onMapConfirm"
+      />
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
+import { Location } from '@element-plus/icons-vue'
 import { merchantApi, fileApi } from '@/api'
 import { AUDIT_STATUS } from '@/utils/orderStatus'
+import MapPicker from '@/components/MapPicker.vue'
 
 const loading = ref(false)
 const saving = ref(false)
 const uploading = ref(false)
+const mapVisible = ref(false)
 const shop = ref(null)
 const profile = ref(null)
 const formRef = ref()
 const openTime = ref('09:00')
 const closeTime = ref('21:00')
 const savingHours = ref(false)
+
+const hasCoord = computed(() => form.longitude != null && form.latitude != null)
+
+function openMap() {
+  mapVisible.value = true
+}
+
+function onMapConfirm({ longitude, latitude }) {
+  form.longitude = longitude
+  form.latitude = latitude
+  mapVisible.value = false
+  ElMessage.success(`已选点：${longitude}, ${latitude}`)
+}
+
 const WEEK_OPTIONS = [
   { value: 1, label: '周一' },
   { value: 2, label: '周二' },
@@ -205,8 +241,8 @@ async function load() {
         notice: shop.value.notice,
         address: shop.value.address,
         phone: shop.value.phone,
-        longitude: Number(shop.value.longitude ?? 0),
-        latitude: Number(shop.value.latitude ?? 0),
+        longitude: shop.value.longitude == null ? null : Number(shop.value.longitude),
+        latitude: shop.value.latitude == null ? null : Number(shop.value.latitude),
         minOrderAmount: Number(shop.value.minOrderAmount ?? 0),
         deliveryFee: Number(shop.value.deliveryFee ?? 0),
         packagingFee: Number(shop.value.packagingFee ?? 0),
@@ -231,6 +267,10 @@ async function load() {
 
 async function save() {
   await formRef.value.validate()
+  if (!hasCoord.value) {
+    ElMessage.warning('请先在地图上选择店铺位置，否则无法计算配送距离')
+    return
+  }
   saving.value = true
   try {
     await merchantApi.updateShop({
@@ -404,5 +444,32 @@ onMounted(load)
   align-items: center;
   gap: 10px;
   margin-top: 4px;
+}
+
+.addr-row {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.coord-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.coord-item {
+  font-size: 13px;
+  color: #606266;
+}
+
+.coord-item b {
+  color: #303133;
+  font-weight: 600;
+}
+
+.coord-tip {
+  font-size: 12px;
 }
 </style>

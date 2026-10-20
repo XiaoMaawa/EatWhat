@@ -59,6 +59,18 @@
         <el-form-item label="详细地址" prop="detail">
           <el-input v-model="form.detail" type="textarea" :rows="2" maxlength="120" show-word-limit placeholder="街道、门牌号、楼栋等" />
         </el-form-item>
+        <el-form-item label="坐标">
+          <div class="coord-row">
+            <el-button size="small" :icon="Location" @click="openMap">地图选点</el-button>
+            <span class="coord-text">
+              经度 <b>{{ form.longitude ?? '未设置' }}</b>
+              　纬度 <b>{{ form.latitude ?? '未设置' }}</b>
+            </span>
+            <el-tag v-if="hasCoord" size="small" type="success" effect="plain">已定位</el-tag>
+            <el-tag v-else size="small" type="warning" effect="plain">未定位</el-tag>
+          </div>
+          <div class="coord-tip ew-muted">选点后按实际坐标计算配送距离，未选点时按省市区兜底估算</div>
+        </el-form-item>
         <el-form-item label="地址标签">
           <el-radio-group v-model="form.tag">
             <el-radio-button value="家">家</el-radio-button>
@@ -75,21 +87,51 @@
         <el-button type="primary" :loading="submitting" @click="submit">保存</el-button>
       </template>
     </el-dialog>
+
+    <el-dialog v-model="mapVisible" title="在地图上选择收货位置" width="720px" destroy-on-close>
+      <MapPicker
+        :longitude="form.longitude"
+        :latitude="form.latitude"
+        :address="fullAddressText"
+        @confirm="onMapConfirm"
+      />
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { userApi } from '@/api'
-import { Search } from '@element-plus/icons-vue'
+import { Location, Search } from '@element-plus/icons-vue'
 import { regionTree, toRegionCodes, fromRegionCodes, formatAddress } from '@/utils/region'
+import MapPicker from '@/components/MapPicker.vue'
 
 const loading = ref(false)
 const submitting = ref(false)
 const visible = ref(false)
+const mapVisible = ref(false)
 const list = ref([])
 const formRef = ref()
+
+const hasCoord = computed(() => form.longitude != null && form.latitude != null)
+
+/** 地图搜索用的完整地址文本 */
+const fullAddressText = computed(() => {
+  const region = fromRegionCodes(form.regionCodes)
+  return `${region.province || ''}${region.city || ''}${region.district || ''}${form.detail || ''}`
+})
+
+function openMap() {
+  mapVisible.value = true
+}
+
+function onMapConfirm({ longitude, latitude }) {
+  form.longitude = longitude
+  form.latitude = latitude
+  mapVisible.value = false
+  ElMessage.success(`已选点：${longitude}, ${latitude}`)
+}
 
 // 顾客-16：地址搜索定位（300ms 防抖，走后端 /users/me/addresses/search）
 const keyword = ref('')
@@ -116,7 +158,9 @@ const form = reactive({
   regionCodes: [],
   detail: '',
   isDefault: 0,
-  tag: '家'
+  tag: '家',
+  longitude: null,
+  latitude: null
 })
 
 const cascaderProps = {
@@ -171,7 +215,9 @@ function openDialog(addr) {
     regionCodes: [],
     detail: '',
     isDefault: list.value.length === 0 ? 1 : 0,
-    tag: '家'
+    tag: '家',
+    longitude: null,
+    latitude: null
   })
   if (addr) {
     Object.assign(form, addr)
@@ -198,7 +244,9 @@ async function submit() {
       district: region.district,
       detail: form.detail,
       isDefault: form.isDefault,
-      tag: form.tag
+      tag: form.tag,
+      longitude: form.longitude,
+      latitude: form.latitude
     }
     if (form.id) {
       await userApi.updateAddress(form.id, payload)
@@ -288,6 +336,28 @@ onMounted(load)
 /* 地址详情行：长地址允许换行，不撑破卡片 */
 .address-detail {
   word-break: break-all;
+}
+
+.coord-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.coord-text {
+  font-size: 13px;
+  color: #606266;
+}
+
+.coord-text b {
+  color: #303133;
+  font-weight: 600;
+}
+
+.coord-tip {
+  font-size: 12px;
+  margin-top: 4px;
 }
 
 </style>

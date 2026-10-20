@@ -231,6 +231,9 @@ async function grab(task) {
     await riderApi.grab(task.id)
     ElMessage.success('抢单成功，请尽快取餐')
     await load()
+  } catch (e) {
+    // 抢单失败（订单已结束 / 已被抢走）时刷新列表，避免僵尸任务一直挂在页面上
+    await load()
   } finally {
     grabbing.value = null
   }

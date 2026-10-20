@@ -100,8 +100,8 @@
       <h4 class="sub-title">订单进度</h4>
       <el-timeline>
         <el-timeline-item
-          v-for="(log, index) in order.statusLogs || []"
-          :key="index"
+          v-for="(log, index) in statusLogs"
+          :key="log.id || index"
           :timestamp="log.createdAt"
           :type="index === 0 ? 'primary' : ''"
         >
@@ -192,6 +192,15 @@ const stepActive = computed(() => {
   if (status === 4) return 4
   if (status === 5) return 5
   return 1
+})
+
+/**
+ * 订单进度时间线：按时间倒序展示（最新状态在最上方并高亮）。
+ * 后端按 id 升序返回，这里翻转让「支付成功」这类最新节点出现在第一行。
+ */
+const statusLogs = computed(() => {
+  const logs = order.value?.statusLogs || []
+  return [...logs].reverse()
 })
 
 async function load() {

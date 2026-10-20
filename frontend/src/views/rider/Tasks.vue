@@ -30,7 +30,7 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="340" fixed="right">
+        <el-table-column label="操作" width="400" fixed="right">
           <template #default="{ row }">
             <el-button v-if="row.status === 1 || row.status === 2" size="small" type="info" @click="navigate(row)">导航</el-button>
             <el-button v-if="row.status === 1" size="small" type="primary" @click="pickup(row)">确认取餐</el-button>
@@ -38,6 +38,7 @@
             <template v-if="row.status === 1 || row.status === 2">
               <el-button size="small" @click="openDialog(row, 'transfer')">转单</el-button>
               <el-button size="small" type="warning" plain @click="openDialog(row, 'report')">异常上报</el-button>
+              <el-button size="small" type="danger" plain @click="abandon(row)">放弃</el-button>
             </template>
             <span v-if="row.status >= 3" class="ew-muted">已完成</span>
           </template>
@@ -158,6 +159,26 @@ async function deliver(row) {
   await riderApi.deliver(row.id)
   ElMessage.success('已送达，收益已计入')
   await load()
+}
+
+/** 放弃任务：把已接的单退回抢单大厅，避免任务卡在自己名下 */
+async function abandon(row) {
+  try {
+    await ElMessageBox.confirm(
+      '放弃后本单将退回抢单大厅由其他骑手接单，本单收益不再计入，确定放弃吗？',
+      '确认放弃任务',
+      { type: 'warning', confirmButtonText: '确定放弃', cancelButtonText: '再想想' }
+    )
+  } catch {
+    return
+  }
+  try {
+    await riderApi.abandon(row.id)
+    ElMessage.success('已退回抢单大厅')
+    await load()
+  } catch {
+    await load()
+  }
 }
 
 function openDialog(row, type) {

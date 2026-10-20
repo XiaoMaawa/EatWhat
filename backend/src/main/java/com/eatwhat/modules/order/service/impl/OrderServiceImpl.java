@@ -231,6 +231,18 @@ public class OrderServiceImpl implements OrderService {
                     .compareTo(BigDecimal.valueOf(shop.getDeliveryRange())) > 0) {
                 throw BizException.of(ErrorCode.OUT_OF_DELIVERY_RANGE);
             }
+        } else if (shop.getLatitude() == null || shop.getLongitude() == null) {
+            // 商家还没在地图上标点，无法校验配送范围，但不应阻塞下单
+            log.warn("店铺 {} 未设置坐标，跳过配送范围校验", shop.getId());
+        } else {
+            // 收货地址未选点：按省市区兜底估算，避免地址没坐标就完全下不了单
+            distanceKm = estimateDistanceByRegion(shop, address);
+            if (distanceKm != null && shop.getDeliveryRange() != null
+                    && distanceKm.multiply(BigDecimal.valueOf(1000))
+                    .compareTo(BigDecimal.valueOf(shop.getDeliveryRange())) > 0) {
+                throw BizException.of(ErrorCode.OUT_OF_DELIVERY_RANGE,
+                        "收货地址与店铺距离约 " + distanceKm + " 公里，超出配送范围，请在地图上重新选点");
+            }
         }
 
         BigDecimal baseFee = shop.getDeliveryFee() == null ? BigDecimal.ZERO : shop.getDeliveryFee();
@@ -456,6 +468,7 @@ public class OrderServiceImpl implements OrderService {
         order.setCancelReason(reason == null || reason.isBlank() ? "用户主动取消" : reason.trim());
         orderMapper.updateById(order);
         writeLog(orderId, from, CommonConstants.ORDER_CANCELLED, userId, "CONSUMER", order.getCancelReason());
+        deliveryService.cancelTaskByOrder(orderId, "顾客取消订单");
     }
 
     @Override
@@ -517,6 +530,7 @@ public class OrderServiceImpl implements OrderService {
         orderMapper.updateById(order);
         writeLog(orderId, from, CommonConstants.ORDER_REFUNDING, UserContext.userId(), "MERCHANT",
                 order.getCancelReason());
+        deliveryService.cancelTaskByOrder(orderId, "商家拒单");
     }
 
     @Override
@@ -589,6 +603,7 @@ public class OrderServiceImpl implements OrderService {
             orderMapper.updateById(order);
             writeLog(order.getId(), CommonConstants.ORDER_PENDING_PAYMENT, CommonConstants.ORDER_CANCELLED,
                     CommonConstants.SYSTEM_OPERATOR_ID, "SYSTEM", "超时未支付，系统自动关闭");
+            deliveryService.cancelTaskByOrder(order.getId(), "超时未支付自动关闭");
         }
         if (!timeoutOrders.isEmpty()) {
             log.info("自动关闭超时未支付订单 {} 笔", timeoutOrders.size());
@@ -619,6 +634,7 @@ public class OrderServiceImpl implements OrderService {
         writeLog(orderId, from, CommonConstants.ORDER_CANCELLED,
                 UserContext.userId() == null ? CommonConstants.SYSTEM_OPERATOR_ID : UserContext.userId(),
                 "SYSTEM", "平台强制取消：" + cancelReason);
+        deliveryService.cancelTaskByOrder(orderId, "平台强制取消");
     }
 
     @Override
@@ -896,12 +912,17 @@ public class OrderServiceImpl implements OrderService {
     }
 
     /**
-     * 估算订单配送距离（公里）：优先用订单是否还有对应配送任务的距离，否则用店铺与收货地址坐标计算。
+     * 估算订单配送距离（公里）：优先用订单上快照的收货坐标，缺失时回退到用户的默认地址。
      */
     private BigDecimal resolveDistanceKm(Order order) {
         Shop shop = shopMapper.selectById(order.getShopId());
         if (shop == null || shop.getLatitude() == null || shop.getLongitude() == null) {
             return null;
+        }
+        // 下单时已把收货地址坐标快照到订单上，这里优先用它，避免用户改默认地址后距离漂移
+        if (order.getReceiverLat() != null && order.getReceiverLng() != null) {
+            return GeoUtils.distanceKm(shop.getLatitude(), shop.getLongitude(),
+                    order.getReceiverLat(), order.getReceiverLng());
         }
         UserAddress address = addressMapper.selectOne(new LambdaQueryWrapper<UserAddress>()
                 .eq(UserAddress::getUserId, order.getUserId())
@@ -912,6 +933,28 @@ public class OrderServiceImpl implements OrderService {
         }
         return GeoUtils.distanceKm(shop.getLatitude(), shop.getLongitude(),
                 address.getLatitude(), address.getLongitude());
+    }
+
+    /**
+     * 收货地址没有坐标时的兜底距离估算：同区县按 2 公里、同城市按 8 公里、跨城市按 50 公里。
+     * 只用于配送范围粗筛，不参与精确计价以外的判断。
+     */
+    private BigDecimal estimateDistanceByRegion(Shop shop, UserAddress address) {
+        if (shop.getAddress() == null || address == null) {
+            return null;
+        }
+        String shopAddr = shop.getAddress();
+        boolean sameDistrict = address.getDistrict() != null && !address.getDistrict().isBlank()
+                && shopAddr.contains(address.getDistrict());
+        boolean sameCity = address.getCity() != null && !address.getCity().isBlank()
+                && shopAddr.contains(address.getCity());
+        if (sameDistrict) {
+            return BigDecimal.valueOf(2);
+        }
+        if (sameCity) {
+            return BigDecimal.valueOf(8);
+        }
+        return BigDecimal.valueOf(50);
     }
 
     private String fullAddress(UserAddress address) {
