@@ -4,7 +4,7 @@
       <el-input
         v-model="keyword"
         :prefix-icon="Search"
-        placeholder="搜索地点，例如：杭州文三路 88 号"
+        placeholder="搜索地点，例如：电子科技大学中山学院"
         clearable
         @keyup.enter="doSearch"
       />
@@ -78,8 +78,8 @@ const current = reactive({ longitude: null, latitude: null })
 let map = null
 let marker = null
 
-/** 默认中心：杭州西湖区 */
-const DEFAULT_CENTER = [30.2741, 120.1551]
+/** 默认中心：中山市石岐街道 · 电子科技大学中山学院 */
+const DEFAULT_CENTER = [22.5296609, 113.384474]
 
 function toNum(v) {
   if (v === null || v === undefined || v === '') return null
