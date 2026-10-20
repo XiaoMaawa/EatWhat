@@ -52,6 +52,12 @@ public interface DeliveryService {
                                       java.math.BigDecimal maxFee);
 
     /**
+     * 抢单大厅为空时给出原因说明：把「还没出餐的订单 / 超距订单 / 已达上限 / 任务池为空」区分开，
+     * 让骑手知道不是系统坏了。
+     */
+    java.util.Map<String, Object> availableHint(Long userId);
+
+    /**
      * 更新骑手接单设置：接单开关、接单半径、同时接单上限。
      */
     void updateSettings(Long userId, Integer accepting, java.math.BigDecimal maxDistance, Integer maxOrders);

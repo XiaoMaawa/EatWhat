@@ -82,7 +82,16 @@
           </div>
         </div>
 
-        <el-empty v-if="!loading && tasks.length === 0" description="暂时没有可抢的订单" />
+        <el-empty v-if="!loading && tasks.length === 0" :description="emptyText">
+          <div v-if="hint" class="empty-hint">
+            <p class="empty-reason">{{ hint.reason }}</p>
+            <p class="ew-muted empty-detail">
+              接单半径 {{ hint.maxDistance }} 公里 · 进行中 {{ hint.ongoing }}/{{ hint.maxOrders }} 单
+            </p>
+            <el-button size="small" @click="settingsVisible = true">调整接单设置</el-button>
+            <el-button size="small" @click="load">刷新</el-button>
+          </div>
+        </el-empty>
       </div>
     </div>
 
@@ -137,7 +146,7 @@
 </template>
 
 <script setup>
-import { onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { riderApi } from '@/api'
 import { distance, money } from '@/utils/format'
@@ -149,6 +158,9 @@ const profile = ref(null)
 const settingsVisible = ref(false)
 const savingSettings = ref(false)
 const settings = reactive({ accepting: 1, maxDistance: 5, maxOrders: 5 })
+// 抢单大厅为空时给骑手一句人话解释（不是系统坏了）
+const hint = ref(null)
+const emptyText = computed(() => (hint.value?.reason ? '暂时没有可抢的订单' : '暂时没有可抢的订单'))
 
 // 骑手-09/13：接单偏好排序与区间筛选
 const sortBy = ref('')
@@ -187,8 +199,15 @@ async function load() {
     if (filter.minFee != null) params.minFee = filter.minFee
     if (filter.maxFee != null) params.maxFee = filter.maxFee
     tasks.value = (await riderApi.available(params)) || []
+    // 列表为空时补一条原因说明，避免骑手以为系统坏了
+    if (tasks.value.length === 0) {
+      hint.value = await riderApi.availableHint().catch(() => null)
+    } else {
+      hint.value = null
+    }
   } catch {
     tasks.value = []
+    hint.value = null
   } finally {
     loading.value = false
   }
@@ -362,5 +381,25 @@ onBeforeUnmount(() => {
 .filter-label {
   color: #909399;
   font-size: 13px;
+}
+
+.empty-hint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.empty-reason {
+  margin: 0;
+  font-size: 14px;
+  color: #606266;
+  max-width: 460px;
+  line-height: 1.6;
+}
+
+.empty-detail {
+  margin: 0;
+  font-size: 12px;
 }
 </style>

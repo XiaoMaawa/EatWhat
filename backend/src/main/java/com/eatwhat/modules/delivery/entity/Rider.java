@@ -46,6 +46,16 @@ public class Rider extends BaseEntity {
     private String serviceArea;
 
     /**
+     * 常驻位置经度（骑手定位，GCJ-02）。
+     */
+    private BigDecimal longitude;
+
+    /**
+     * 常驻位置纬度（骑手定位，GCJ-02）。
+     */
+    private BigDecimal latitude;
+
+    /**
      * 1 接单中 / 0 已暂停接单。
      */
     private Integer accepting;
@@ -148,6 +158,22 @@ public class Rider extends BaseEntity {
 
     public void setServiceArea(String serviceArea) {
         this.serviceArea = serviceArea;
+    }
+
+    public BigDecimal getLongitude() {
+        return longitude;
+    }
+
+    public void setLongitude(BigDecimal longitude) {
+        this.longitude = longitude;
+    }
+
+    public BigDecimal getLatitude() {
+        return latitude;
+    }
+
+    public void setLatitude(BigDecimal latitude) {
+        this.latitude = latitude;
     }
 
     public Integer getAccepting() {

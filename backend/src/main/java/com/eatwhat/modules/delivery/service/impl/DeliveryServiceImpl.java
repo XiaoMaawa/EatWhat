@@ -124,11 +124,17 @@ public class DeliveryServiceImpl implements DeliveryService {
             String area = request.getServiceArea().trim();
             rider.setServiceArea(area.isEmpty() ? null : area);
         }
+        if (request.getLongitude() != null) {
+            rider.setLongitude(request.getLongitude());
+        }
+        if (request.getLatitude() != null) {
+            rider.setLatitude(request.getLatitude());
+        }
         if (request.getHealthExpire() != null && !request.getHealthExpire().isBlank()) {
             try {
                 rider.setHealthExpire(LocalDate.parse(request.getHealthExpire().trim()));
             } catch (Exception e) {
-                throw BizException.of(ErrorCode.PARAM_INVALID, "鍋ュ悍璇佹湁鏁堟湡鏍煎紡搴斾负 yyyy-MM-dd");
+                throw BizException.of(ErrorCode.PARAM_INVALID, "健康证有效期格式应为 yyyy-MM-dd");
             }
         }
         riderMapper.updateById(rider);
@@ -151,8 +157,8 @@ public class DeliveryServiceImpl implements DeliveryService {
         reminder.put("daysLeft", days);
         reminder.put("expired", days < 0);
         reminder.put("message", days < 0
-                ? "鍋ュ悍璇佸凡杩囨湡 " + (-days) + " 澶╋紝璇峰敖蹇笂浼犳柊鐨勫仴搴疯瘉"
-                : "鍋ュ悍璇佸皢浜?" + days + " 澶╁悗鍒版湡锛岃鍙婃椂鏇存柊");
+                ? "健康证已过期 " + (-days) + " 天，请尽快上传新的健康证"
+                : "健康证将在 " + days + " 天后到期，请及时更新");
         return reminder;
     }
     @Override
@@ -233,6 +239,57 @@ public class DeliveryServiceImpl implements DeliveryService {
         }
         tasks.forEach(this::fillOrderNo);
         return tasks;
+    }
+
+    @Override
+    public Map<String, Object> availableHint(Long userId) {
+        Rider rider = requireApprovedRider(userId);
+        BigDecimal radius = rider.getMaxDistance() == null ? DEFAULT_MAX_DISTANCE : rider.getMaxDistance();
+        int maxOrders = rider.getMaxOrders() == null ? DEFAULT_MAX_ORDERS : rider.getMaxOrders();
+        long ongoing = taskMapper.selectCount(new LambdaQueryWrapper<DeliveryTask>()
+                .eq(DeliveryTask::getRiderId, rider.getId())
+                .in(DeliveryTask::getStatus, CommonConstants.TASK_GRABBED, CommonConstants.TASK_PICKED));
+
+        List<DeliveryTask> waiting = taskMapper.selectList(new LambdaQueryWrapper<DeliveryTask>()
+                .eq(DeliveryTask::getStatus, CommonConstants.TASK_WAITING)
+                .isNull(DeliveryTask::getRiderId));
+        List<DeliveryTask> alive = waiting.stream()
+                .filter(this::isTaskOrderAlive)
+                .collect(java.util.stream.Collectors.toList());
+        long outOfRadius = alive.stream()
+                .filter(t -> t.getDistance() != null && t.getDistance().compareTo(radius) > 0)
+                .count();
+
+        // 还没出餐（备餐中/待接单/待支付）的订单：告诉骑手「不是没有单，是商家还没出餐」
+        long notReady = orderMapper.selectCount(new LambdaQueryWrapper<Order>()
+                .in(Order::getStatus, CommonConstants.ORDER_PENDING_PAYMENT,
+                        CommonConstants.ORDER_PENDING_ACCEPT, CommonConstants.ORDER_PREPARING));
+
+        Map<String, Object> hint = new HashMap<>();
+        hint.put("accepting", rider.getAccepting());
+        hint.put("maxDistance", radius);
+        hint.put("maxOrders", maxOrders);
+        hint.put("ongoing", ongoing);
+        hint.put("waitingPool", alive.size());
+        hint.put("outOfRadius", outOfRadius);
+        hint.put("notReadyOrders", notReady);
+
+        String reason;
+        if (!Integer.valueOf(1).equals(rider.getAccepting())) {
+            reason = "接单开关已关闭，开启后才能看到可抢订单";
+        } else if (ongoing >= maxOrders) {
+            reason = "已达同时接单上限（" + maxOrders + " 单），先完成手上的任务";
+        } else if (!alive.isEmpty() && outOfRadius == alive.size()) {
+            reason = "订单池里有 " + alive.size() + " 单，但都超出了你的接单半径（" + radius + " 公里），可调大半径";
+        } else if (!alive.isEmpty()) {
+            reason = "抢单大厅有 " + alive.size() + " 单可以抢，点击刷新即可看到";
+        } else if (notReady > 0) {
+            reason = "有 " + notReady + " 笔订单还在等待商家接单或备餐，商家标记出餐后才会进入抢单大厅";
+        } else {
+            reason = "当前没有待配送订单";
+        }
+        hint.put("reason", reason);
+        return hint;
     }
 
     @Override

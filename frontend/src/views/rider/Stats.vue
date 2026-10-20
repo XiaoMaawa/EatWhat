@@ -136,6 +136,12 @@
         <el-descriptions-item label="姓名">{{ profile.realName }}</el-descriptions-item>
         <el-descriptions-item label="联系电话">{{ profile.contactPhone }}</el-descriptions-item>
         <el-descriptions-item label="常用配送区域">{{ profile.serviceArea || '未设置' }}</el-descriptions-item>
+        <el-descriptions-item label="常驻定位">
+          <span v-if="profile.longitude != null && profile.latitude != null" class="coord-text">
+            {{ Number(profile.longitude).toFixed(5) }}, {{ Number(profile.latitude).toFixed(5) }}
+          </span>
+          <span v-else class="ew-muted">未设置</span>
+        </el-descriptions-item>
         <el-descriptions-item label="健康证有效期">{{ profile.healthExpire || '未设置' }}</el-descriptions-item>
         <el-descriptions-item label="审核状态">
           <el-tag :type="AUDIT_STATUS[profile.auditStatus]?.type">
@@ -154,7 +160,16 @@
           <el-input v-model="editForm.contactPhone" maxlength="11" placeholder="11 位手机号" />
         </el-form-item>
         <el-form-item label="常用配送区域" prop="serviceArea">
-          <el-input v-model="editForm.serviceArea" maxlength="200" placeholder="例如：滨江区、西湖区文三路一带" />
+          <el-input v-model="editForm.serviceArea" maxlength="200" placeholder="例如：石岐街道 · 电子科技大学中山学院一带" />
+        </el-form-item>
+        <el-form-item label="常驻定位">
+          <div class="coord-edit">
+            <span v-if="editForm.longitude != null" class="coord-text">
+              {{ Number(editForm.longitude).toFixed(5) }}, {{ Number(editForm.latitude).toFixed(5) }}
+            </span>
+            <span v-else class="ew-muted">未设置，设置后可查看附近的待抢订单</span>
+            <el-button size="small" @click="openMap">地图选点</el-button>
+          </div>
         </el-form-item>
         <el-form-item label="健康证有效期" prop="healthExpire">
           <el-date-picker
@@ -171,6 +186,15 @@
         <el-button type="primary" :loading="saving" @click="saveProfile">保存</el-button>
       </template>
     </el-dialog>
+
+    <el-dialog v-model="mapVisible" title="选择常驻位置" width="720px" append-to-body>
+      <MapPicker
+        :longitude="editForm.longitude"
+        :latitude="editForm.latitude"
+        :address="editForm.serviceArea"
+        @confirm="onMapConfirm"
+      />
+    </el-dialog>
   </div>
 </template>
 
@@ -180,6 +204,7 @@ import { ElMessage } from 'element-plus'
 import { riderApi } from '@/api'
 import { money } from '@/utils/format'
 import { AUDIT_STATUS } from '@/utils/orderStatus'
+import MapPicker from '@/components/MapPicker.vue'
 
 const loading = ref(false)
 const stats = ref({})
@@ -242,7 +267,9 @@ const editVisible = ref(false)
 const saving = ref(false)
 const editRef = ref()
 const healthTip = ref(null)
-const editForm = reactive({ contactPhone: '', serviceArea: '', healthExpire: '' })
+const editForm = reactive({ contactPhone: '', serviceArea: '', healthExpire: '', longitude: null, latitude: null })
+// 骑手常驻定位：地图选点后保存，用于展示就近的待抢订单
+const mapVisible = ref(false)
 const editRules = {
   contactPhone: [
     { required: true, message: '请填写联系电话', trigger: 'blur' },
@@ -250,10 +277,22 @@ const editRules = {
   ]
 }
 
+function openMap() {
+  mapVisible.value = true
+}
+
+function onMapConfirm(coord) {
+  editForm.longitude = coord.longitude
+  editForm.latitude = coord.latitude
+  mapVisible.value = false
+}
+
 function openEdit() {
   editForm.contactPhone = profile.value?.contactPhone || ''
   editForm.serviceArea = profile.value?.serviceArea || ''
   editForm.healthExpire = profile.value?.healthExpire || ''
+  editForm.longitude = profile.value?.longitude == null ? null : Number(profile.value.longitude)
+  editForm.latitude = profile.value?.latitude == null ? null : Number(profile.value.latitude)
   editVisible.value = true
 }
 
@@ -371,6 +410,19 @@ onMounted(async () => {
 
 .bar-value {
   font-size: 11px;
+  color: #606266;
+}
+
+.coord-edit {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.coord-text {
+  font-family: monospace;
+  font-size: 13px;
   color: #606266;
 }
 </style>

@@ -306,6 +306,8 @@ CREATE TABLE `rider` (
   `health_expire` DATE            DEFAULT NULL            COMMENT '健康证有效期至',
   `contact_phone` VARCHAR(20)     NOT NULL                COMMENT '联系电话',
   `service_area`  VARCHAR(200)    DEFAULT NULL            COMMENT '常用配送区域',
+  `longitude`     DECIMAL(10,7)   DEFAULT NULL            COMMENT '常驻位置经度(骑手定位)',
+  `latitude`      DECIMAL(10,7)   DEFAULT NULL            COMMENT '常驻位置纬度(骑手定位)',
   `accepting`     TINYINT         NOT NULL DEFAULT 1      COMMENT '1接单中 0已暂停',
   `max_distance`  DECIMAL(4,1)    NOT NULL DEFAULT 5.0    COMMENT '接单半径(公里)',
   `max_orders`    INT             NOT NULL DEFAULT 5      COMMENT '最大同时接单数',
@@ -664,9 +666,9 @@ INSERT INTO `sys_user` (`id`, `phone`, `password`, `nickname`, `avatar`, `role`,
 (8, '13800000012', '$2a$10$0.tTNqTv2lADJJmLGdrIhuJTPFmY8UghrQ4fq0c3iCETlTLTtlNW2','轻食小铺',    NULL, 'MERCHANT', 1);
 
 INSERT INTO `user_address` (`id`, `user_id`, `contact_name`, `phone`, `province`, `city`, `district`, `detail`, `longitude`, `latitude`, `is_default`) VALUES
-(1, 2, '张三', '13800000001', '浙江省', '杭州市', '西湖区', '文三路 100 号 3 幢 501 室', 120.1234560, 30.2765000, 1),
-(2, 2, '张三', '13800000001', '浙江省', '杭州市', '滨江区', '江南大道 588 号 A 座 1201', 120.2100000, 30.2080000, 0),
-(3, 3, '李四', '13800000002', '浙江省', '杭州市', '西湖区', '文三路 200 号 1 幢 802 室', 120.1200000, 30.2780000, 1);
+(1, 2, '张三', '13800000001', '广东省', '中山市', '石岐街道', '学院宿舍 7 栋 302 室', 113.3912800, 22.5258070, 1),
+(2, 2, '张三', '13800000001', '广东省', '中山市', '石岐街道', '宏基社区莲塘路 18 号 A 座 1201', 113.3852750, 22.5274030, 0),
+(3, 3, '李四', '13800000002', '广东省', '中山市', '石岐街道', '岐江公园东门 3 号商铺', 113.3949820, 22.5235090, 1);
 
 INSERT INTO `merchant` (`id`, `user_id`, `real_name`, `id_card`, `license_img`, `contact_phone`, `audit_status`, `audit_remark`, `audited_at`) VALUES
 (1, 4, '陈建国', '330106199001011234', NULL, '13800000010', 1, '资质齐全，审核通过', NOW()),
@@ -674,9 +676,9 @@ INSERT INTO `merchant` (`id`, `user_id`, `real_name`, `id_card`, `license_img`, 
 (3, 8, '林轻食', '330106199308089012', NULL, '13800000012', 1, '资质齐全，审核通过', NOW());
 
 INSERT INTO `shop` (`id`, `merchant_id`, `name`, `logo`, `description`, `notice`, `address`, `longitude`, `latitude`, `phone`, `min_order_amount`, `delivery_fee`, `delivery_fee_type`, `delivery_range`, `open_time`, `close_time`, `is_open`, `avg_score`, `month_sales`, `status`) VALUES
-(1, 1, '川味小厨', NULL, '正宗川菜，麻辣鲜香，现炒现做', '本店所有菜品均使用非转基因食用油', '浙江省杭州市西湖区文三路 88 号 1 层', 120.1250000, 30.2770000, '13800000010', 20.00, 3.00, 1, 3000, '09:00:00', '21:00:00', 1, 4.80, 1268, 1),
-(2, 2, '麦香烘焙', NULL, '手作面包与甜点，每日现烤', '下午 3 点后全场 8 折', '浙江省杭州市西湖区学院路 200 号', 120.1300000, 30.2800000, '13800000011', 15.00, 2.00, 0, 2500, '08:00:00', '20:00:00', 1, 4.60, 892, 1),
-(3, 3, '麦香轻食', NULL, '轻食沙拉与低卡套餐', '支持预订次日餐', '浙江省杭州市西湖区教工路 55 号', 120.1350000, 30.2850000, '13800000012', 18.00, 2.50, 1, 2000, '10:00:00', '19:00:00', 1, 4.50, 431, 1);
+(1, 1, '川味小厨', NULL, '正宗川菜，麻辣鲜香，现炒现做', '本店所有菜品均使用非转基因食用油', '广东省中山市石岐街道莲兴路 12 号 1 层', 113.3916800, 22.5285080, '13800000010', 20.00, 3.00, 1, 3000, '09:00:00', '21:00:00', 1, 4.80, 1268, 1),
+(2, 2, '麦香烘焙', NULL, '手作面包与甜点，每日现烤', '下午 3 点后全场 8 折', '广东省中山市石岐街道兴中道 88 号', 113.3864760, 22.5251040, '13800000011', 15.00, 2.00, 0, 2500, '08:00:00', '20:00:00', 1, 4.60, 892, 1),
+(3, 3, '麦香轻食', NULL, '轻食沙拉与低卡套餐', '支持预订次日餐', '广东省中山市石岐街道龙腾路 36 号', 113.3886780, 22.5319060, '13800000012', 18.00, 2.50, 1, 2000, '10:00:00', '19:00:00', 1, 4.50, 431, 1);
 
 INSERT INTO `dish_category` (`id`, `shop_id`, `name`, `sort`) VALUES
 (1, 1, '招牌热菜', 1),
@@ -737,9 +739,9 @@ INSERT INTO `dish_addon` (`dish_id`, `name`, `price`, `sort`) VALUES
 (5, '加青菜', 1.50, 2),
 (6, '加米饭', 1.00, 0),
 (6, '加卤蛋', 2.00, 1);
-INSERT INTO `rider` (`id`, `user_id`, `real_name`, `id_card`, `health_img`, `contact_phone`, `audit_status`, `audit_remark`, `audited_at`, `total_orders`, `total_income`) VALUES
-(1, 6, '王强', '330106199303031234', NULL, '13800000020', 1, '健康证有效，审核通过', NOW(), 0, 0.00),
-(2, 7, '赵敏', '330106199407075678', NULL, '13800000021', 1, '健康证有效，审核通过', NOW(), 0, 0.00);
+INSERT INTO `rider` (`id`, `user_id`, `real_name`, `id_card`, `health_img`, `contact_phone`, `service_area`, `longitude`, `latitude`, `audit_status`, `audit_remark`, `audited_at`, `total_orders`, `total_income`) VALUES
+(1, 6, '王强', '442000199303031234', NULL, '13800000020', '石岐街道 · 电子科技大学中山学院一带', 113.3925810, 22.5278080, 1, '健康证有效，审核通过', NOW(), 0, 0.00),
+(2, 7, '赵敏', '442000199407075678', NULL, '13800000021', '石岐街道 · 兴中道 / 龙腾路一带', 113.3870770, 22.5262040, 1, '健康证有效，审核通过', NOW(), 0, 0.00);
 
 INSERT INTO `shop_favorite` (`id`, `user_id`, `shop_id`) VALUES
 (1, 2, 1),

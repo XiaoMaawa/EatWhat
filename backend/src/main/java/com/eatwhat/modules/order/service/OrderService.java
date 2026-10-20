@@ -80,7 +80,8 @@ public interface OrderService {
      */
     void merchantReady(Long merchantId, Long orderId);
     /**
-     * 鍟嗗-43锛氱敓鎴愯鍗曞皬绁ㄦ墦鍗版暟鎹紙搴楅摵淇℃伅銆佽彍鍝併€佹暟閲忋€侀噾棰濄€佸娉級銆?     */
+     * 商家-43：生成订单小票打印数据（店铺信息、菜品、数量、金额、备注）。
+     */
     Map<String, Object> receipt(Long merchantId, Long orderId);
 
     /**

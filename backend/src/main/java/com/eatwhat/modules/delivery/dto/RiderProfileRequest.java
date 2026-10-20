@@ -14,8 +14,30 @@ public class RiderProfileRequest {
     @Size(max = 200, message = "常用配送区域过长")
     private String serviceArea;
 
+    /** 常驻位置经度（GCJ-02，地图选点） */
+    private java.math.BigDecimal longitude;
+
+    /** 常驻位置纬度（GCJ-02，地图选点） */
+    private java.math.BigDecimal latitude;
+
     /** 健康证有效期（yyyy-MM-dd），骑手-05 */
     private String healthExpire;
+
+    public java.math.BigDecimal getLongitude() {
+        return longitude;
+    }
+
+    public void setLongitude(java.math.BigDecimal longitude) {
+        this.longitude = longitude;
+    }
+
+    public java.math.BigDecimal getLatitude() {
+        return latitude;
+    }
+
+    public void setLatitude(java.math.BigDecimal latitude) {
+        this.latitude = latitude;
+    }
 
     public String getContactPhone() {
         return contactPhone;

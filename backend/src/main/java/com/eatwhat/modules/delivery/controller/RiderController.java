@@ -79,6 +79,12 @@ public class RiderController {
         return R.ok(deliveryService.availableTasks(UserContext.userId(), sortBy, minDistance, maxDistance, minFee, maxFee));
     }
 
+    @Operation(summary = "抢单大厅为空的原因说明（为什么暂时没有可抢订单）")
+    @GetMapping("/tasks/available/hint")
+    public R<Map<String, Object>> availableHint() {
+        return R.ok(deliveryService.availableHint(UserContext.userId()));
+    }
+
     @Operation(summary = "更新接单设置")
     @PatchMapping("/settings")
     public R<Void> updateSettings(@RequestBody Map<String, Object> body) {

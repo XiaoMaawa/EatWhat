@@ -127,6 +127,7 @@ export const riderApi = {
   updateProfile: (data) => request.patch('/rider/profile', data),
   healthReminder: () => request.get('/rider/health-reminder'),
   available: (params) => request.get('/rider/tasks/available', { params }),
+  availableHint: () => request.get('/rider/tasks/available/hint'),
   grab: (taskId) => request.post(`/rider/tasks/${taskId}/grab`),
   pickup: (taskId) => request.patch(`/rider/tasks/${taskId}/pickup`),
   deliver: (taskId) => request.patch(`/rider/tasks/${taskId}/deliver`),
